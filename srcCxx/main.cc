@@ -25,6 +25,7 @@ DDS::DurabilityQosPolicyKind        durability_kind    = DDS::VOLATILE_DURABILIT
 int                 ownership_strength = -1;      /* means shared */
 char              * topic_name         = NULL;
 char              * color              = NULL;
+char              * partition          = NULL;
 int                 publish            = 0;
 int                 subscribe          = 0;
 int                 timebasedfilter_interval = 0; /* off */
@@ -48,22 +49,31 @@ ShapeTypeDataWriter           * dw    = NULL;
   class DPListener : public DomainParticipantListener 
   {
   public:
-    void on_inconsistent_topic         ( Topic    *    topic,  const InconsistentTopicStatus & status){
+    void on_inconsistent_topic         ( Topic    *    topic,  const InconsistentTopicStatus & status ){
       const char * topic_name = topic->get_name();
       const char * type_name  = topic->get_type_name();
       printf("%s() topic: '%s'  type: '%s'\n", __FUNCTION__, topic_name, type_name);
     }
-    void on_offered_incompatible_qos(DataWriter *dw,  const OfferedIncompatibleQosStatus & status) { 
-      Topic  * topic = dw->get_topic( );
+    void on_offered_incompatible_qos( DataWriter *dw,  const OfferedIncompatibleQosStatus & status ) { 
+      Topic      * topic = dw->get_topic( );
       const char * topic_name = topic->get_name( );
       const char * type_name  = topic->get_type_name( );
-      printf("%s() topic: '%s'  type: '%s' : %d\n", __FUNCTION__, topic_name, type_name, status.last_policy_id );
+      const char * policy_name = NULL;
+      policy_name = DDS_qos_policy_str(status.last_policy_id); // not standard... 
+      printf("%s() topic: '%s'  type: '%s' : %d (%s)\n", __FUNCTION__,
+             topic_name, type_name,
+             status.last_policy_id,
+             policy_name );
     }
-    void on_requested_incompatible_qos ( DataReader *dr, const RequestedIncompatibleQosStatus & status){
-      TopicDescription * topic      = dr->get_topicdescription( );
-      const char       * topic_name = topic->get_name( );
-      const char       * type_name  = topic->get_type_name( );
-      printf("%s() topic: '%s'  type: '%s' : %d\n", __FUNCTION__, topic_name, type_name, status.last_policy_id );
+    void on_requested_incompatible_qos ( DataReader *dr, const RequestedIncompatibleQosStatus & status ){
+      DDS::TopicDescription * td    = dr->get_topicdescription( );
+      const char       * topic_name = td->get_name( );
+      const char       * type_name  = td->get_type_name( );
+      const char * policy_name = NULL;
+      policy_name = DDS_qos_policy_str(status.last_policy_id); // not standard... 
+      printf("%s() topic: '%s'  type: '%s' : %d (%s)\n", __FUNCTION__,
+             topic_name, type_name, status.last_policy_id,
+             policy_name);
     }
     
   };
@@ -82,6 +92,7 @@ print_usage( const char * prog )
   printf("   -s <int>        : set ownership strength [-1: SHARED]\n");
   printf("   -t <topic_name> : set the topic name\n");
   printf("   -c <color>      : set color to publish (filter if subscriber)\n");
+  printf("   -p <partition>  : set a 'partition' string\n");
   printf("   -D [v|t]        : set durability [v: VOLATILE, t: TRANSIENT_LOCAL]\n");
   printf("   -P              : publish samples\n");
   printf("   -S              : subscribe samples\n");
@@ -93,7 +104,7 @@ parse_args(int argc, char * argv[])
 {
   int opt;
   // double d;
-  while ((opt = getopt(argc, argv, "hbc:d:i:D:rs:t:PS")) != -1) 
+  while ((opt = getopt(argc, argv, "hbc:d:D:i:p:Prs:t:S")) != -1) 
     {
       switch (opt) 
 	{
@@ -125,6 +136,9 @@ parse_args(int argc, char * argv[])
           break;
         case 'i':
           timebasedfilter_interval = atoi(optarg);
+          break;
+        case 'p':
+          partition = strdup(optarg);
           break;
         case 'r':
           reliability_kind = DDS::RELIABLE_RELIABILITY_QOS;
@@ -231,9 +245,6 @@ int main( int argc, char * argv[] )
   
   parse_args(argc, argv);
 
-  if (color == NULL)
-    color = strdup("BLUE");
-  
   if (topic_name == NULL)
     precondition(argv[0], "please specify topic name [-t]");
 
@@ -243,6 +254,9 @@ int main( int argc, char * argv[] )
   if ( publish && subscribe )
     precondition(argv[0], "please specify only one of: publish [-P] or subscribe [-S]");
 
+  if (publish && (color == NULL) )
+    color = strdup("BLUE");
+  
   dpf = DDS::DomainParticipantFactory::get_instance();
   if (dpf == NULL)
     error("failed to create participant factory (missing license?).");
@@ -259,14 +273,19 @@ int main( int argc, char * argv[] )
   
   if (publish)
     {
+      DDS::PublisherQos  pub_qos;
       DDS::DataWriterQos dw_qos;
       ShapeType          shape;
 
       topic = dp->create_topic( topic_name, "ShapeType", DDS::TOPIC_QOS_DEFAULT, NULL, 0);
       if (topic == NULL)
         error("failed to create topic");
+
+      dp->get_default_publisher_qos( pub_qos );
+      if ( partition != NULL )
+        pub_qos.partition.name.push_back(partition);
       
-      pub = dp->create_publisher(DDS::PUBLISHER_QOS_DEFAULT, NULL, 0);
+      pub = dp->create_publisher(pub_qos, NULL, 0);
       if (pub == NULL)
         error("failed to create publisher");
 
@@ -303,9 +322,14 @@ int main( int argc, char * argv[] )
     }
   else if (subscribe)
     {
+      DDS::SubscriberQos sub_qos;
       DDS::DataReaderQos dr_qos;
       
-      sub = dp->create_subscriber( DDS::SUBSCRIBER_QOS_DEFAULT, NULL, 0 );
+      dp->get_default_subscriber_qos( sub_qos );
+      if ( partition != NULL )
+        sub_qos.partition.name.push_back(partition);
+      
+      sub = dp->create_subscriber( sub_qos, NULL, 0 );
       if (sub == NULL)
         error("failed to create subscriber");
 
@@ -383,6 +407,7 @@ int main( int argc, char * argv[] )
 
   free(topic_name);
   free(color);
+  free(partition);
   
   return 0;
 }
