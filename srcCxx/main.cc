@@ -22,11 +22,12 @@ int                 all_done           = 0;
 DDS::DomainId_t                     domain_id          = 0;
 DDS::ReliabilityQosPolicyKind       reliability_kind   = (DDS::ReliabilityQosPolicyKind)-1; /* means 'defined default' */
 DDS::DurabilityQosPolicyKind        durability_kind    = DDS::VOLATILE_DURABILITY_QOS;
-int                 ownership_strength = -1; /* means shared */
+int                 ownership_strength = -1;      /* means shared */
 char              * topic_name         = NULL;
 char              * color              = NULL;
 int                 publish            = 0;
 int                 subscribe          = 0;
+int                 timebasedfilter_interval = 0; /* off */
 
 int                 da_width  = 240;
 int                 da_height = 270;
@@ -77,6 +78,7 @@ print_usage( const char * prog )
   printf("   -d <int>        : domain id (default: 0)\n");
   printf("   -b              : BEST_EFFORT reliability\n");
   printf("   -r              : RELIABLE reliability\n");
+  printf("   -i <interval>   : apply time based filter with interval (seconds)\n");
   printf("   -s <int>        : set ownership strength [-1: SHARED]\n");
   printf("   -t <topic_name> : set the topic name\n");
   printf("   -c <color>      : set color to publish (filter if subscriber)\n");
@@ -91,7 +93,7 @@ parse_args(int argc, char * argv[])
 {
   int opt;
   // double d;
-  while ((opt = getopt(argc, argv, "hbc:d:D:rs:t:PS")) != -1) 
+  while ((opt = getopt(argc, argv, "hbc:d:i:D:rs:t:PS")) != -1) 
     {
       switch (opt) 
 	{
@@ -120,6 +122,9 @@ parse_args(int argc, char * argv[])
                   break;
                 }
             }
+          break;
+        case 'i':
+          timebasedfilter_interval = atoi(optarg);
           break;
         case 'r':
           reliability_kind = DDS::RELIABLE_RELIABILITY_QOS;
@@ -310,7 +315,12 @@ int main( int argc, char * argv[] )
       if ( ownership_strength != -1 )
         dr_qos.ownership.kind = DDS::EXCLUSIVE_OWNERSHIP_QOS;
       dr_qos.durability.kind = durability_kind;
-
+      if (timebasedfilter_interval > 0)
+        {
+          dr_qos.time_based_filter.minimum_separation.sec      = timebasedfilter_interval;
+          dr_qos.time_based_filter.minimum_separation.nanosec = 0;
+        }
+          
       if ( color != NULL ) /*  filter on specified color */
         {
           DDS::ContentFilteredTopic * cft;
