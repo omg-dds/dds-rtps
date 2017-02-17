@@ -79,7 +79,7 @@ print_usage( const char * prog )
   printf("   -r              : RELIABLE reliability\n");
   printf("   -s <int>        : set ownership strength [-1: SHARED]\n");
   printf("   -t <topic_name> : set the topic name\n");
-  printf("   -c <color>      : set color to publish (publisher only)\n");
+  printf("   -c <color>      : set color to publish (filter if subscriber)\n");
   printf("   -D [v|t]        : set durability [v: VOLATILE, t: TRANSIENT_LOCAL]\n");
   printf("   -P              : publish samples\n");
   printf("   -S              : subscribe samples\n");
@@ -247,16 +247,19 @@ int main( int argc, char * argv[] )
     error("failed to create participant (missing license?).");
 
   ShapeTypeTypeSupport::register_type(dp, "ShapeType");
-
+  
   topic = dp->create_topic( topic_name, "ShapeType", DDS::TOPIC_QOS_DEFAULT, NULL, 0);
   if (topic == NULL)
     error("failed to create topic");
-
   
   if (publish)
     {
       DDS::DataWriterQos dw_qos;
       ShapeType          shape;
+
+      topic = dp->create_topic( topic_name, "ShapeType", DDS::TOPIC_QOS_DEFAULT, NULL, 0);
+      if (topic == NULL)
+        error("failed to create topic");
       
       pub = dp->create_publisher(DDS::PUBLISHER_QOS_DEFAULT, NULL, 0);
       if (pub == NULL)
@@ -301,15 +304,27 @@ int main( int argc, char * argv[] )
       if (sub == NULL)
         error("failed to create subscriber");
 
-
       sub->get_default_datareader_qos( dr_qos );
       if ( reliability_kind  != -1 )
         dr_qos.reliability.kind = reliability_kind;
       if ( ownership_strength != -1 )
         dr_qos.ownership.kind = DDS::EXCLUSIVE_OWNERSHIP_QOS;
       dr_qos.durability.kind = durability_kind;
-      
-      dr = (ShapeTypeDataReader *)sub->create_datareader( topic, dr_qos, NULL, 0 );
+
+      if ( color != NULL ) /*  filter on specified color */
+        {
+          DDS::ContentFilteredTopic * cft;
+          DDS::StringSeq              cf_params;
+          cf_params.push_back( color );
+          cft = dp->create_contentfilteredtopic( topic_name, topic, "color=%0", cf_params );
+          if (cft == NULL)
+            error("failed to create content filtered topic");
+          dr = (ShapeTypeDataReader *)sub->create_datareader( cft, dr_qos, NULL, 0 );
+        }
+      else
+        {
+          dr = (ShapeTypeDataReader *)sub->create_datareader( topic, dr_qos, NULL, 0 );
+        }
       
       if (dr == NULL)
         error("failed to create datareader");
