@@ -22,6 +22,7 @@ int                 all_done           = 0;
 DDS::DomainId_t                     domain_id          = 0;
 DDS::ReliabilityQosPolicyKind       reliability_kind   = (DDS::ReliabilityQosPolicyKind)-1; /* means 'defined default' */
 DDS::DurabilityQosPolicyKind        durability_kind    = DDS::VOLATILE_DURABILITY_QOS;
+int                 history_depth      = 1;
 int                 ownership_strength = -1;      /* means shared */
 char              * topic_name         = NULL;
 char              * color              = NULL;
@@ -88,6 +89,7 @@ print_usage( const char * prog )
   printf("   -d <int>        : domain id (default: 0)\n");
   printf("   -b              : BEST_EFFORT reliability\n");
   printf("   -r              : RELIABLE reliability\n");
+  printf("   -k <depth>      : keep history depth (0: KEEP_ALL)\n");
   printf("   -i <interval>   : apply time based filter with interval (seconds)\n");
   printf("   -s <int>        : set ownership strength [-1: SHARED]\n");
   printf("   -t <topic_name> : set the topic name\n");
@@ -104,7 +106,7 @@ parse_args(int argc, char * argv[])
 {
   int opt;
   // double d;
-  while ((opt = getopt(argc, argv, "hbc:d:D:i:p:Prs:t:S")) != -1) 
+  while ((opt = getopt(argc, argv, "hbc:d:D:i:k:p:Prs:t:S")) != -1) 
     {
       switch (opt) 
 	{
@@ -136,6 +138,11 @@ parse_args(int argc, char * argv[])
           break;
         case 'i':
           timebasedfilter_interval = atoi(optarg);
+          break;
+        case 'k':
+          history_depth = atoi(optarg);
+          if (history_depth < 0)
+            history_depth = 0;
           break;
         case 'p':
           partition = strdup(optarg);
@@ -202,7 +209,6 @@ install_sig_handlers()
   sigaddset(&int_action.sa_mask, SIGINT);
   int_action.sa_flags     = 0;
   sigaction(SIGINT,  &int_action, NULL);
-  sigaction(SIGUSR1, &int_action, NULL);
   return 0;
 }
 
@@ -211,7 +217,7 @@ void
 moveShape( ShapeType * shape)
 {
   int w2;
-  
+
   w2 = 1 + shape->shapesize / 2;
   shape->x = shape->x + xvel;
   shape->y = shape->y + yvel;
@@ -240,7 +246,6 @@ moveShape( ShapeType * shape)
 /*************************************************************/
 int main( int argc, char * argv[] )
 {
-  /* set up defaults */
   install_sig_handlers();
   
   parse_args(argc, argv);
@@ -277,6 +282,8 @@ int main( int argc, char * argv[] )
       DDS::DataWriterQos dw_qos;
       ShapeType          shape;
 
+      printf("Create writer topic: %s color: %s\n", topic_name, color );
+      
       topic = dp->create_topic( topic_name, "ShapeType", DDS::TOPIC_QOS_DEFAULT, NULL, 0);
       if (topic == NULL)
         error("failed to create topic");
@@ -297,7 +304,15 @@ int main( int argc, char * argv[] )
           dw_qos.ownership.kind = DDS::EXCLUSIVE_OWNERSHIP_QOS;
           dw_qos.ownership_strength.value = ownership_strength;
         }
-      
+      dw_qos.durability.kind = durability_kind; 
+      if (history_depth > 0)
+        {
+          dw_qos.history.kind  = DDS::KEEP_LAST_HISTORY_QOS;
+          dw_qos.history.depth = history_depth;
+        }
+      else
+        dw_qos.history.kind  = DDS::KEEP_ALL_HISTORY_QOS;
+     
       dw = (ShapeTypeDataWriter *)pub->create_datawriter( topic, dw_qos, NULL, 0);
 
       if (dw == NULL)
@@ -314,9 +329,7 @@ int main( int argc, char * argv[] )
       while ( ! all_done )
         {
           moveShape(&shape);
-          /* printf("write...\n"); */
           dw->write( &shape, DDS_HANDLE_NIL );
-          
           usleep(33000);
         }
     }
@@ -344,7 +357,14 @@ int main( int argc, char * argv[] )
           dr_qos.time_based_filter.minimum_separation.sec      = timebasedfilter_interval;
           dr_qos.time_based_filter.minimum_separation.nanosec = 0;
         }
-          
+      if (history_depth > 0)
+        {
+          dr_qos.history.kind  = DDS::KEEP_LAST_HISTORY_QOS;
+          dr_qos.history.depth = history_depth;
+        }
+      else
+        dr_qos.history.kind  = DDS::KEEP_ALL_HISTORY_QOS;
+
       if ( color != NULL ) /*  filter on specified color */
         {
           DDS::ContentFilteredTopic * cft;
@@ -408,6 +428,8 @@ int main( int argc, char * argv[] )
   free(topic_name);
   free(color);
   free(partition);
-  
+
+  printf("Done.\n");
+
   return 0;
 }
