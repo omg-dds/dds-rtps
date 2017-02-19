@@ -1,0 +1,61 @@
+######################################################################
+# To compile, type:
+# 	gmake -f makefile_rti_connext_dds_linux
+#
+# This makefile assumes that your build environment is already correctly
+# configured. (For example, the correct version of your compiler and
+# linker should be on your PATH.)
+#
+# You should set the environemnt variable NDDSHOME to point to where
+# RTI Connext DDS is installed.
+#
+###########
+
+# If undefined in the environment default NDDSHOME to install dir
+ifndef NDDSHOME
+NDDSHOME := "/home/gerardo/rti_connext_dds-5.2.3"
+endif
+
+TARGET_ARCH = i86Linux2.6gcc4.4.5
+
+ifndef COMPILER
+COMPILER = g++
+endif
+COMPILER_FLAGS = -m32 
+ifndef LINKER
+LINKER = g++
+endif
+LINKER_FLAGS = -m32 -static-libgcc
+SYSLIBS = -ldl -lnsl -lm -lpthread -lrt
+DEFINES = -DRTI_UNIX -DRTI_LINUX -DRTI_CONNEXT_DDS
+
+INCLUDES = -I. -I$(NDDSHOME)/include -I$(NDDSHOME)/include/ndds 
+       
+LIBS = -L$(NDDSHOME)/lib/$(TARGET_ARCH) \
+        -lnddscppz -lnddscz -lnddscorez $(SYSLIBS)
+
+OBJDIR := objs/$(TARGET_ARCH)
+
+CDRSOURCES     := shape.idl
+AUTOGENSOURCES := shapeSupport.cxx shapePlugin.cxx shape.cxx 
+
+EXEC          := shape_main
+AUTOGENOBJS   := $(addprefix $(OBJDIR)/, $(AUTOGENSOURCES:%.cxx=%.o))
+
+$(OBJDIR)/$(EXEC) : $(AUTOGENSOURCES) $(AUTOGENOBJS) $(OBJDIR)/$(EXEC).o 
+	$(LINKER) $(LINKER_FLAGS)   -o $@ $@.o $(AUTOGENOBJS) $(LIBS)
+
+$(OBJDIR)/%.o : %.cxx
+	$(COMPILER) $(COMPILER_FLAGS)  -o $@ $(DEFINES) $(INCLUDES) -c $<
+
+shape_main.cxx : shape_configurator_rti_connext_dds.h
+
+# Generate type-specific sources
+$(AUTOGENSOURCES) : $(CDRSOURCES)
+	$(NDDSHOME)/bin/rtiddsgen $(CDRSOURCES) -replace -language C++
+
+$(AUTOGENOBJS): |  objs/$(TARGET_ARCH)
+
+objs/$(TARGET_ARCH):
+	echo "Making directory objs/$(TARGET_ARCH)"; 
+	mkdir -p objs/$(TARGET_ARCH)
