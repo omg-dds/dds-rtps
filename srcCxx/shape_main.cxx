@@ -315,7 +315,7 @@ public:
                 policy_name);
     }
 
-    void on_subscription_matched (DDSDataReader * dr, const SubscriptionMatchedStatus & status) {
+    void on_subscription_matched (DataReader * dr, const SubscriptionMatchedStatus & status) {
         TopicDescription * td         = dr->get_topicdescription( );
         const char       * topic_name = td->get_name( );
         const char       * type_name  = td->get_type_name( );
