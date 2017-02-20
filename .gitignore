@@ -27,6 +27,12 @@
 *.exe
 *.out
 *.app
+shape_main
+
+# Generated Makefiles
+.depend.*
+GNUmakefile*
 
 # Other
 *~
+GeneratedCode
