@@ -20,8 +20,17 @@
 #include "shape_configurator_rti_connext_dds.h"
 #elif defined(TWINOAKS_COREDX)
 #include "shape_configurator_toc_coredx_dds.h"
+#elif defined(OPENDDS)
+#include "shape_configurator_opendds.h"
 #else
 #error "Must define the DDS vendor"
+#endif
+
+#ifndef STRING_IN
+#define STRING_IN
+#endif
+#ifndef STRING_INOUT
+#define STRING_INOUT
 #endif
 
 using namespace DDS;
@@ -32,7 +41,7 @@ using namespace DDS;
 int  all_done  = 0;
 
 /*************************************************************/
-void 
+void
 handle_sig(int sig)
 {
     if (sig == SIGINT) {
@@ -150,7 +159,7 @@ public:
         }
         if (publish && (color == NULL) ) {
             color = strdup("BLUE");
-            printf("warning: color was nor specified, defaulting to \"BLUE\"\n");
+            printf("warning: color was not specified, defaulting to \"BLUE\"\n");
         }
         return true;
     }
@@ -259,10 +268,10 @@ public:
 
 
 /*************************************************************/
-class DPListener : public DomainParticipantListener 
+class DPListener : public DomainParticipantListener
 {
 public:
-    void on_inconsistent_topic         ( Topic * topic,  const InconsistentTopicStatus & status ) {
+    void on_inconsistent_topic         ( Topic * topic,  const InconsistentTopicStatus &) {
         const char * topic_name = topic->get_name();
         const char * type_name  = topic->get_type_name();
         printf("%s() topic: '%s'  type: '%s'\n", __FUNCTION__, topic_name, type_name);
@@ -338,6 +347,11 @@ public:
         printf("%s() topic: '%s'  type: '%s' : (alive = %d, not_alive = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.alive_count, status.not_alive_count);
     }
+
+  void on_sample_rejected (DataReader *, const SampleRejectedStatus &) {}
+  void on_data_available (DataReader *) {}
+  void on_sample_lost (DataReader *, const SampleLostStatus &) {}
+  void on_data_on_readers (Subscriber *) {}
 };
 
 
@@ -386,12 +400,18 @@ public:
     //-------------------------------------------------------------
     bool initialize(ShapeOptions *options)
     {
-        DomainParticipantFactory *dpf = DomainParticipantFactory::get_instance();
+#ifndef OBTAIN_DOMAIN_PARTICIPANT_FACTORY
+#define OBTAIN_DOMAIN_PARTICIPANT_FACTORY DomainParticipantFactory::get_instance()
+#endif
+        DomainParticipantFactory *dpf = OBTAIN_DOMAIN_PARTICIPANT_FACTORY;
         if (dpf == NULL) {
             printf("failed to create participant factory (missing license?).\n");
             return false;
         }
 
+#ifdef CONFIGURE_PARTICIPANT_FACTORY
+        CONFIGURE_PARTICIPANT_FACTORY
+#endif
 
         dp = dpf->create_participant( options->domain_id, PARTICIPANT_QOS_DEFAULT, &dp_listener, LISTENER_STATUS_MASK_ALL );
         if (dp == NULL) {
@@ -399,7 +419,10 @@ public:
             return false;
         }
 
-        ShapeTypeTypeSupport::register_type(dp, "ShapeType");
+#ifndef REGISTER_TYPE
+#define REGISTER_TYPE ShapeTypeTypeSupport::register_type
+#endif
+        REGISTER_TYPE(dp, "ShapeType");
 
         printf("Create topic: %s\n", options->topic_name );
         topic = dp->create_topic( options->topic_name, "ShapeType", TOPIC_QOS_DEFAULT, NULL, 0);
@@ -472,7 +495,7 @@ public:
         }
 
         printf("Create writer for topic: %s color: %s\n", options->topic_name, options->color );
-        dw = (ShapeTypeDataWriter *)pub->create_datawriter( topic, dw_qos, NULL, 0);
+        dw = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topic, dw_qos, NULL, 0));
 
         if (dw == NULL) {
             printf("failed to create datawriter");
@@ -542,7 +565,7 @@ public:
             sprintf(paramater, "'%s'",  options->color);
             StringSeq_push(cf_params, paramater);
             cft = dp->create_contentfilteredtopic( options->topic_name, topic, "color MATCH %0", cf_params );
-#elif defined(TWINOAKS_COREDX)
+#elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
             StringSeq_push(cf_params, options->color);
             cft = dp->create_contentfilteredtopic( options->topic_name, topic, "color = %0", cf_params );
 #endif
@@ -552,11 +575,11 @@ public:
             }
 
             printf("Create reader for topic: %s color: %s\n", options->topic_name, options->color );
-            dr = (ShapeTypeDataReader *)sub->create_datareader( cft, dr_qos, NULL, 0 );
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader( cft, dr_qos, NULL, 0));
         }
         else  {
             printf("Create reader for topic: %s\n", options->topic_name );
-            dr = (ShapeTypeDataReader *)sub->create_datareader( topic, dr_qos, NULL, 0 );
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader( topic, dr_qos, NULL, 0));
         }
 
         if (dr == NULL) {
@@ -574,7 +597,7 @@ public:
             ReturnCode_t     retval;
             SampleInfoSeq    sample_infos;
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
             ShapeTypeSeq          samples;
 #elif defined(TWINOAKS_COREDX)
             ShapeTypePtrSeq       samples;
@@ -583,7 +606,7 @@ public:
             InstanceHandle_t previous_handle = HANDLE_NIL;
 
             do {
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
                 retval = dr->take_next_instance ( samples,
                         sample_infos,
                         LENGTH_UNLIMITED,
@@ -605,7 +628,7 @@ public:
                     int i;
                     for (i = samples.length()-1; i>=0; i--)  {
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
                         ShapeType          *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #elif defined(TWINOAKS_COREDX)
@@ -615,7 +638,7 @@ public:
 
                         if (sample_info->valid_data)  {
                             printf("%-10s %-10s %03d %03d [%d]\n", dr->get_topicdescription()->get_name(),
-                                    sample->color,
+                                    sample->color STRING_IN,
                                     sample->x,
                                     sample->y,
                                     sample->shapesize );
@@ -623,7 +646,7 @@ public:
                         }
                     }
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
                     previous_handle = sample_infos[0].instance_handle;
                     dr->return_loan( samples, sample_infos );
 #elif defined(TWINOAKS_COREDX)
@@ -675,7 +698,13 @@ public:
 #endif
 
         srandom((uint32_t)time(NULL));
-        strcpy(shape.color, color);
+
+#ifndef STRING_ALLOC
+#define STRING_ALLOC(A, B)
+#endif
+        STRING_ALLOC(shape.color, std::strlen(color));
+        strcpy(shape.color STRING_INOUT, color);
+
         shape.shapesize = 20;
         shape.x    =  random() % da_width;
         shape.y    =  random() % da_height;
@@ -684,7 +713,7 @@ public:
 
         while ( ! all_done )  {
             moveShape(&shape);
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
             dw->write( shape, HANDLE_NIL );
 #elif defined(TWINOAKS_COREDX)
             dw->write( &shape, HANDLE_NIL );

@@ -27,6 +27,11 @@
 *.exe
 *.out
 *.app
+shape_main
+
+# Generated Makefiles
+.depend.*
+GNUmakefile*
 
 #Bin and Object directories
 bin/
@@ -34,3 +39,4 @@ objs/
 
 # Other
 *~
+GeneratedCode
