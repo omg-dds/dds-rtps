@@ -28,5 +28,9 @@
 *.out
 *.app
 
+#Bin and Object directories
+bin/
+objs/
+
 # Other
 *~

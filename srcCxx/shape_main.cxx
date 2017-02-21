@@ -128,7 +128,7 @@ public:
         printf("   -t <topic_name> : set the topic name\n");
         printf("   -c <color>      : set color to publish (filter if subscriber)\n");
         printf("   -p <partition>  : set a 'partition' string\n");
-        printf("   -D [v|l|t|p]    : set durability [v: VOLATILE,  t: TRANSIENT_LOCAL]\n");
+        printf("   -D [v|l|t|p]    : set durability [v: VOLATILE,  l: TRANSIENT_LOCAL]\n");
         printf("                                     t: TRANSIENT, p: PERSISTENT]\n");
         printf("   -P              : publish samples\n");
         printf("   -S              : subscribe samples\n");
