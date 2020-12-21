@@ -1,0 +1,15 @@
+# configuration for log4rs crate
+refresh_rate: 10 seconds # interval for checking config changes
+appenders:
+  stdout:
+    kind: console
+root:
+  level: debug
+  appenders:
+    - stdout
+loggers:
+  # do not trace mio
+  mio:
+    level: warn
+  mio_extras: 
+    level: warn

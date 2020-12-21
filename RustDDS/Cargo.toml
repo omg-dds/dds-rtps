@@ -8,11 +8,13 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33"
-rustdds = "0.1"
+rustdds = {version = "0.1", path ="../../RustDDS" }
 serde = { version="1", features=["derive"] }
 ctrlc = "3"
 mio = "0.6"
 mio-extras = "2"
+log = "0.4"
+log4rs = "1"
 
 
 

@@ -37,6 +37,8 @@ const READER_READY: Token = Token(1);
 //const WRITER_READY: Token = Token(2);
 
 fn main() {
+	log4rs::init_file("logging-config.yaml", Default::default()).unwrap();
+
 	let matches = 
 		App::new("RustDDS-interop")
         .version("0.1")
