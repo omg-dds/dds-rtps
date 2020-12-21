@@ -1,6 +1,5 @@
 /// Interoperability test program for RustDDS library
 use rustdds::dds::DomainParticipant;
-//use rustdds::dds::{No_Key_DataReader as DataReader, No_Key_DataWriter as DataWriter, no_key::DataSample};
 use rustdds::dds::qos::QosPolicyBuilder;
 use rustdds::dds::qos::policy::{ Reliability, Durability, History };
 use rustdds::dds::data_types::DDSDuration;
@@ -15,9 +14,13 @@ use clap::{Arg, App}; // command line argument processing
 use mio::*; // polling 
 use mio_extras::channel; // pollable channel
 
+use log::{debug,trace};
+
+use rand::prelude::*;
+
 use std::time::Duration;
 
-#[derive(Serialize,Deserialize)]
+#[derive(Serialize,Deserialize,Clone)]
 struct Shape {
 	color: String,
 	x: i32,
@@ -31,6 +34,9 @@ impl Keyed for Shape {
 		self.color.clone()
 	}
 }
+
+const DA_WIDTH: i32 = 240;
+const DA_HEIGHT: i32 = 270;
 
 const STOP_PROGRAM: Token = Token(0);
 const READER_READY: Token = Token(1);
@@ -130,7 +136,7 @@ fn main() {
   		.build();
 
   let topic = domain_participant
-  	.create_topic(topic_name, "Shape", &qos, TopicKind::WithKey)
+  	.create_topic(topic_name, "ShapeType", &qos, TopicKind::WithKey)
   	.unwrap();
 	println!("Topic name is {}", topic.get_name());
 
@@ -149,7 +155,7 @@ fn main() {
   		.unwrap();
 
   if matches.is_present("publisher") {
-  	println!("Publisher");
+  	debug!("Publisher");
   	let publisher = domain_participant.create_publisher(&qos).unwrap();
   	let writer = publisher
   				.create_datawriter::<Shape, CDRSerializerAdapter<Shape>>(
@@ -157,6 +163,11 @@ fn main() {
 				    topic,
 				    None)
 				  .unwrap();
+    let mut shape_sample = Shape { color: color.to_string(), x: 0, y: 0, shapesize: 21 };
+    let mut random_gen = thread_rng();
+    // a bit complicated lottery to ensure we do not end up with zero velocity.
+    let mut x_vel = if random() { random_gen.gen_range(1..5) } else { random_gen.gen_range(-5..-1) };
+    let mut y_vel = if random() { random_gen.gen_range(1..5) } else { random_gen.gen_range(-5..-1) };
   	loop {
   		poll
   			.poll(&mut events, Some(Duration::from_millis(500)))
@@ -177,14 +188,19 @@ fn main() {
 					}
   			}
   		}
-  		// or maybe it was timeout
-  		println!("Writing shape color {}", &color);
-  		writer.write( Shape { color: color.to_string(), x: 1, y: 2, shapesize: 20 } ,
-  									None)
-  			.unwrap();
+
+      let r = move_shape(shape_sample,x_vel,y_vel);     
+      shape_sample = r.0;
+      x_vel = r.1;
+      y_vel = r.2;
+
+      // write to DDS
+      trace!("Writing shape color {}", &color);
+  		writer.write( shape_sample.clone() , None)
+  			.expect("DataWriter write failed.")
   	} // loop
   } else  if matches.is_present("subscriber") {
-  	println!("Subscriber");
+  	debug!("Subscriber");
   	let subscriber = domain_participant.create_subscriber(&qos).unwrap();
   	let mut reader = subscriber
   		.create_datareader::<Shape, CDRDeserializerAdapter<Shape>>(
@@ -195,7 +211,7 @@ fn main() {
   		.unwrap();
   	poll.register(&reader, READER_READY, Ready::readable(),PollOpt::edge())
   		.unwrap();
-  	println!("Created DataReader");
+  	debug!("Created DataReader");
   	loop {
   		poll.poll(&mut events, None).unwrap();
   		for event in &events {
@@ -211,7 +227,7 @@ fn main() {
   				}
   				READER_READY => {
   					loop {
-  						println!("DataReader triggered");
+  						trace!("DataReader triggered");
 	  					match reader.take_next_sample() {
 	  						Ok(Some(sample)) =>
 	  							match sample.into_value() {
@@ -241,4 +257,31 @@ fn main() {
   	println!("Nothing to do.");
   }
 
+}
+
+fn move_shape(shape:Shape, xv:i32, yv:i32) -> (Shape,i32,i32) {
+  let half_size = shape.shapesize/2 + 1;
+  let mut x = shape.x + xv;
+  let mut y = shape.y + yv;
+
+  let mut xv_new = xv;
+  let mut yv_new = yv;
+
+  if x < half_size {
+    x = half_size;
+    xv_new = -xv;
+  }
+  if x > DA_WIDTH - half_size {
+    x = DA_WIDTH - half_size;
+    xv_new = -xv;
+  }
+  if y < half_size {
+    y = half_size;
+    yv_new = -yv;
+  }
+  if y > DA_HEIGHT - half_size {
+    y = DA_HEIGHT - half_size;
+    yv_new = -yv;
+  }
+  ( Shape { color: shape.color, x, y, shapesize: shape.shapesize } , xv_new , yv_new)
 }
