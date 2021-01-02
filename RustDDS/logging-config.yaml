@@ -4,7 +4,7 @@ appenders:
   stdout:
     kind: console
 root:
-  level: warn
+  level: error #debug
   appenders:
     - stdout
 loggers:
@@ -13,5 +13,5 @@ loggers:
     level: warn
   mio_extras: 
     level: warn
-  rustdds::common::bit_set:
+  rustdds::discovery::discovery:
     level: warn
