@@ -1,11 +1,13 @@
 /// Interoperability test program for RustDDS library
+use log::{debug,trace,LevelFilter};
+use log4rs::{Config, config::Appender, config::Root, append::console::ConsoleAppender};
+
 use rustdds::dds::DomainParticipant;
 use rustdds::dds::qos::QosPolicyBuilder;
 use rustdds::dds::qos::policy::{ Reliability, Durability, History };
 use rustdds::dds::data_types::DDSDuration;
 use rustdds::dds::data_types::TopicKind;
 use rustdds::dds::traits::TopicDescription;
-use rustdds::serialization::{CDRSerializerAdapter, CDRDeserializerAdapter};
 use rustdds::dds::traits::Keyed;
 use serde::{Serialize, Deserialize};
 
@@ -14,7 +16,8 @@ use clap::{Arg, App}; // command line argument processing
 use mio::*; // polling 
 use mio_extras::channel; // pollable channel
 
-use log::{debug,trace};
+
+use std::io;
 
 use rand::prelude::*;
 
@@ -43,11 +46,29 @@ const READER_READY: Token = Token(1);
 //const WRITER_READY: Token = Token(2);
 
 fn main() {
-	log4rs::init_file("logging-config.yaml", Default::default()).unwrap();
+	// initialize logging, preferably from config file
+	log4rs::init_file("logging-config.yaml", Default::default())
+		.unwrap_or_else( |e| {
+			match e.downcast_ref::<io::Error>() {
+				// Config file did not work. If it is a simple "No such file or directory", then
+				// substitute some default config.
+				Some(os_err) if os_err.kind() == io::ErrorKind::NotFound => {
+						println!("No config file.");
+						let stdout = ConsoleAppender::builder().build();
+						let conf = Config::builder()
+	        		.appender(Appender::builder().build("stdout", Box::new(stdout)))
+	        		.build(Root::builder().appender("stdout").build(LevelFilter::Error))
+	        		.unwrap();
+	        	log4rs::init_config(conf).unwrap();
+				}
+				// Give up.
+				other_error => panic!("Config problem: {:?}",other_error),
+			}
+	});
 
 	let matches = 
 		App::new("RustDDS-interop")
-        .version("0.1")
+        .version("0.2.1")
         .author("Juhana Helovuo <juhe@iki.fi>")
         .about("Command-line \"shapes\" interoperability test.")
         .arg(Arg::with_name("domain_id")
@@ -97,15 +118,16 @@ fn main() {
           .value_name("depth"))
         .get_matches();
 
-  // Gets a value for config if supplied by user, or defaults to "default.conf"
-  let topic_name = matches.value_of("topic").unwrap_or("shapes");
+  // Process command line arguments
+  let topic_name = matches.value_of("topic").unwrap_or("Square");
   let domain_id  = matches.value_of("domain_id")
   									.unwrap_or("0")
   									.parse::<u16>()
   									.unwrap_or(0);
   let color = matches.value_of("color").unwrap_or("BLUE");
 
-  let domain_participant = DomainParticipant::new(domain_id);
+  let domain_participant = DomainParticipant::new(domain_id)
+  			.unwrap_or_else(|e| panic!("DomainParticipant construction failed: {:?}",e));
 
   let qos = QosPolicyBuilder::new()
   		.reliability(
@@ -137,8 +159,8 @@ fn main() {
 
   let topic = domain_participant
   	.create_topic(topic_name, "ShapeType", &qos, TopicKind::WithKey)
-  	.unwrap();
-	println!("Topic name is {}", topic.get_name());
+  	.unwrap_or_else(|e| panic!("create_topic failed: {:?}",e));
+	println!("Topic name is {}. Type is {}.", topic.get_name(), topic.get_type().name());
 
   // Set Ctrl-C handler
   let (stop_sender,stop_receiver) = channel::channel();
@@ -158,10 +180,10 @@ fn main() {
   	debug!("Publisher");
   	let publisher = domain_participant.create_publisher(&qos).unwrap();
   	let writer = publisher
-  				.create_datawriter::<Shape, CDRSerializerAdapter<Shape>>(
-				    None,
+  				.create_datawriter_CDR::<Shape>(
+				    None, // auto-generate entity id
 				    topic,
-				    None)
+				    None) // get qos policy from publisher
 				  .unwrap();
     let mut shape_sample = Shape { color: color.to_string(), x: 0, y: 0, shapesize: 21 };
     let mut random_gen = thread_rng();
@@ -170,7 +192,7 @@ fn main() {
     let mut y_vel = if random() { random_gen.gen_range(1..5) } else { random_gen.gen_range(-5..-1) };
   	loop {
   		poll
-  			.poll(&mut events, Some(Duration::from_millis(500)))
+  			.poll(&mut events, Some(Duration::from_millis(200)))
   			.unwrap();
   		for event in &events {
   			match event.token() {
@@ -203,9 +225,9 @@ fn main() {
   	debug!("Subscriber");
   	let subscriber = domain_participant.create_subscriber(&qos).unwrap();
   	let mut reader = subscriber
-  		.create_datareader::<Shape, CDRDeserializerAdapter<Shape>>(
+  		.create_datareader_CDR::<Shape>(
     			topic.clone(),
-    			None, // entity id
+    			None, // auto-generate entity id
     			None, // get qos policy from subscriber
     		)
   		.unwrap();

@@ -1,6 +1,6 @@
 [package]
 name = "rustdds_interop_test"
-version = "0.1.0"
+version = "0.2.1"
 authors = ["Juhana Helovuo <juhe@iki.fi>"]
 edition = "2018"
 
@@ -8,8 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33"
-rustdds = {version = "0.1.5"} 
-#, path ="../../RustDDS" }
+rustdds = {version = "0.2.1", path ="../../RustDDS" }
 serde = { version="1", features=["derive"] }
 ctrlc = "3"
 mio = "0.6"
