@@ -68,7 +68,7 @@ fn main() {
 
 	let matches = 
 		App::new("RustDDS-interop")
-        .version("0.2.1")
+        .version("0.2.2")
         .author("Juhana Helovuo <juhe@iki.fi>")
         .about("Command-line \"shapes\" interoperability test.")
         .arg(Arg::with_name("domain_id")
