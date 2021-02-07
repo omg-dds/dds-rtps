@@ -9,6 +9,7 @@ use rustdds::dds::data_types::DDSDuration;
 use rustdds::dds::data_types::TopicKind;
 use rustdds::dds::traits::TopicDescription;
 use rustdds::dds::traits::Keyed;
+use rustdds::dds::statusevents::StatusEvented;
 use serde::{Serialize, Deserialize};
 
 use clap::{Arg, App}; // command line argument processing 
@@ -43,7 +44,7 @@ const DA_HEIGHT: i32 = 270;
 
 const STOP_PROGRAM: Token = Token(0);
 const READER_READY: Token = Token(1);
-//const WRITER_READY: Token = Token(2);
+const STATUS_READY: Token = Token(2);
 
 fn main() {
 	// initialize logging, preferably from config file
@@ -179,12 +180,11 @@ fn main() {
   if matches.is_present("publisher") {
   	debug!("Publisher");
   	let publisher = domain_participant.create_publisher(&qos).unwrap();
-  	let writer = publisher
-  				.create_datawriter_CDR::<Shape>(
-				    None, // auto-generate entity id
-				    topic,
-				    None) // get qos policy from publisher
+  	let mut writer = publisher
+  				.create_datawriter_CDR::<Shape>( topic, None) // None = get qos policy from publisher
 				  .unwrap();
+	 	poll.register(writer.as_status_evented(), STATUS_READY, Ready::readable(), PollOpt::edge())
+	  		.unwrap();
     let mut shape_sample = Shape { color: color.to_string(), x: 0, y: 0, shapesize: 21 };
     let mut random_gen = thread_rng();
     // a bit complicated lottery to ensure we do not end up with zero velocity.
@@ -203,6 +203,11 @@ fn main() {
 		  					return  							
   						}
   						Err(_) => { /* Can this even happen? */ }
+  					}
+  				}
+  				STATUS_READY => {
+  					while let Some(status) = writer.try_recv_status() {
+  						println!("DataWriter status: {:?}", status);
   					}
   				}
   				other_token => {
@@ -225,13 +230,11 @@ fn main() {
   	debug!("Subscriber");
   	let subscriber = domain_participant.create_subscriber(&qos).unwrap();
   	let mut reader = subscriber
-  		.create_datareader_CDR::<Shape>(
-    			topic.clone(),
-    			None, // auto-generate entity id
-    			None, // get qos policy from subscriber
-    		)
+  		.create_datareader_CDR::<Shape>( topic.clone(),	Some(qos)	)
   		.unwrap();
   	poll.register(&reader, READER_READY, Ready::readable(),PollOpt::edge())
+  		.unwrap();
+  	poll.register(reader.as_status_evented(), STATUS_READY, Ready::readable(), PollOpt::edge())
   		.unwrap();
   	debug!("Created DataReader");
   	loop {
@@ -268,6 +271,11 @@ fn main() {
 	  						Err(e) => println!("DataReader error {:?}", e),
 	  					} // match
 	  				} 
+  				}
+  				STATUS_READY => {
+  					while let Some(status) = reader.try_recv_status() {
+  						println!("DataReader status: {:?}", status);
+  					}
   				}
   				other_token => {
   					println!("Polled event is {:?}. WTF?", other_token);
