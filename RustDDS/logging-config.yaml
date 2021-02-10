@@ -4,13 +4,13 @@ appenders:
   stdout:
     kind: console
 root:
-  level: error #debug
+#  level: debug
+  level: error
   appenders:
     - stdout
 loggers:
-  # do not trace mio
-  mio:
-    level: warn
+#  mio:
+#    level: warn
   mio_extras: 
     level: warn
 #  rustdds::dds::qos:
