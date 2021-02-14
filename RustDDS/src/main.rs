@@ -4,7 +4,7 @@ use log4rs::{Config, config::Appender, config::Root, append::console::ConsoleApp
 
 use rustdds::dds::DomainParticipant;
 use rustdds::dds::qos::QosPolicyBuilder;
-use rustdds::dds::qos::policy::{ Reliability, Durability, History };
+use rustdds::dds::qos::policy::{ Reliability, Durability, History, Deadline };
 use rustdds::dds::data_types::DDSDuration;
 use rustdds::dds::data_types::TopicKind;
 use rustdds::dds::traits::TopicDescription;
@@ -117,6 +117,26 @@ fn main() {
           .short("k")
           .takes_value(true)
           .value_name("depth"))
+        .arg(Arg::with_name("deadline")
+          .help("Set a 'deadline' with interval (seconds)")
+          .short("f")
+          .takes_value(true)
+          .value_name("interval"))
+        .arg(Arg::with_name("partition")
+          .help("Set a 'partition' string")
+          .short("p")
+          .takes_value(true)
+          .value_name("partition"))
+        .arg(Arg::with_name("interval")
+          .help("Apply 'time based filter' with interval (seconds)")
+          .short("i")
+          .takes_value(true)
+          .value_name("interval"))
+        .arg(Arg::with_name("ownership_strength")
+          .help("Set ownership strength [-1: SHARED]")
+          .short("s")
+          .takes_value(true)
+          .value_name("strength"))
         .get_matches();
 
   // Process command line arguments
@@ -130,7 +150,7 @@ fn main() {
   let domain_participant = DomainParticipant::new(domain_id)
   			.unwrap_or_else(|e| panic!("DomainParticipant construction failed: {:?}",e));
 
-  let qos = QosPolicyBuilder::new()
+  let mut qos_b = QosPolicyBuilder::new()
   		.reliability(
 	  			if matches.is_present("reliable") {	
 	  				Reliability::Reliable { max_blocking_time: DDSDuration::DURATION_ZERO } 
@@ -155,8 +175,30 @@ fn main() {
   						if d < 0 { History::KeepAll } else { History::KeepLast{ depth: d } },
 
   				}
-  			)
-  		.build();
+        );
+  match matches.value_of("deadline") {
+    None => (),
+    Some(dl) =>
+      match dl.parse::<f64>() {
+        Ok(d) => qos_b =
+          qos_b.deadline(Deadline(DDSDuration::from_frac_seconds(d))),
+        Err(e) => panic!("Expected numeric value for deadline. {:?}",e),
+      },
+  }
+
+  if matches.is_present("partition") {
+    panic!("QoS policy Partition is not yet implemented.")
+  }
+
+  if matches.is_present("interval") {
+    panic!("QoS policy Time Based Filter is not yet implemented.")
+  }
+
+  if matches.is_present("ownership_strength") {
+    panic!("QoS policy Ownership Strength is not yet implemented.")
+  }
+
+  let qos = qos_b.build();
 
   let topic = domain_participant
   	.create_topic(topic_name, "ShapeType", &qos, TopicKind::WithKey)
