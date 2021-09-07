@@ -22,7 +22,7 @@ use std::io;
 
 use rand::prelude::*;
 
-use std::time::Duration;
+use std::time::{Duration,Instant};
 
 #[derive(Serialize,Deserialize,Clone)]
 struct Shape {
@@ -253,6 +253,9 @@ fn main() {
   // a bit complicated lottery to ensure we do not end up with zero velocity.
   let mut x_vel = if random() { random_gen.gen_range(1..5) } else { random_gen.gen_range(-5..-1) };
   let mut y_vel = if random() { random_gen.gen_range(1..5) } else { random_gen.gen_range(-5..-1) };
+
+  let mut last_write = Instant::now();
+
 	loop {
 		poll
 			.poll(&mut events, Some(Duration::from_millis(200)))
@@ -331,8 +334,12 @@ fn main() {
     trace!("Writing shape color {}", &color);
     match writer_opt {
       Some(ref mut writer) => {
-        writer.write( shape_sample.clone() , None)
-          .expect("DataWriter write failed.")
+        let now = Instant::now();
+        if last_write + Duration::from_millis(200) < now {
+          writer.write( shape_sample.clone() , None)
+            .unwrap_or_else(|e| error!("DataWriter write failed: {:?}",e));
+          last_write = now;
+        }
       }
       None => { 
         if is_publisher {

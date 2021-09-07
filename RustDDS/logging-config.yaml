@@ -4,8 +4,8 @@ appenders:
   stdout:
     kind: console
 root:
-#  level: debug
-  level: error
+  level: warn
+#  level: error
   appenders:
     - stdout
 loggers:
@@ -19,3 +19,14 @@ loggers:
 #    level: trace
 #  rustdds::discovery::discovery:
 #    level: warn
+#  rustdds::dds::dp_event_loop:
+#    level: error
+#  rustdds::discovery::discovery_db:
+#    level: info
+#  rustdds::dds::with_key::datareader:
+#    level: debug
+#  rustdds::dds::reader:
+#    level: info
+#  rustdds::dds::writer:
+#    level: info
+
