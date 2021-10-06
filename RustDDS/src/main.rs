@@ -1,4 +1,8 @@
-/// Interoperability test program for RustDDS library
+//! Interoperability test program for `RustDDS` library
+
+#![deny(clippy::all)]
+#![warn(clippy::pedantic)]
+
 use log::{debug,trace,error,LevelFilter};
 use log4rs::{Config, config::Appender, config::Root, append::console::ConsoleAppender};
 
@@ -12,9 +16,9 @@ use rustdds::dds::traits::Keyed;
 use rustdds::dds::statusevents::StatusEvented;
 use serde::{Serialize, Deserialize};
 
-use clap::{Arg, App}; // command line argument processing 
+use clap::{App, Arg, ArgMatches}; // command line argument processing 
  
-use mio::*; // polling 
+use mio::{Events, Poll, PollOpt, Ready, Token}; // polling 
 use mio_extras::channel; // pollable channel
 
 
@@ -47,97 +51,11 @@ const READER_READY: Token = Token(1);
 const READER_STATUS_READY: Token = Token(2);
 const WRITER_STATUS_READY: Token = Token(3);
 
+#[allow(clippy::too_many_lines)]
 fn main() {
-	// initialize logging, preferably from config file
-	log4rs::init_file("logging-config.yaml", Default::default())
-		.unwrap_or_else( |e| {
-			match e.downcast_ref::<io::Error>() {
-				// Config file did not work. If it is a simple "No such file or directory", then
-				// substitute some default config.
-				Some(os_err) if os_err.kind() == io::ErrorKind::NotFound => {
-						println!("No config file.");
-						let stdout = ConsoleAppender::builder().build();
-						let conf = Config::builder()
-	        		.appender(Appender::builder().build("stdout", Box::new(stdout)))
-	        		.build(Root::builder().appender("stdout").build(LevelFilter::Error))
-	        		.unwrap();
-	        	log4rs::init_config(conf).unwrap();
-				}
-				// Give up.
-				other_error => panic!("Config problem: {:?}",other_error),
-			}
-	});
-
-	let matches = 
-		App::new("RustDDS-interop")
-        .version("0.2.2")
-        .author("Juhana Helovuo <juhe@iki.fi>")
-        .about("Command-line \"shapes\" interoperability test.")
-        .arg(Arg::with_name("domain_id")
-          .short("d")
-          .value_name("id")
-          .help("Sets the DDS domain id number")
-          .takes_value(true))
-        .arg(Arg::with_name("topic")
-          .short("t")
-          .value_name("name")
-          .help("Sets the topic name")
-          .takes_value(true)
-      		.required(true))
-        .arg(Arg::with_name("color")
-          .short("c")
-          .value_name("color")
-          .help("Color to publish (or filter)")
-          .takes_value(true))
-        .arg(Arg::with_name("durability")
-          .short("D")
-          .value_name("durability")
-          .help("Set durability")
-          .takes_value(true)
-          .possible_values(&["v","l", "t","p"]))
-        .arg(Arg::with_name("publisher")
-          .help("Act as publisher")
-          .short("P")
-          .required_unless("subscriber"))
-        .arg(Arg::with_name("subscriber")
-          .help("Act as subscriber")
-          .short("S")
-          .required_unless("publisher"))
-        .arg(Arg::with_name("best_effort")
-          .help("BEST_EFFORT reliability")
-          .short("b")
-          .conflicts_with("reliable"))
-        .arg(Arg::with_name("reliable")
-          .help("RELIABLE reliability")
-          .short("r")
-          .conflicts_with("best_effort"))
-        .arg(Arg::with_name("history_depth")
-          .help("Keep history depth")
-          .short("k")
-          .takes_value(true)
-          .value_name("depth"))
-        .arg(Arg::with_name("deadline")
-          .help("Set a 'deadline' with interval (seconds)")
-          .short("f")
-          .takes_value(true)
-          .value_name("interval"))
-        .arg(Arg::with_name("partition")
-          .help("Set a 'partition' string")
-          .short("p")
-          .takes_value(true)
-          .value_name("partition"))
-        .arg(Arg::with_name("interval")
-          .help("Apply 'time based filter' with interval (seconds)")
-          .short("i")
-          .takes_value(true)
-          .value_name("interval"))
-        .arg(Arg::with_name("ownership_strength")
-          .help("Set ownership strength [-1: SHARED]")
-          .short("s")
-          .takes_value(true)
-          .value_name("strength"))
-        .get_matches();
-
+  configure_logging();
+  let matches = get_matches();
+		
   // Process command line arguments
   let topic_name = matches.value_of("topic").unwrap_or("Square");
   let domain_id  = matches.value_of("domain_id")
@@ -159,7 +77,6 @@ fn main() {
   			)
   		.durability(
 	  			match matches.value_of("durability") {
-	  				Some("v") => Durability::Volatile,
 	  				Some("l") => Durability::TransientLocal,
 	  				Some("t") => Durability::Transient,
 	  				Some("p") => Durability::Persistent,
@@ -167,7 +84,7 @@ fn main() {
 	  			}
   			)
   		.history(
-  				match matches.value_of("history_depth").map( |d| d.parse::<i32>() )  {
+  				match matches.value_of("history_depth").map( str::parse )  {
   					None | 
   					Some(Err(_)) => History::KeepAll,
   					Some(Ok(d)) =>
@@ -185,17 +102,11 @@ fn main() {
       },
   }
 
-  if matches.is_present("partition") {
-    panic!("QoS policy Partition is not yet implemented.")
-  }
+  assert!(!matches.is_present("partition"), "QoS policy Partition is not yet implemented.");
 
-  if matches.is_present("interval") {
-    panic!("QoS policy Time Based Filter is not yet implemented.")
-  }
+  assert!(!matches.is_present("interval"), "QoS policy Time Based Filter is not yet implemented.");
 
-  if matches.is_present("ownership_strength") {
-    panic!("QoS policy Ownership Strength is not yet implemented.")
-  }
+  assert!(!matches.is_present("ownership_strength"), "QoS policy Ownership Strength is not yet implemented.");
 
   let qos = qos_b.build();
 
@@ -207,7 +118,7 @@ fn main() {
   // Set Ctrl-C handler
   let (stop_sender,stop_receiver) = channel::channel();
   ctrlc::set_handler(move || {
-        stop_sender.send( () ).unwrap_or( () )
+        stop_sender.send( () ).unwrap_or( () );
         // ignore errors, as we are quitting anyway
     }).expect("Error setting Ctrl-C handler");
 	println!("Press Ctrl-C to quit.");
@@ -263,13 +174,10 @@ fn main() {
 		for event in &events {
 			match event.token() {
 				STOP_PROGRAM => {
-					match stop_receiver.try_recv() {
-						Ok(_) => {
-	  					println!("Done.");
-	  					return  							
-						}
-						Err(_) => { /* Can this even happen? */ }
-					}
+					if stop_receiver.try_recv().is_ok() {
+     	  					println!("Done.");
+     	  					return  							
+     						}
 				}
         READER_READY => {
             match reader_opt {
@@ -351,6 +259,100 @@ fn main() {
 	} // loop
 }
 
+fn configure_logging() {
+	// initialize logging, preferably from config file
+	log4rs::init_file("logging-config.yaml", log4rs::config::Deserializers::default())
+		.unwrap_or_else( |e| {
+			match e.downcast_ref::<io::Error>() {
+				// Config file did not work. If it is a simple "No such file or directory", then
+				// substitute some default config.
+				Some(os_err) if os_err.kind() == io::ErrorKind::NotFound => {
+						println!("No config file.");
+						let stdout = ConsoleAppender::builder().build();
+						let conf = Config::builder()
+	        		.appender(Appender::builder().build("stdout", Box::new(stdout)))
+	        		.build(Root::builder().appender("stdout").build(LevelFilter::Error))
+	        		.unwrap();
+	        	log4rs::init_config(conf).unwrap();
+				}
+				// Give up.
+				other_error => panic!("Config problem: {:?}",other_error),
+			}
+	});
+}
+
+fn get_matches() -> ArgMatches<'static> {
+    App::new("RustDDS-interop")
+        .version("0.2.2")
+        .author("Juhana Helovuo <juhe@iki.fi>")
+        .about("Command-line \"shapes\" interoperability test.")
+        .arg(Arg::with_name("domain_id")
+          .short("d")
+          .value_name("id")
+          .help("Sets the DDS domain id number")
+          .takes_value(true))
+        .arg(Arg::with_name("topic")
+          .short("t")
+          .value_name("name")
+          .help("Sets the topic name")
+          .takes_value(true)
+      		.required(true))
+        .arg(Arg::with_name("color")
+          .short("c")
+          .value_name("color")
+          .help("Color to publish (or filter)")
+          .takes_value(true))
+        .arg(Arg::with_name("durability")
+          .short("D")
+          .value_name("durability")
+          .help("Set durability")
+          .takes_value(true)
+          .possible_values(&["v","l", "t","p"]))
+        .arg(Arg::with_name("publisher")
+          .help("Act as publisher")
+          .short("P")
+          .required_unless("subscriber"))
+        .arg(Arg::with_name("subscriber")
+          .help("Act as subscriber")
+          .short("S")
+          .required_unless("publisher"))
+        .arg(Arg::with_name("best_effort")
+          .help("BEST_EFFORT reliability")
+          .short("b")
+          .conflicts_with("reliable"))
+        .arg(Arg::with_name("reliable")
+          .help("RELIABLE reliability")
+          .short("r")
+          .conflicts_with("best_effort"))
+        .arg(Arg::with_name("history_depth")
+          .help("Keep history depth")
+          .short("k")
+          .takes_value(true)
+          .value_name("depth"))
+        .arg(Arg::with_name("deadline")
+          .help("Set a 'deadline' with interval (seconds)")
+          .short("f")
+          .takes_value(true)
+          .value_name("interval"))
+        .arg(Arg::with_name("partition")
+          .help("Set a 'partition' string")
+          .short("p")
+          .takes_value(true)
+          .value_name("partition"))
+        .arg(Arg::with_name("interval")
+          .help("Apply 'time based filter' with interval (seconds)")
+          .short("i")
+          .takes_value(true)
+          .value_name("interval"))
+        .arg(Arg::with_name("ownership_strength")
+          .help("Set ownership strength [-1: SHARED]")
+          .short("s")
+          .takes_value(true)
+          .value_name("strength"))
+        .get_matches()
+}
+
+#[allow(clippy::similar_names)]
 fn move_shape(shape:Shape, xv:i32, yv:i32) -> (Shape,i32,i32) {
   let half_size = shape.shapesize/2 + 1;
   let mut x = shape.x + xv;
