@@ -92,14 +92,18 @@ fn main() {
 
   				}
         );
-  match matches.value_of("deadline") {
-    None => (),
-    Some(dl) =>
-      match dl.parse::<f64>() {
-        Ok(d) => qos_b =
-          qos_b.deadline(Deadline(DDSDuration::from_frac_seconds(d))),
-        Err(e) => panic!("Expected numeric value for deadline. {:?}",e),
-      },
+  let deadline_policy =
+    match matches.value_of("deadline") {
+      None => None,
+      Some(dl) =>
+        match dl.parse::<f64>() {
+          Ok(d) => Some(Deadline(DDSDuration::from_frac_seconds(d))),
+          Err(e) => panic!("Expected numeric value for deadline. {:?}",e),
+        },
+    };
+
+  if let Some(dl) = deadline_policy {
+    qos_b = qos_b.deadline(dl);
   }
 
   assert!(!matches.is_present("partition"), "QoS policy Partition is not yet implemented.");
@@ -109,6 +113,14 @@ fn main() {
   assert!(!matches.is_present("ownership_strength"), "QoS policy Ownership Strength is not yet implemented.");
 
   let qos = qos_b.build();
+
+  let loop_delay : Duration = 
+    match deadline_policy {
+      None => Duration::from_millis(200), // This is the default rate
+      Some(Deadline(dd)) => 
+        Duration::from(dd)
+          .mul_f32(0.8), // slightly faster than dealine 
+    };
 
   let topic = domain_participant
   	.create_topic(topic_name, "ShapeType", &qos, TopicKind::WithKey)
@@ -169,7 +181,7 @@ fn main() {
 
 	loop {
 		poll
-			.poll(&mut events, Some(Duration::from_millis(200)))
+			.poll(&mut events, Some(loop_delay))
 			.unwrap();
 		for event in &events {
 			match event.token() {
@@ -243,7 +255,7 @@ fn main() {
     match writer_opt {
       Some(ref mut writer) => {
         let now = Instant::now();
-        if last_write + Duration::from_millis(200) < now {
+        if last_write + loop_delay < now {
           writer.write( shape_sample.clone() , None)
             .unwrap_or_else(|e| error!("DataWriter write failed: {:?}",e));
           last_write = now;
