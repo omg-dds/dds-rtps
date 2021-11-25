@@ -38,7 +38,7 @@ struct Shape {
 
 impl Keyed for Shape {
 	type K = String;
-	fn get_key(&self) -> String {
+	fn key(&self) -> String {
 		self.color.clone()
 	}
 }
@@ -125,7 +125,7 @@ fn main() {
   let topic = domain_participant
   	.create_topic(topic_name.to_string(), "ShapeType".to_string(), &qos, TopicKind::WithKey)
   	.unwrap_or_else(|e| panic!("create_topic failed: {:?}",e));
-	println!("Topic name is {}. Type is {}.", topic.get_name(), topic.get_type().name());
+	println!("Topic name is {}. Type is {}.", topic.name(), topic.get_type().name());
 
   // Set Ctrl-C handler
   let (stop_sender,stop_receiver) = channel::channel();
@@ -201,7 +201,7 @@ fn main() {
                       match sample.into_value() {
                         Ok(sample) =>                  
                           println!("{:10.10} {:10.10} {:3.3} {:3.3} [{}]",
-                                    topic.get_name(), 
+                                    topic.name(), 
                                     sample.color,
                                     sample.x,
                                     sample.y,

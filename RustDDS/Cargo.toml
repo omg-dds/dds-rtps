@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 clap = "2.33"
-rustdds = { version = "~0.5" }
+rustdds = { version = "0.6" }
 #rustdds = { path ="../../RustDDS" }
 serde = { version="1", features=["derive"] }
 ctrlc = "3"
