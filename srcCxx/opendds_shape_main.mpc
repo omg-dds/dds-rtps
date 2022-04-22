@@ -4,6 +4,7 @@ project: dcps, dcps_rtps_udp, dcps_ts_subdir {
   idlflags += -I$(DDS_ROOT)/examples/DCPS/ishapes -SS -o GeneratedCode
 
   TypeSupport_Files {
+    dcps_ts_flags += -o GeneratedCode
     gendir = GeneratedCode
     $(DDS_ROOT)/examples/DCPS/ishapes/ShapeType.idl
   }
