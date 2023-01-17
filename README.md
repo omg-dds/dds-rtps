@@ -39,7 +39,7 @@ output options:
                         Report filename.
 ```
 
-**NOTE**: The option -f only supports junit.
+**NOTE**: The option `-f` only supports junit.
 
 ### Example of use interoperability_report
 
