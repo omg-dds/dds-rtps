@@ -35,4 +35,4 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: report
-          path: ./index.html
+          path: ./junit_interoperability_report.html
