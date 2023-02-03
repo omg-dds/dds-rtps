@@ -1,4 +1,12 @@
 #!/usr/bin/python
+#################################################################
+# Use and redistribution is source and binary forms is permitted
+# subject to the OMG-DDS INTEROPERABILITY TESTING LICENSE found
+# at the following URL:
+#
+# https://github.com/omg-dds/dds-rtps/blob/master/LICENSE.md
+#
+#################################################################
 
 import time
 import re
