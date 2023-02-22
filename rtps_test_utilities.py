@@ -1,5 +1,4 @@
 from enum import Enum
-
 class ReturnCode(Enum):
     """"
     Codes to give information about Shape Applications' behavior.
@@ -35,3 +34,10 @@ class ReturnCode(Enum):
     DATA_NOT_CORRECT = 12
     RECEIVING_FROM_ONE = 13
     RECEIVING_FROM_BOTH = 14
+
+def log_message(message, verbosity):
+    if verbosity:
+        print(message)
+
+def no_check(child_sub, samples_sent, timeout):
+    return ReturnCode.OK
