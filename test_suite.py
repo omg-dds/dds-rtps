@@ -38,6 +38,9 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
                 the Publishers send. Element 1 of the list is for
                 Publisher 1, etc.
     timeout: time pexpect waits until it matches a pattern.
+
+    This functions assumes that the subscriber has already received samples
+    from, at least, one publisher.
     """
     first_received_first_time = False
     second_received_first_time = False
@@ -46,17 +49,29 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
     list_data_received_second = []
     max_samples_received = 80
     max_wait_time = 5
-    for x in range(0,max_samples_received,1):
-        # we take the numbers that identify the sample
-        sub_string = re.search('[0-9]{3} [0-9]{3}',
-            child_sub.before)
+    for x in range(0, max_samples_received, 1):
+        # take the topic, color and position and size of the shapetype.
+        # child_sub.before contains x and y, and child_sub.after contains
+        # [shapesize]
+        # Example: child_sub.before contains 'Square     BLUE       191 152'
+        #          child_sub.after contains '[30]'
+        sub_string = re.search('[0-9]{3} [0-9]{3} \[[0-9]{2}\]',
+            child_sub.before + child_sub.after)
+        # sub_string contains 'x y [shapesize]', example: '191 152 [30]'
         try:
             # the function takes the samples the second publisher is sending
             # ('samples_sent[1]') and saves them in a list.
-            # In the case that samples_sent[1] is empty, the method get
+            # In the case that samples_sent[1] is empty, the method get()
             # waits until <max_wait_time> to stop the execution of the loop and
             # save the code "RECEIVING_FROM_ONE".
-            list_data_received_second.append(samples_sent[1].get(block=True, timeout=max_wait_time))
+            # list_data_received_second is a list with the samples sent from the
+            # second publisher
+            # the samples from the first publisher are not read because if the
+            # samples are not in list_data_received_second, they are from
+            # publisher 1.
+            list_data_received_second.append(samples_sent[1].get(
+                    block=True,
+                    timeout=max_wait_time))
         except:
             print("No samples to take from Queue")
             break
@@ -72,10 +87,10 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
         elif sub_string.group(0) in list_data_received_second:
             second_received_first_time = True
 
-        # we get the next samples the subscriber is receiving
+        # Get the next samples the subscriber is receiving
         child_sub.expect(
             [
-                '\[[0-9][0-9]\]', # index = 0
+                '\[[0-9]{2}\]', # index = 0
                 pexpect.TIMEOUT # index = 1
             ],
             timeout
@@ -102,7 +117,8 @@ def test_reliability_4(child_sub, samples_sent, timeout):
     max_wait_time = 5
     for x in range(0, max_samples_received, 1):
         # take the position of the samples
-        sub_string = re.search('[0-9]{3} [0-9]{3}', child_sub.before)
+        sub_string = re.search('[0-9]{3} [0-9]{3} \[[0-9]{2}\]',
+            child_sub.before + child_sub.after)
         # the function takes the samples the first publisher is sending
         # ('samples_sent[0]') and checks whether they match the
         # samples that the subscriber has received.
@@ -118,10 +134,10 @@ def test_reliability_4(child_sub, samples_sent, timeout):
             print("No samples to take from Queue")
             break
 
-        # we get the next samples the subscriber is receiving
+        # Get the next samples the subscriber is receiving
         child_sub.expect(
             [
-                '\[[0-9][0-9]\]', # index = 0
+                '\[[0-9]{2}\]', # index = 0
                 pexpect.TIMEOUT # index = 1
             ],
             timeout
@@ -154,11 +170,6 @@ rtps_test_suite_1 = {
     'Test_Deadline_0' : [['-P -t Square -f 3 -x 2', '-S -t Square -f 5 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
     'Test_Deadline_1' : [['-P -t Square -f 5 -x 2', '-S -t Square -f 5 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
     'Test_Deadline_2' : [['-P -t Square -f 7 -x 2', '-S -t Square -f 5 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-
-    # OWNERSHIP
-    'Test_Ownership_0': [['-P -t Square -s -1 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Ownership_1': [['-P -t Square -s -1 -x 2', '-S -t Square -s 3 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Ownership_2': [['-P -t Square -s 3 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
 
     # TOPIC
     'Test_Topic_0' : [['-P -t Square -x 2', '-S -t Square -x 2'], [ReturnCode.OK, ReturnCode.OK]],
@@ -211,10 +222,13 @@ rtps_test_suite_1 = {
     'Test_History_3' : [['-P -t Square -k 0 -x 2', '-S -t Square -k 0 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
 
     # OWNERSHIP
+    'Test_Ownership_0': [['-P -t Square -s -1 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Ownership_1': [['-P -t Square -s -1 -x 2', '-S -t Square -s 3 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Ownership_2': [['-P -t Square -s 3 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
     # Two Publishers and One Subscriber to test that if each one has a different color, the ownership strength does not matter
-    'Test_Ownership_3': [['-P -t Square -s 3 -c BLUE -w -x 2', '-P -t Square -s 4 -c RED -w -x 2', '-S -t Square -s 2 -r -k 0 -x 2'],
+    'Test_Ownership_3': [['-P -t Square -s 3 -c BLUE -w -x 2 -z 20', '-P -t Square -s 4 -c RED -w -x 2 -z 30', '-S -t Square -s 2 -r -k 0 -x 2'],
                          [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_BOTH], test_ownership3_4],
     # Two Publishers and One Subscriber to test that the Subscriber only receives samples from the Publisher with the greatest ownership
-    'Test_Ownership_4': [['-P -t Square -s 5 -r -k 0 -w -x 2', '-P -t Square -s 4 -r -k 0 -w -x 2', '-S -t Square -s 2 -r -k 0 -x 2'],
+    'Test_Ownership_4': [['-P -t Square -s 5 -r -k 0 -w -x 2 -z 20', '-P -t Square -s 4 -r -k 0 -w -x 2 -z 30', '-S -t Square -s 2 -r -k 0 -x 2'],
                          [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE], test_ownership3_4],
 }
