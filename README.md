@@ -18,42 +18,44 @@ and can interoperate with each other.
 * 1\. [Introduction](#introduction)
     * 1.1. [Vocabulary](#vocabulary)
 
-* 2\. [Test Suite](#test-suite)
+* 2\. [Shape Application](#shape-application)
 
-* 3\. [Run Interoperability Test Manually](#run-interoperability-test-manually)
-    * 3.1. [Requirements](#requirements)
+* 3\. [Test Suite](#test-suite)
 
-      * 3.1.1. [Using virtual environments](#using-virtual-environments)
+* 4\. [Run Interoperability Test Manually](#run-interoperability-test-manually)
+    * 4.1. [Requirements](#requirements)
 
-        * 3.1.1.1. [Create virtual environment](#create-virtual-environment)
+      * 4.1.1. [Using virtual environments](#using-virtual-environments)
 
-        * 3.1.1.2. [Activate virtual environment](#activate-virtual-environment)
+        * 4.1.1.1. [Create virtual environment](#create-virtual-environment)
 
-        * 3.1.1.3. [Install requirements](#install-requirements)
+        * 4.1.1.2. [Activate virtual environment](#activate-virtual-environment)
 
-    * 3.2. [Options of interoperability_report](#options-of-interoperability_report)
+        * 4.1.1.3. [Install requirements](#install-requirements)
 
-    * 3.3. [Example of use interoperability_report](#example-of-use-interoperability_report)
+    * 4.2. [Options of interoperability_report](#options-of-interoperability_report)
 
-    * 3.4. [Report](#report)
+    * 4.3. [Example of use interoperability_report](#example-of-use-interoperability_report)
 
-* 4\. [Automation with GitHub Actions](#automation-with-github-actions)
+    * 4.4. [Report](#report)
 
-* 5\. [Workflow](#workflow)
+* 5\. [Automation with GitHub Actions](#automation-with-github-actions)
 
-    * 5.1. [Create executable](#create-executable)
+* 6\. [Workflow](#workflow)
 
-    * 5.2. [Upload executable](#upload-executable)
+    * 6.1. [Create executable](#create-executable)
 
-    * 5.3. [Create a new release](#create-a-new-release)
+    * 6.2. [Upload executable](#upload-executable)
 
-      * 5.1.1. [Release and tag name](#release-and-tag-name)
+    * 6.3. [Create a new release](#create-a-new-release)
 
-      * 5.1.2. [When to create a release](#when-to-create-a-release)
+      * 6.1.1. [Release and tag name](#release-and-tag-name)
 
-      * 5.1.3. [Process of creating the release](#process-of-creating-the-release)
+      * 6.1.2. [When to create a release](#when-to-create-a-release)
 
-    * 5.4. [Report Bugs](#report-bugs)
+      * 6.1.3. [Process of creating the release](#process-of-creating-the-release)
+
+    * 6.4. [Report Bugs](#report-bugs)
 
 # Introduction
 
@@ -93,8 +95,12 @@ Test Cases within a Test Suite and generates a report with the results.
 
 # Test Suite
 
-In order to create a Test Suite we must define it in a python file,
-following the next pattern:
+This is the file that contains all the different Test Cases that GitHub
+Actions run. This is a Python dictionary in which each element defines
+a Test Case. This Test Suite may also contain different functions that
+the `interoperability_report.py` script uses to determine whether the
+test result is succesful or not. The Python dictionary must follow
+this pattern:
 
 ~~~python
 # The Test Suite is a dictionary where each element
@@ -145,9 +151,13 @@ By default, the `interoperability_report.py` script runs the tests from
 `test_suite.py` in its same directory. The Test Suites defined **must** be
 located in the same directory as `interoperability_report.py`.
 
-## `shape_main` application parameters
+# Shape Application
 
-The `shape_main` application allows the following parameters:
+The Shape application is created in the folder `srcCxx/shape_main.cxx`.
+This application allows the user to test the interoperability between
+different executables (built with different DDS implementations).
+
+The Shape application allows the following parameters:
 
 ~~~
    -d <int>        : domain id (default: 0)
