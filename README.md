@@ -16,46 +16,50 @@ and can interoperate with each other.
 ## Table of contents
 
 * 1\. [Introduction](#introduction)
+
     * 1.1. [Vocabulary](#vocabulary)
 
-* 2\. [Shape Application](#shape-application)
+* 2\. [Test Suite](#test-suite)
 
-* 3\. [Test Suite](#test-suite)
+    * 2.1. [Shape Application parameters](#shape-application-parameters)
 
-* 4\. [Run Interoperability Test Manually](#run-interoperability-test-manually)
-    * 4.1. [Requirements](#requirements)
+    * 2.2. [Return Code](#return-code)
 
-      * 4.1.1. [Using virtual environments](#using-virtual-environments)
+* 3\. [Run Interoperability Test Manually](#run-interoperability-test-manually)
 
-        * 4.1.1.1. [Create virtual environment](#create-virtual-environment)
+    * 3.1. [Requirements](#requirements)
 
-        * 4.1.1.2. [Activate virtual environment](#activate-virtual-environment)
+      * 3.1.1. [Using virtual environments](#using-virtual-environments)
 
-        * 4.1.1.3. [Install requirements](#install-requirements)
+        * 3.1.1.1. [Create virtual environment](#create-virtual-environment)
 
-    * 4.2. [Options of interoperability_report](#options-of-interoperability_report)
+        * 3.1.1.2. [Activate virtual environment](#activate-virtual-environment)
 
-    * 4.3. [Example of use interoperability_report](#example-of-use-interoperability_report)
+        * 3.1.1.3. [Install requirements](#install-requirements)
 
-    * 4.4. [Report](#report)
+    * 3.2. [Options of interoperability_report](#options-of-interoperability_report)
 
-* 5\. [Automation with GitHub Actions](#automation-with-github-actions)
+    * 3.3. [Example of use interoperability_report](#example-of-use-interoperability_report)
 
-* 6\. [Workflow](#workflow)
+    * 3.4. [Report](#report)
 
-    * 6.1. [Create executable](#create-executable)
+* 4\. [Automation with GitHub Actions](#automation-with-github-actions)
 
-    * 6.2. [Upload executable](#upload-executable)
+* 5\. [Workflow](#workflow)
 
-    * 6.3. [Create a new release](#create-a-new-release)
+    * 5.1. [Create executable](#create-executable)
 
-      * 6.1.1. [Release and tag name](#release-and-tag-name)
+    * 5.2. [Upload executable](#upload-executable)
 
-      * 6.1.2. [When to create a release](#when-to-create-a-release)
+    * 5.3. [Create a new release](#create-a-new-release)
 
-      * 6.1.3. [Process of creating the release](#process-of-creating-the-release)
+      * 5.1.1. [Release and tag name](#release-and-tag-name)
 
-    * 6.4. [Report Bugs](#report-bugs)
+      * 5.1.2. [When to create a release](#when-to-create-a-release)
+
+      * 5.1.3. [Process of creating the release](#process-of-creating-the-release)
+
+    * 5.4. [Report Bugs](#report-bugs)
 
 # Introduction
 
@@ -63,7 +67,7 @@ In order to test the interoperability between different DDS implementations, a
 DDS application is used. This application is `shape_main`. The `shape_main`
 application adds a big variety of options to modify several parameters it uses,
 such as the topic name, the kind of entity (publisher/subscriber), includes
-DDS QoSes... The `shape_main` application is built statically with different
+DDS QoSes, etc. The `shape_main` application is built statically with different
 DDS implementations and those executables are tested between them to check
 their interoperability with different parameter sets defined in a Test Suite.
 This is done by the `interoperability_report.py` script.
@@ -99,7 +103,7 @@ This is the file that contains all the different Test Cases that GitHub
 Actions run. This is a Python dictionary in which each element defines
 a Test Case. This Test Suite may also contain different functions that
 the `interoperability_report.py` script uses to determine whether the
-test result is succesful or not. The Python dictionary must follow
+test result is successful or not. The Python dictionary must follow
 this pattern:
 
 ~~~python
@@ -107,7 +111,7 @@ this pattern:
 # is a Test Case that interoperability_report.py
 # executes.
 # The dictionary has the following structure:
-#       'name' : [[parameter_list], [expected_return_code_list], function]
+#       'name' : [[parameter_list], [expected_return_code_list], checking_function]
 # where:
 #   * name: TestCase's name
 #   * parameter_list: list in which each element is the parameters that
@@ -116,13 +120,13 @@ this pattern:
 #     a succeed test execution.
 #   * expected_return_code_list: list with expected ReturnCodes
 #         for a succeed test execution.
-#   * function [OPTIONAL]: function to check how the Subscribers receive
+#   * checking_function [OPTIONAL]: function to check how the Subscribers receive
 #         the samples from the Publishers. By default, it just checks that
 #         the data is received. In case that it has a different behavior, that
 #         function must be implemented in the test_suite file and the test case
 #         should reference it in this parameter.
 #
-#     The function must have the following parameters:
+#     The checking_function must have the following parameters:
 #     child_sub: child program generated with pexpect
 #     samples_sent: list of multiprocessing Queues with the samples
 #                the Publishers send. Element 1 of the list is for
@@ -151,7 +155,7 @@ By default, the `interoperability_report.py` script runs the tests from
 `test_suite.py` in its same directory. The Test Suites defined **must** be
 located in the same directory as `interoperability_report.py`.
 
-# Shape Application
+## Shape Application parameters
 
 The Shape application is created in the folder `srcCxx/shape_main.cxx`.
 This application allows the user to test the interoperability between
@@ -163,9 +167,9 @@ The Shape application allows the following parameters:
    -d <int>        : domain id (default: 0)
    -b              : BEST_EFFORT reliability
    -r              : RELIABLE reliability
-   -k <depth>      : keep history depth (0: KEEP_ALL)
-   -f <interval>   : set a 'deadline' with interval (seconds)
-   -i <interval>   : apply 'time based filter' with interval (seconds)
+   -k <depth>      : keep history depth [0: KEEP_ALL]
+   -f <interval>   : set a 'deadline' with interval (seconds) [0: OFF]
+   -i <interval>   : apply 'time based filter' with interval (seconds) [0: OFF]
    -s <int>        : set ownership strength [-1: SHARED]
    -t <topic_name> : set the topic name
    -c <color>      : set color to publish (filter if subscriber)
@@ -178,8 +182,88 @@ The Shape application allows the following parameters:
    -w              : print Publisher's samples
    -z <int>        : set shapesize (between 10-99)
    -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
-
 ~~~
+
+## Return Code
+
+The `shape_main` application always follows a specific sequence of steps:
+
+* Publisher `shape_main` application
+  * Create Topic
+  * Create DataWriter
+  * DataWriter matches DataReader
+  * DataWriter sends samples
+
+* Subscriber `shape_main` application
+  * Create Topic
+  * Create DataReader
+  * DataReader matches DataWriter
+  * DataWriter is detected as alive
+  * DataReader receives samples
+
+At each step, the `shape_main` application prints a specific string which
+allows the `interoperability_report` script to know how was the execution
+of the application. In order to keep track of the `shape_main` application
+execution, there are some Return Codes, each of them related to one
+publisher/subscriber step. They are set depending on the stdout strings.
+These printed strings and the corresponding Return Codes follows this workflow
+(at the left side, the stdout string; at the right side, the Return Code):
+
+**Publisher**:
+
+* `'Create topic'` not found -> `TOPIC_NOT_CREATED`
+* `'Create topic'`:
+  * `'Create writer for topic'` not found -> `WRITER_NOT_CREATED`
+  * `'Create writer for topic'`:
+    * `'on_offered_incompatible_qos()'` -> `INCOMPATIBLE_QOS`
+    * No string matched -> `READER_NOT_MATCHED`
+    * `'on_publication_matched()'`:
+      * case '-w' not in parameters -> `OK`
+      * case '-w' in parameters:
+        * `'[10-99]'`-> `OK`
+        * `'[10-99]'` not found -> `DATA_NOT_SENT`
+
+**Subscriber**:
+
+* `'Create topic'` not found -> `TOPIC_NOT_CREATED`
+* `'Create topic'`:
+  * `'failed to create content filtered topic'`-> `FILTER_NOT_CREATED`
+  * No string matched -> `READER_NOT_CREATED`
+  * `'Create reader for topic'`:
+    * `'on_requested_incompatible_qos()'`-> `INCOMPATIBLE_QOS`
+    * None string matched ->  `WRITER_NOT_MATCHED`
+    * `'on_subscription_matched()'`:
+      * `'on_liveliness_changed()'` not found -> `WRITER_NOT_ALIVE`
+      * `'on_liveliness_changed()'`:
+        * `'[10-99]'` not found -> `DATA_NOT_RECEIVED`
+        * `'[10-99]'`:
+          * `checking_function` not defined in Test Case -> `OK`
+          * `checking_function` defined in Test Case -> `OK`, `DATA_NOT_CORRECT`,
+          `RECEIVING_FROM_ONE` or `RECEIVING_FROM_BOTH`, depending on the function.
+
+> **Note**: `'[10-99]'` is the shapesize of the samples. The
+> `interoperability_report` script is only taking into account the shapesize in
+> order to match a printed shape sample. This does not prevent the script to
+> recover the other information: x, y and color.
+
+The codes `DATA_NOT_CORRECT`, `RECEIVING_FROM_ONE` and `RECEIVING_FROM_BOTH`
+are only used in specific `checking_function`. These functions check specific
+behavior of a test. For example, Reliability and Ownership work correctly, etc.
+
+> Example of the Return Code that a Test Case should use in a specific scenario.
+> In this case, the Publisher and Subscriber will not have communication because
+> the Subscriber creates a content filtered topic for color Blue and the
+> Publisher sends Red samples. Therefore the Publisher is created correctly
+> (Return Code `OK`) and the Subscriber matches the Publisher but does not
+> read any data (Return Code `DATA_NOT_RECEIVED`):
+> * Publisher parameters: Square Color Red
+> * Subscriber parameters: Square Color Blue (content filtered topic)
+> * Publisher expected return code: `OK`
+> * Subscriber expected return code: `DATA_NOT_RECEIVED`
+
+> **NOTE: `interoperability_report` is based on the string patterns from the**
+> **`shape_main` application. In order to keep it working right, please do not**
+> **modify the `shape_main` application strings**.
 
 # Run Interoperability Test Manually
 
@@ -229,7 +313,7 @@ The `interoperability_report.py` may configure the following options:
 ```
 $ python3 interoperability_report.py -h
 
-usage: interoperability_report.py [-h] -P publisher_name -S subscriber_name
+usage: interoperability_report.py [-h] -P publisher_executable_name -S subscriber_executable_name
                                   [-v] [-s test_suite_dictionary_file]
                                   [-t test_cases [test_cases ...] | -d
                                   test_cases_disabled
@@ -243,12 +327,12 @@ optional arguments:
   -h, --help            show this help message and exit
 
 general options:
-  -P publisher_name, --publisher publisher_name
+  -P publisher_executable_name, --publisher publisher_executable_name
                         Path to the Publisher shape_main application. It may
                         be absolute or relative path. Example: if the
                         executable is in the same folder as the script: "-P
                         ./rti_connext_dds-6.1.1_shape_main_linux".
-  -S subscriber_name, --subscriber subscriber_name
+  -S subscriber_executable_name, --subscriber subscriber_executable_name
                         Path to the Subscriber shape_main application. It may
                         be absolute or relative path. Example: if the
                         executable is in the same folder as the script: "-S
