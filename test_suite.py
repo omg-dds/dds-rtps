@@ -14,14 +14,14 @@ import pexpect
 # the dictionary is a Test Case that the interoperability_report.py
 # executes.
 # The dictionary has the following structure:
-#       'name' : [[parameter_list], [expected_return_code_list], function]
+#       'name' : [[parameter_list], [expected_return_code_list], checking_function]
 # where:
 #       * name: TestCase's name
 #       * parameter_list: list in which each element is the parameters that
 #         the shape_main application will use.
 #       * expected_return_code_list: list with expected ReturnCodes
 #         for a succeed test execution.
-#       * function [OPTIONAL]: function to check how the Subscribers receive
+#       * checking_function [OPTIONAL]: function to check how the Subscribers receive
 #         the samples from the Publishers. By default, it just checks that
 #         the data is received. In case that it has a different behavior, that
 #         function must be implemented in the test_suite file and the test case
@@ -234,10 +234,12 @@ rtps_test_suite_1 = {
     'Test_Ownership_0': [['-P -t Square -s -1 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.OK, ReturnCode.OK]],
     'Test_Ownership_1': [['-P -t Square -s -1 -x 2', '-S -t Square -s 3 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
     'Test_Ownership_2': [['-P -t Square -s 3 -x 2', '-S -t Square -s -1 -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    # Two Publishers and One Subscriber to test that if each one has a different color, the ownership strength does not matter
+    # Two Publishers and One Subscriber to test that if each one has a different color, the ownership strength does not matter.
+    # Each Publisher has a different shapesize to allow the Subscriber to recognize from which Publisher is receiving the samples.
     'Test_Ownership_3': [['-P -t Square -s 3 -c BLUE -w -x 2 -z 20', '-P -t Square -s 4 -c RED -w -x 2 -z 30', '-S -t Square -s 2 -r -k 0 -x 2'],
                          [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_BOTH], test_ownership3_4],
-    # Two Publishers and One Subscriber to test that the Subscriber only receives samples from the Publisher with the greatest ownership
+    # Two Publishers and One Subscriber to test that the Subscriber only receives samples from the Publisher with the greatest ownership.
+    # Each Publisher has a different shapesize to allow the Subscriber to recognize from which Publisher is receiving the samples.
     'Test_Ownership_4': [['-P -t Square -s 5 -r -k 0 -w -x 2 -z 20', '-P -t Square -s 4 -r -k 0 -w -x 2 -z 30', '-S -t Square -s 2 -r -k 0 -x 2'],
                          [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE], test_ownership3_4],
 }

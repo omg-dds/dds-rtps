@@ -99,17 +99,13 @@ def run_subscriber_shape_main(
         [
             'Create topic:', # index = 0
             pexpect.TIMEOUT, # index = 1
-            'please specify topic name', # index = 2
-            'unrecognized value', # index = 3
-            pexpect.EOF # index = 4
+            pexpect.EOF # index = 2
         ],
         timeout
     )
 
-    if index == 1 or index == 2 or index == 4:
+    if index == 1 or index == 2:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
-    elif index == 3:
-        produced_code[produced_code_index] = ReturnCode.UNRECOGNIZED_VALUE
     elif index == 0:
         # Step 3 : Check if the reader is created
         log_message(f'Subscriber {subscriber_index}: Waiting for DataReader '
@@ -257,17 +253,13 @@ def run_publisher_shape_main(
         [
             'Create topic:', # index == 0
             pexpect.TIMEOUT, # index == 1
-            'please specify topic name', # index == 2
-            'unrecognized value', # index == 3
-            pexpect.EOF # index == 4
+            pexpect.EOF # index == 2
         ],
         timeout
     )
 
-    if index == 1 or index == 2 or index == 4:
+    if index == 1 or index == 2:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
-    elif index == 3:
-        produced_code[produced_code_index] = ReturnCode.UNRECOGNIZED_VALUE
     elif index == 0:
         # Step 3 : Check if the writer is created
         log_message(f'Publisher {publisher_index}: Waiting for DataWriter '
@@ -567,7 +559,7 @@ class Arguments:
             default=None,
             required=True,
             type=str,
-            metavar='publisher_name',
+            metavar='publisher_executable_name',
             help='Path to the Publisher shape_main application. '
                 'It may be absolute or relative path. Example: if the executable '
                 'is in the same folder as the script: '
@@ -576,7 +568,7 @@ class Arguments:
             default=None,
             required=True,
             type=str,
-            metavar='subscriber_name',
+            metavar='subscriber_executable_name',
             help='Path to the Subscriber shape_main application. '
                 'It may be absolute or relative path. Example: if the executable '
                 'is in the same folder as the script: '
@@ -677,8 +669,8 @@ def main():
     if args.output_name is None:
         now = datetime.now()
         date_time = now.strftime('%Y%m%d-%H_%M_%S')
-        options['filename_report'] = f'{name_publisher}-{name_subscriber}-\
-            {date_time}.xml'
+        options['filename_report'] = \
+            f'{name_publisher}-{name_subscriber}-{date_time}.xml'
         xml = junitparser.JUnitXml()
 
     else:
