@@ -1,11 +1,18 @@
-from enum import Enum
+#################################################################
+# Use and redistribution is source and binary forms is permitted
+# subject to the OMG-DDS INTEROPERABILITY TESTING LICENSE found
+# at the following URL:
+#
+# https://github.com/omg-dds/dds-rtps/blob/master/LICENSE.md
+#
+#################################################################
 
+from enum import Enum
 class ReturnCode(Enum):
     """"
     Codes to give information about Shape Applications' behavior.
 
     OK                   : Publisher/Subscriber sent/received data correctly
-    UNRECOGNIZED_VALUE   : Parameters for the Publisher/Subscriber not supported
     TOPIC_NOT_CREATED    : Publisher/Subscriber does not create the topic
     READER_NOT_CREATED   : Subscriber does not create the Data Reader
     WRITER_NOT_CREATED   : Publisher does not create the Data Writer
@@ -21,17 +28,23 @@ class ReturnCode(Enum):
     RECEIVING_FROM_BOTH  : Subscriber receives from two Publishers
     """
     OK = 0
-    UNRECOGNIZED_VALUE = 1
-    TOPIC_NOT_CREATED = 2
-    READER_NOT_CREATED = 3
-    WRITER_NOT_CREATED = 4
-    FILTER_NOT_CREATED = 5
-    INCOMPATIBLE_QOS = 6
-    READER_NOT_MATCHED = 7
-    WRITER_NOT_MATCHED = 8
-    WRITER_NOT_ALIVE = 9
-    DATA_NOT_RECEIVED = 10
-    DATA_NOT_SENT = 11
-    DATA_NOT_CORRECT = 12
-    RECEIVING_FROM_ONE = 13
-    RECEIVING_FROM_BOTH = 14
+    TOPIC_NOT_CREATED = 1
+    READER_NOT_CREATED = 2
+    WRITER_NOT_CREATED = 3
+    FILTER_NOT_CREATED = 4
+    INCOMPATIBLE_QOS = 5
+    READER_NOT_MATCHED = 6
+    WRITER_NOT_MATCHED = 7
+    WRITER_NOT_ALIVE = 8
+    DATA_NOT_RECEIVED = 9
+    DATA_NOT_SENT = 10
+    DATA_NOT_CORRECT = 11
+    RECEIVING_FROM_ONE = 12
+    RECEIVING_FROM_BOTH = 13
+
+def log_message(message, verbosity):
+    if verbosity:
+        print(message)
+
+def no_check(child_sub, samples_sent, timeout):
+    return ReturnCode.OK
