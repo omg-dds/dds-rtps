@@ -77,6 +77,7 @@ public:
         } else if (reliability_value == RELIABLE_RELIABILITY_QOS){
             return "RELIABLE";
         }
+        return "Error stringifying Reliability kind.";
     }
 
     static std::string to_string(DurabilityQosPolicyKind durability_value)
@@ -90,6 +91,7 @@ public:
         } else if (durability_value == PERSISTENT_DURABILITY_QOS){
             return "PERSISTENT";
         }
+        return "Error stringifying Durability kind.";
     }
 
     static std::string to_string(DataRepresentationId_t data_representation_value)
@@ -99,6 +101,7 @@ public:
         } else if (data_representation_value == XCDR2_DATA_REPRESENTATION){
             return "XCDR2";
         }
+        return "Error stringifying DataRepresentation.";
     }
 
     static std::string to_string(Verbosity verbosity_value)
@@ -116,6 +119,7 @@ public:
         default:
             break;
         }
+        return "Error stringifying verbosity.";
     }
 
     static std::string to_string(OwnershipQosPolicyKind ownership_kind_value)
@@ -125,6 +129,7 @@ public:
         } else if (ownership_kind_value == EXCLUSIVE_OWNERSHIP_QOS){
             return "EXCLUSIVE";
         }
+        return "Error stringifying Ownership kind.";
     }
 
     static std::string to_string(HistoryQosPolicyKind history_kind_value)
@@ -134,6 +139,7 @@ public:
         } else if (history_kind_value == KEEP_LAST_HISTORY_QOS){
             return "KEEP_LAST";
         }
+        return "Error stringifying History kind.";
     }
 };
 
