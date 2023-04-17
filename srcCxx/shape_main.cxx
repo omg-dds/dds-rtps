@@ -794,6 +794,10 @@ public:
         data_representation_seq[0] = options->data_representation;
         dw_qos.representation.value = data_representation_seq;
 
+#elif  defined(TWINOAKS_COREDX)
+        dw_qos.representation.value.clear( );
+        dw_qos.representation.value.push_back( options->data_representation );
+        
 #elif   defined(OPENDDS)
         dw_qos.representation.value.length(1);
         dw_qos.representation.value[0] = options->data_representation;
@@ -883,6 +887,10 @@ public:
             data_representation_seq.ensure_length(1,1);
             data_representation_seq[0] = options->data_representation;
             dr_qos.representation.value = data_representation_seq;
+            
+#elif  defined(TWINOAKS_COREDX)
+        dr_qos.representation.value.clear( );
+        dr_qos.representation.value.push_back( options->data_representation );
 
 #elif   defined(OPENDDS)
         dr_qos.representation.value.length(1);
