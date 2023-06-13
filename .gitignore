@@ -28,6 +28,7 @@
 *.out
 *.app
 shape_main
+*shape_main_linux
 
 # Generated Makefiles
 .depend.*
@@ -51,3 +52,6 @@ srcCxx/shapePlugin.*
 srcCxx/shapeSupport.*
 
 .vscode/
+
+# Generated reports
+*.html

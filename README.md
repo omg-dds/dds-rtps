@@ -500,10 +500,12 @@ you can use `makefile_rti_connext_dds_linux`.
 
 ## Upload executable
 
-Each vendor should compile `shape_main.cxx` with their own product.
+Each vendor should compile `shape_main.cxx` with their own product using the
+GLIBC version 2.31 or older (eg Ubuntu 2004). This helps to run the executables
+in older OSes.
 The executable created **must** follow the following pattern:
-`<product_name_and_version>_shape_main_linux` and compress it
-into a `.zip` file.
+`<product_name_and_version>_shape_main_linux` and compress it into a `.zip`
+file.
 
 Example:
 
