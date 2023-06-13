@@ -444,34 +444,34 @@ The GitHub Actions process must be launched in the following cases:
 To generate the report you should follow the next steps:
 1. Go to *Actions*.
 
-![Actions](./doc/img1.png)
+![Actions](./doc/img/img1.png)
 
 2. Go to *Testing Interoperability*.
 
-![Testing-Interoperability](./doc/img2.png)
+![Testing-Interoperability](./doc/img/img2.png)
 
 3. Press *Run workflow*, select master branch (for the official tests).
 
-![Run-workflow](./doc/img3.png)
+![Run-workflow](./doc/img/img3.png)
 
 4. Wait a few minutes until the new task is finished and then press it.\
 Example of a successful and a failed test:
 
-![Succeeded test](./doc/img4.png)
-![Failed test](./doc/img5.png)
+![Succeeded test](./doc/img/img4.png)
+![Failed test](./doc/img/img5.png)
 
 
 5. At the bottom of the page you can find the attached artifacts
 in the **Artifacts** section that contains the generated report.
-![Artifacts-1](./doc/img6.png)
-![Artifacts-2](./doc/img7.png)
+![Artifacts-1](./doc/img/img6.png)
+![Artifacts-2](./doc/img/img7.png)
 
 6. Download and unzip it. There is file called `index.html`, inside
 `report.zip` that is the generated report. It will look something like this
 (set pretty option):
 
-![report-1](./doc/img8.png)
-![report-2](./doc/img9.png)
+![report-1](./doc/img/img8.png)
+![report-2](./doc/img/img9.png)
 
 > **Note**: The status of the GitHub Action will be **Failure** :x:,
 if any of the Test Cases that we are testing has an error,
@@ -507,7 +507,7 @@ into a `.zip` file.
 
 Example:
 
-![zip](./doc/img10.png)
+![zip](./doc/img/img10.png)
 
 Then, the executable should be uploaded to the corresponding release:
 
@@ -515,17 +515,17 @@ Then, the executable should be uploaded to the corresponding release:
 
 1. In the main page, go to *Releases*.
 
-![Releases](./doc/img11.png)
+![Releases](./doc/img/img11.png)
 
 2. Inside the latest release, go to *Edit*.
 
-![Edit](./doc/img12.png)
+![Edit](./doc/img/img12.png)
 
 3. Upload the executables in *Attach binaries by dropping them here or
 selecting them* (leave all the other fields as they were).
 Keep marked *Set as the latest release*, and press *Update release*.
 
-![Attach](./doc/img13.png)
+![Attach](./doc/img/img13.png)
 
 > **Note**: once the executable is uploaded, the user should run
 > GitHub Actions to generate a new report.
@@ -596,11 +596,11 @@ The name of the release and the tag should be as explained in
 
 1. In the main page, go to *Releases*.
 
-![Releases](./doc/img11.png)
+![Releases](./doc/img/img11.png)
 
 2. Go to *Draft a new release*.
 
-![Draft a new release](./doc/img14.png)
+![Draft a new release](./doc/img/img14.png)
 
 3. Do:
     * In *Choose a tag* write the name of the tag and select
@@ -614,7 +614,7 @@ The name of the release and the tag should be as explained in
     * Make sure *Set as pre-release* is **not selected**.
     * Press *Publish release*.
 
-![Create release](./doc/img15.png)
+![Create release](./doc/img/img15.png)
 
 ## Report Bugs
 
@@ -626,16 +626,16 @@ in the following way.
 
 * Go to *Issues*.
 
-![Issues](./doc/img16.png)
+![Issues](./doc/img/img16.png)
 
 * **Check the issue is not already submitted**.
 * Select *New Issue*.
 
-![New issue](./doc/img17.png)
+![New issue](./doc/img/img17.png)
 
 * Select Interoperability issue template, *Get Started*.
 
-![Issue-Get started](./doc/img18.png)
+![Issue-Get started](./doc/img/img18.png)
 
 * Fill out the corresponding information:
     * Title: `Problem with <QoS or parameter>`
@@ -644,16 +644,16 @@ in the following way.
     * Copy the link to the GitHub Action workflow run.
         * Example, from this page:
 
-        ![Artifacts-1](./doc/img6.png)
+        ![Artifacts-1](./doc/img/img6.png)
 
     * Add any suggestion about how to fix it, or why
       this is happening [Optional].
     * Add another comment [Optional].
     * In the section *Labels*, assign them to the vendors involved.
 
-   ![Label-1](./doc/img19.png)
-   ![Label-2](./doc/img20.png)
+   ![Label-1](./doc/img/img19.png)
+   ![Label-2](./doc/img/img20.png)
 
     * Press *Submit new issue*.
 
-    ![Template](./doc/img21.png)
+    ![Template](./doc/img/img21.png)
