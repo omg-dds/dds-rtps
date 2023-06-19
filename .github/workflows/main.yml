@@ -1,0 +1,38 @@
+name: Testing Interoperability
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: workflow_dispatch
+jobs:
+  Testing_Interoperability:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.7
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Run Interoperability script
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+          cd executables
+          for i in ./* ; \
+            do for j in ./*; \
+              do python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml; \
+            done; \
+          done
+      - name: XUnit Viewer
+        id: xunit-viewer
+        uses: AutoModality/action-xunit-viewer@v1
+        with:
+          results: ./junit_interoperability_report.xml
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v1
+        with:
+          name: report
+          path: ./index.html

@@ -28,15 +28,30 @@
 *.out
 *.app
 shape_main
+*shape_main_linux
 
 # Generated Makefiles
 .depend.*
 GNUmakefile*
 
-#Bin and Object directories
+# Bin and Object directories
 bin/
 objs/
 
 # Other
 *~
 GeneratedCode
+
+# Python files
+.venv/
+*.pyc
+
+# Generated files
+srcCxx/shape.*
+srcCxx/shapePlugin.*
+srcCxx/shapeSupport.*
+
+.vscode/
+
+# Generated reports
+*.html
