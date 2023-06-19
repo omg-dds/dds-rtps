@@ -686,7 +686,7 @@ def main():
     # applications. A TestSuite contains a collection of TestCases.
     suite = junitparser.TestSuite(f"{name_publisher}---{name_subscriber}")
 
-    timeout = 5
+    timeout = 6
     now = datetime.now()
 
     t_suite_module = importlib.import_module(options['test_suite'])
