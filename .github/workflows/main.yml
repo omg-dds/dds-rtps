@@ -21,8 +21,8 @@ jobs:
           pip install -r requirements.txt
           cd executables
           for i in ./* ; do \
-            for j in ./*; do \
-              echo Testing Publisher $i Subscriber $j \
+            for j in ./* ; do \
+              echo "Testing Publisher $i --- Subscriber $j"; \
               python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml; \
             done; \
           done
