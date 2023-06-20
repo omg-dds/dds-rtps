@@ -127,11 +127,17 @@ def run_subscriber_shape_main(
             # Step 4 : Check if the reader matches the writer
             log_message(f'Subscriber {subscriber_index}: Waiting for matching '
                     'DataWriter', verbosity)
+            # the normal flow of the application is to find on_subscription_matched()
+            # and then on_liveliness_changed(). However, in some cases the
+            # situation is the opposite. This will handle those cases.
+            # pexpect searches the results in order, so a matching on
+            # on_subscription_matched() takes precedence over on_liveliness_changed()
             index = child_sub.expect(
                 [
                     'on_subscription_matched()', # index = 0
                     pexpect.TIMEOUT, # index = 1
-                    'on_requested_incompatible_qos()' # index = 2
+                    'on_requested_incompatible_qos()', # index = 2
+                    'on_liveliness_changed()' # index = 3
                 ],
                 timeout
             )
@@ -140,8 +146,20 @@ def run_subscriber_shape_main(
                 produced_code[produced_code_index] = ReturnCode.WRITER_NOT_MATCHED
             elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
-            elif index == 0:
+            # This case handles when on_liveliness_changed() happens before
+            # on_subscription_matched()
+            elif index == 0 or index == 3:
                 # Step 5: Check if the reader detects the writer as alive
+                if index == 3:
+                    log_message(f'Subscriber {subscriber_index}: Found alive '
+                        'DataWriter. Waiting for matching DataWriter.', verbosity)
+                index = child_sub.expect(
+                    [
+                        'on_subscription_matched()', # index = 0
+                        pexpect.TIMEOUT # index = 1
+                    ],
+                    timeout
+                )
                 log_message(f'Subscriber {subscriber_index}: Waiting for '
                         'detecting DataWriter alive', verbosity)
                 index = child_sub.expect(
@@ -154,7 +172,7 @@ def run_subscriber_shape_main(
 
                 if index == 1:
                     produced_code[produced_code_index] = ReturnCode.WRITER_NOT_ALIVE
-                elif index == 0:
+                elif index == 0 :
                     # Step 6 : Check if the reader receives the samples
                     log_message(f'Subscriber {subscriber_index}: Receiving '
                             'samples', verbosity)
@@ -176,7 +194,7 @@ def run_subscriber_shape_main(
                                                                 child_sub,
                                                                 samples_sent,
                                                                 timeout)
-    time.sleep(1)
+
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
             'finish', verbosity)
@@ -327,7 +345,7 @@ def run_publisher_shape_main(
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                 else:
                     produced_code[produced_code_index] = ReturnCode.OK
-    time.sleep(1)
+
     log_message(f'Publisher {publisher_index}: Waiting for Subscribers to finish',
             verbosity)
     for element in subscribers_finished:
@@ -686,7 +704,7 @@ def main():
     # applications. A TestSuite contains a collection of TestCases.
     suite = junitparser.TestSuite(f"{name_publisher}---{name_subscriber}")
 
-    timeout = 10
+    timeout = 5
     now = datetime.now()
 
     t_suite_module = importlib.import_module(options['test_suite'])
