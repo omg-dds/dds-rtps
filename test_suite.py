@@ -56,7 +56,7 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
     first_received = False
     second_received = False
     list_data_received_second = []
-    max_samples_received = 80
+    max_samples_received = 120
     max_wait_time = 5
     for x in range(0, max_samples_received, 1):
         # take the topic, color and position and size of the shapetype.
