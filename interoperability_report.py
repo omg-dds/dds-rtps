@@ -176,7 +176,7 @@ def run_subscriber_shape_main(
                                                                 child_sub,
                                                                 samples_sent,
                                                                 timeout)
-
+    time.sleep(1)
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
             'finish', verbosity)
