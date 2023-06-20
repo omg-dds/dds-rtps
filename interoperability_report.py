@@ -327,7 +327,7 @@ def run_publisher_shape_main(
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                 else:
                     produced_code[produced_code_index] = ReturnCode.OK
-
+    time.sleep(1)
     log_message(f'Publisher {publisher_index}: Waiting for Subscribers to finish',
             verbosity)
     for element in subscribers_finished:
