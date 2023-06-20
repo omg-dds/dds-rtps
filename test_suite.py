@@ -51,15 +51,16 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
     This functions assumes that the subscriber has already received samples
     from, at least, one publisher.
     """
-    first_received_first_time = False
-    second_received_first_time = False
+    first_sample_received_publisher = 0
+    ignore_first_samples = True
     first_received = False
     second_received = False
     list_data_received_second = []
     max_samples_received = 120
-    max_wait_time = 7
+    max_wait_time = 1
+
     for x in range(0, max_samples_received, 1):
-        # take the topic, color and position and size of the shapetype.
+        # take the topic, color, position and size of the ShapeType.
         # child_sub.before contains x and y, and child_sub.after contains
         # [shapesize]
         # Example: child_sub.before contains 'Square     BLUE       191 152'
@@ -67,6 +68,18 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
         sub_string = re.search('[0-9]{3} [0-9]{3} \[[0-9]{2}\]',
             child_sub.before + child_sub.after)
         # sub_string contains 'x y [shapesize]', example: '191 152 [30]'
+
+        # Get the next samples the subscriber is receiving
+        index = child_sub.expect(
+            [
+                '\[[0-9]{2}\]', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            break
+
         try:
             # the function takes the samples the second publisher is sending
             # ('samples_sent[1]') and saves them in a list.
@@ -82,32 +95,48 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
                     block=True,
                     timeout=max_wait_time))
         except:
-            print("No samples to take from Queue")
             break
-        if sub_string.group(0) not in list_data_received_second \
-                and second_received_first_time:
+
+        # Determine to which publisher the current sample belong to
+        if sub_string.group(0) in list_data_received_second:
+            current_sample_from_publisher = 2
+        else:
+            current_sample_from_publisher = 1
+
+        if x == 0:
+            # A potential case is that the reader gets data from one writer and
+            # then start receiving from a different writer with a higher
+            # ownership. This avoids returning RECEIVING_FROM_BOTH if this is
+            # the case.
+            if current_sample_from_publisher == 1:
+                first_sample_received_publisher = 1
+            elif current_sample_from_publisher == 2:
+                first_sample_received_publisher = 2
+
+        # Check if the app still needs to ignore samples
+        if ignore_first_samples == True:
+            if (first_sample_received_publisher == 1 \
+                    and current_sample_from_publisher == 2) \
+                or (first_sample_received_publisher == 2 \
+                    and current_sample_from_publisher == 1):
+                # if receiving samples from a different publisher, then stop
+                # ignoring samples
+                ignore_first_samples = False
+            else:
+                # in case that the app only receives samples from one publisher
+                # this loop always continues and will return RECEIVING_FROM_ONE
+                continue
+
+        if current_sample_from_publisher == 1:
             first_received = True
-        elif sub_string.group(0) in list_data_received_second \
-                and first_received_first_time:
+        else:
             second_received = True
 
-        if sub_string.group(0) not in list_data_received_second:
-            first_received_first_time = True
-        elif sub_string.group(0) in list_data_received_second:
-            second_received_first_time = True
-
-        # Get the next samples the subscriber is receiving
-        child_sub.expect(
-            [
-                '\[[0-9]{2}\]', # index = 0
-                pexpect.TIMEOUT # index = 1
-            ],
-            timeout
-        )
         if second_received == True and first_received == True:
             return ReturnCode.RECEIVING_FROM_BOTH
 
     return ReturnCode.RECEIVING_FROM_ONE
+
 
 
 def test_reliability_4(child_sub, samples_sent, timeout):
