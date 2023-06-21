@@ -765,6 +765,7 @@ def main():
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
+                    log_message(f'Running test: {test_case_name}', options['verbosity'])
                     run_test(name_executable_pub=options['publisher'],
                             name_executable_sub=options['subscriber'],
                             test_case=case,

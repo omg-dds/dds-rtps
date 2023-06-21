@@ -10,6 +10,8 @@
 from rtps_test_utilities import ReturnCode, log_message
 import re
 import pexpect
+import queue
+import time
 # rtps_test_suite_1 is a dictionary that defines the TestSuite. Each element of
 # the dictionary is a Test Case that the interoperability_report.py
 # executes.
@@ -56,8 +58,8 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
     first_received = False
     second_received = False
     list_data_received_second = []
-    max_samples_received = 120
-    max_wait_time = 1
+    list_data_received_first = []
+    max_samples_received = 125
 
     for x in range(0, max_samples_received, 1):
         # take the topic, color, position and size of the ShapeType.
@@ -69,6 +71,42 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
             child_sub.before + child_sub.after)
         # sub_string contains 'x y [shapesize]', example: '191 152 [30]'
 
+        # takes samples written from both publishers stored in their queues
+        # ('samples_sent[i]') and save them in different lists.
+        # Try to get all available samples to avoid a race condition that
+        # happens when the samples are not in the list but the reader has
+        # already read them.
+        # waits until <max_wait_time> to stop the execution of the loop and
+        # returns the code "RECEIVING_FROM_ONE".
+        # list_data_received_[first|second] is a list with the samples sent from
+        # its corresponding publisher
+        try:
+            while True:
+                list_data_received_first.append(samples_sent[0].get(
+                        block=False))
+        except queue.Empty:
+            pass
+
+        try:
+            while True:
+                list_data_received_second.append(samples_sent[1].get(
+                        block=False))
+        except queue.Empty:
+            pass
+
+        # Determine to which publisher the current sample belong to
+        if sub_string.group(0) in list_data_received_second:
+            current_sample_from_publisher = 2
+        elif sub_string.group(0) in list_data_received_first:
+            current_sample_from_publisher = 1
+        else:
+            # If the sample is not in any queue, wait a bit and continue
+            time.sleep(0.1)
+            continue
+
+        # If the app hit this point, it is because the previous subscriber
+        # sample has been already read. Then, we can process the next sample
+        # read by the subscriber.
         # Get the next samples the subscriber is receiving
         index = child_sub.expect(
             [
@@ -79,29 +117,6 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
         )
         if index == 1:
             break
-
-        try:
-            # the function takes the samples the second publisher is sending
-            # ('samples_sent[1]') and saves them in a list.
-            # In the case that samples_sent[1] is empty, the method get()
-            # waits until <max_wait_time> to stop the execution of the loop and
-            # save the code "RECEIVING_FROM_ONE".
-            # list_data_received_second is a list with the samples sent from the
-            # second publisher
-            # the samples from the first publisher are not read because if the
-            # samples are not in list_data_received_second, they are from
-            # publisher 1.
-            list_data_received_second.append(samples_sent[1].get(
-                    block=True,
-                    timeout=max_wait_time))
-        except:
-            break
-
-        # Determine to which publisher the current sample belong to
-        if sub_string.group(0) in list_data_received_second:
-            current_sample_from_publisher = 2
-        else:
-            current_sample_from_publisher = 1
 
         if x == 0:
             # A potential case is that the reader gets data from one writer and
@@ -131,7 +146,6 @@ def test_ownership3_4(child_sub, samples_sent, timeout):
             first_received = True
         else:
             second_received = True
-
         if second_received == True and first_received == True:
             return ReturnCode.RECEIVING_FROM_BOTH
 
