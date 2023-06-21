@@ -23,6 +23,7 @@
 #define NAME_ACCESSOR .c_str()
 #define FIELD_ACCESSOR ()
 #define GET_TOPIC_DESCRIPTION(dr) const_cast<TopicDescription*>(dr->get_topicdescription())
+#define ADD_PARTITION(field, value) field().push_back(value)
 #define SECONDS_FIELD_NAME seconds
 
 #define ShapeTypeDataReader DataReader
@@ -59,9 +60,4 @@ const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
   case DDS::DURABILITYSERVICE_QOS_POLICY_ID: return "DURABILITYSERVICE";
   default: return "Unknown";
   }
-}
-
-void StringSeq_push(DDS::PartitionQosPolicy& string_seq, const char* elem)
-{
-  string_seq.push_back(elem);
 }

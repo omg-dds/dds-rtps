@@ -50,6 +50,9 @@
 #ifndef GET_TOPIC_DESCRIPTION
 #define GET_TOPIC_DESCRIPTION(dr) dr->get_topicdescription()
 #endif
+#ifndef ADD_PARTITION
+#define ADD_PARTITION(field, value) StringSeq_push(field.name, value)
+#endif
 
 using namespace DDS;
 
@@ -789,7 +792,7 @@ public:
 
         dp->get_default_publisher_qos( pub_qos );
         if ( options->partition != NULL ) {
-            StringSeq_push(pub_qos.partition(), options->partition);
+            ADD_PARTITION(pub_qos.partition, options->partition);
         }
 
         pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
@@ -885,7 +888,7 @@ public:
 
         dp->get_default_subscriber_qos( sub_qos );
         if ( options->partition != NULL ) {
-            StringSeq_push(sub_qos.partition(), options->partition);
+            ADD_PARTITION(sub_qos.partition, options->partition);
         }
 
         sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
