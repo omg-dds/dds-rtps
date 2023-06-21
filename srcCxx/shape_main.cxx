@@ -23,6 +23,8 @@
 #include "shape_configurator_toc_coredx_dds.h"
 #elif defined(OPENDDS)
 #include "shape_configurator_opendds.h"
+#elif defined(EPROSIMA_FAST_DDS)
+#include "shape_configurator_eprosima_fast_dds.h"
 #else
 #error "Must define the DDS vendor"
 #endif
@@ -32,6 +34,24 @@
 #endif
 #ifndef STRING_INOUT
 #define STRING_INOUT
+#endif
+#ifndef NAME_ACCESSOR
+#define NAME_ACCESSOR
+#endif
+#ifndef LISTENER_STATUS_MASK_NONE
+#define LISTENER_STATUS_MASK_NONE 0
+#endif
+#ifndef SECONDS_FIELD_NAME
+#define SECONDS_FIELD_NAME sec
+#endif
+#ifndef FIELD_ACCESSOR
+#define FIELD_ACCESSOR
+#endif
+#ifndef GET_TOPIC_DESCRIPTION
+#define GET_TOPIC_DESCRIPTION(dr) dr->get_topicdescription()
+#endif
+#ifndef ADD_PARTITION
+#define ADD_PARTITION(field, value) StringSeq_push(field.name, value)
 #endif
 
 using namespace DDS;
@@ -582,15 +602,15 @@ class DPListener : public DomainParticipantListener
 {
 public:
     void on_inconsistent_topic         (Topic *topic,  const InconsistentTopicStatus &) {
-        const char *topic_name = topic->get_name();
-        const char *type_name  = topic->get_type_name();
+        const char *topic_name = topic->get_name() NAME_ACCESSOR;
+        const char *type_name  = topic->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s'\n", __FUNCTION__, topic_name, type_name);
     }
 
     void on_offered_incompatible_qos(DataWriter *dw,  const OfferedIncompatibleQosStatus & status) {
         Topic      *topic       = dw->get_topic( );
-        const char *topic_name  = topic->get_name( );
-        const char *type_name   = topic->get_type_name( );
+        const char *topic_name  = topic->get_name() NAME_ACCESSOR;
+        const char *type_name   = topic->get_type_name() NAME_ACCESSOR;
         const char *policy_name = NULL;
         policy_name = get_qos_policy_name(status.last_policy_id);
         printf("%s() topic: '%s'  type: '%s' : %d (%s)\n", __FUNCTION__,
@@ -601,32 +621,32 @@ public:
 
     void on_publication_matched (DataWriter *dw, const PublicationMatchedStatus & status) {
         Topic      *topic      = dw->get_topic( );
-        const char *topic_name = topic->get_name( );
-        const char *type_name  = topic->get_type_name( );
+        const char *topic_name = topic->get_name() NAME_ACCESSOR;
+        const char *type_name  = topic->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : matched readers %d (change = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.current_count, status.current_count_change);
     }
 
     void on_offered_deadline_missed (DataWriter *dw, const OfferedDeadlineMissedStatus & status) {
         Topic      *topic      = dw->get_topic( );
-        const char *topic_name = topic->get_name( );
-        const char *type_name  = topic->get_type_name( );
+        const char *topic_name = topic->get_name() NAME_ACCESSOR;
+        const char *type_name  = topic->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (total = %d, change = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.total_count, status.total_count_change);
     }
 
     void on_liveliness_lost (DataWriter *dw, const LivelinessLostStatus & status) {
         Topic      *topic      = dw->get_topic( );
-        const char *topic_name = topic->get_name( );
-        const char *type_name  = topic->get_type_name( );
+        const char *topic_name = topic->get_name() NAME_ACCESSOR;
+        const char *type_name  = topic->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (total = %d, change = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.total_count, status.total_count_change);
     }
 
     void on_requested_incompatible_qos (DataReader *dr, const RequestedIncompatibleQosStatus & status) {
-        TopicDescription *td         = dr->get_topicdescription( );
-        const char       *topic_name = td->get_name( );
-        const char       *type_name  = td->get_type_name( );
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
+        const char       *topic_name = td->get_name() NAME_ACCESSOR;
+        const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         const char *policy_name = NULL;
         policy_name = get_qos_policy_name(status.last_policy_id);
         printf("%s() topic: '%s'  type: '%s' : %d (%s)\n", __FUNCTION__,
@@ -635,25 +655,25 @@ public:
     }
 
     void on_subscription_matched (DataReader *dr, const SubscriptionMatchedStatus & status) {
-        TopicDescription *td         = dr->get_topicdescription( );
-        const char       *topic_name = td->get_name( );
-        const char       *type_name  = td->get_type_name( );
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
+        const char       *topic_name = td->get_name() NAME_ACCESSOR;
+        const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : matched writers %d (change = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.current_count, status.current_count_change);
     }
 
     void on_requested_deadline_missed (DataReader *dr, const RequestedDeadlineMissedStatus & status) {
-        TopicDescription *td         = dr->get_topicdescription( );
-        const char       *topic_name = td->get_name( );
-        const char       *type_name  = td->get_type_name( );
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
+        const char       *topic_name = td->get_name() NAME_ACCESSOR;
+        const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (total = %d, change = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.total_count, status.total_count_change);
     }
 
     void on_liveliness_changed (DataReader *dr, const LivelinessChangedStatus & status) {
-        TopicDescription *td         = dr->get_topicdescription( );
-        const char       *topic_name = td->get_name( );
-        const char       *type_name  = td->get_type_name( );
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
+        const char       *topic_name = td->get_name() NAME_ACCESSOR;
+        const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (alive = %d, not_alive = %d)\n", __FUNCTION__,
                 topic_name, type_name, status.alive_count, status.not_alive_count);
     }
@@ -735,7 +755,7 @@ public:
         REGISTER_TYPE(dp, "ShapeType");
 
         printf("Create topic: %s\n", options->topic_name );
-        topic = dp->create_topic( options->topic_name, "ShapeType", TOPIC_QOS_DEFAULT, NULL, 0);
+        topic = dp->create_topic( options->topic_name, "ShapeType", TOPIC_QOS_DEFAULT, NULL, LISTENER_STATUS_MASK_NONE);
         if (topic == NULL) {
             logger.log_message("failed to create topic", Verbosity::ERROR);
             return false;
@@ -772,10 +792,10 @@ public:
 
         dp->get_default_publisher_qos( pub_qos );
         if ( options->partition != NULL ) {
-            StringSeq_push(pub_qos.partition.name, options->partition);
+            ADD_PARTITION(pub_qos.partition, options->partition);
         }
 
-        pub = dp->create_publisher(pub_qos, NULL, 0);
+        pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
         if (pub == NULL) {
             logger.log_message("failed to create publisher", Verbosity::ERROR);
             return false;
@@ -783,10 +803,10 @@ public:
         logger.log_message("Publisher created", Verbosity::DEBUG);
         logger.log_message("Data Writer QoS:", Verbosity::DEBUG);
         pub->get_default_datawriter_qos( dw_qos );
-        dw_qos.reliability.kind = options->reliability_kind;
-        logger.log_message("    Reliability = " + QosUtils::to_string(dw_qos.reliability.kind), Verbosity::DEBUG);
-        dw_qos.durability.kind  = options->durability_kind;
-        logger.log_message("    Durability = " + QosUtils::to_string(dw_qos.durability.kind), Verbosity::DEBUG);
+        dw_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
+        logger.log_message("    Reliability = " + QosUtils::to_string(dw_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+        dw_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
+        logger.log_message("    Durability = " + QosUtils::to_string(dw_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS)
         DataRepresentationIdSeq data_representation_seq;
@@ -802,41 +822,43 @@ public:
         dw_qos.representation.value.length(1);
         dw_qos.representation.value[0] = options->data_representation;
 #endif
-        logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation.value[0]), Verbosity::DEBUG);
+#if !defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
+#endif
         if ( options->ownership_strength != -1 ) {
-            dw_qos.ownership.kind = EXCLUSIVE_OWNERSHIP_QOS;
-            dw_qos.ownership_strength.value = options->ownership_strength;
+            dw_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
+            dw_qos.ownership_strength FIELD_ACCESSOR.value = options->ownership_strength;
         }
 
         if ( options->ownership_strength == -1 ) {
-            dw_qos.ownership.kind = SHARED_OWNERSHIP_QOS;
+            dw_qos.ownership  FIELD_ACCESSOR.kind = SHARED_OWNERSHIP_QOS;
         }
-        logger.log_message("    Ownership = " + QosUtils::to_string(dw_qos.ownership.kind), Verbosity::DEBUG);
-        if (dw_qos.ownership.kind == EXCLUSIVE_OWNERSHIP_QOS){
-            logger.log_message("    OwnershipStrength = " + std::to_string(dw_qos.ownership_strength.value), Verbosity::DEBUG);
+        logger.log_message("    Ownership = " + QosUtils::to_string(dw_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+        if (dw_qos.ownership FIELD_ACCESSOR.kind == EXCLUSIVE_OWNERSHIP_QOS){
+            logger.log_message("    OwnershipStrength = " + std::to_string(dw_qos.ownership_strength FIELD_ACCESSOR.value), Verbosity::DEBUG);
         }
 
         if ( options->deadline_interval > 0 ) {
-            dw_qos.deadline.period.sec      = options->deadline_interval;
-            dw_qos.deadline.period.nanosec  = 0;
+            dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval;
+            dw_qos.deadline FIELD_ACCESSOR.period.nanosec  = 0;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline.period.sec), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
-            dw_qos.history.kind  = KEEP_LAST_HISTORY_QOS;
-            dw_qos.history.depth = options->history_depth;
+            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_LAST_HISTORY_QOS;
+            dw_qos.history FIELD_ACCESSOR.depth = options->history_depth;
         }
         else if ( options->history_depth == 0 ) {
-            dw_qos.history.kind  = KEEP_ALL_HISTORY_QOS;
+            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
         }
-        logger.log_message("    History = " + QosUtils::to_string(dw_qos.history.kind), Verbosity::DEBUG);
-        if (dw_qos.history.kind == KEEP_LAST_HISTORY_QOS){
-            logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history.depth), Verbosity::DEBUG);
+        logger.log_message("    History = " + QosUtils::to_string(dw_qos.history FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+        if (dw_qos.history FIELD_ACCESSOR.kind == KEEP_LAST_HISTORY_QOS){
+            logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
         printf("Create writer for topic: %s color: %s\n", options->topic_name, options->color );
-        dw = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topic, dw_qos, NULL, 0));
+        dw = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topic, dw_qos, NULL, LISTENER_STATUS_MASK_NONE));
 
         if (dw == NULL) {
             logger.log_message("failed to create datawriter", Verbosity::ERROR);
@@ -866,10 +888,10 @@ public:
 
         dp->get_default_subscriber_qos( sub_qos );
         if ( options->partition != NULL ) {
-            StringSeq_push(sub_qos.partition.name, options->partition);
+            ADD_PARTITION(sub_qos.partition, options->partition);
         }
 
-        sub = dp->create_subscriber( sub_qos, NULL, 0 );
+        sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
         if (sub == NULL) {
             logger.log_message("failed to create subscriber", Verbosity::ERROR);
             return false;
@@ -877,17 +899,16 @@ public:
         logger.log_message("Subscriber created", Verbosity::DEBUG);
         logger.log_message("Data Reader QoS:", Verbosity::DEBUG);
         sub->get_default_datareader_qos( dr_qos );
-        dr_qos.reliability.kind = options->reliability_kind;
-        logger.log_message("    Reliability = " + QosUtils::to_string(dr_qos.reliability.kind), Verbosity::DEBUG);
-        dr_qos.durability.kind  = options->durability_kind;
-        logger.log_message("    Durability = " + QosUtils::to_string(dr_qos.durability.kind), Verbosity::DEBUG);
+        dr_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
+        logger.log_message("    Reliability = " + QosUtils::to_string(dr_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+        dr_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
+        logger.log_message("    Durability = " + QosUtils::to_string(dr_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS)
-            DataRepresentationIdSeq data_representation_seq;
-            data_representation_seq.ensure_length(1,1);
-            data_representation_seq[0] = options->data_representation;
-            dr_qos.representation.value = data_representation_seq;
-            
+        DataRepresentationIdSeq data_representation_seq;
+        data_representation_seq.ensure_length(1,1);
+        data_representation_seq[0] = options->data_representation;
+        dr_qos.representation.value = data_representation_seq;
 #elif  defined(TWINOAKS_COREDX)
         dr_qos.representation.value.clear( );
         dr_qos.representation.value.push_back( options->data_representation );
@@ -896,39 +917,41 @@ public:
         dr_qos.representation.value.length(1);
         dr_qos.representation.value[0] = options->data_representation;
 #endif
-        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation.value[0]), Verbosity::DEBUG);
+#if !defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
+#endif
         if ( options->ownership_strength != -1 ) {
-            dr_qos.ownership.kind = EXCLUSIVE_OWNERSHIP_QOS;
+            dr_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
         }
-        logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership.kind), Verbosity::DEBUG);
+        logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if ( options->timebasedfilter_interval > 0) {
-            dr_qos.time_based_filter.minimum_separation.sec      = options->timebasedfilter_interval;
-            dr_qos.time_based_filter.minimum_separation.nanosec  = 0;
+            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval;
+            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec  = 0;
         }
-        logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter.minimum_separation.sec), Verbosity::DEBUG);
+        logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         if ( options->deadline_interval > 0 ) {
-            dr_qos.deadline.period.sec      = options->deadline_interval;
-            dr_qos.deadline.period.nanosec  = 0;
+            dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval;
+            dr_qos.deadline FIELD_ACCESSOR.period.nanosec  = 0;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline.period.sec), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
-            dr_qos.history.kind  = KEEP_LAST_HISTORY_QOS;
-            dr_qos.history.depth = options->history_depth;
+            dr_qos.history FIELD_ACCESSOR.kind  = KEEP_LAST_HISTORY_QOS;
+            dr_qos.history FIELD_ACCESSOR.depth = options->history_depth;
         }
         else if ( options->history_depth == 0 ) {
-            dr_qos.history.kind  = KEEP_ALL_HISTORY_QOS;
+            dr_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
         }
-        logger.log_message("    History = " + QosUtils::to_string(dr_qos.history.kind), Verbosity::DEBUG);
-        if (dr_qos.history.kind == KEEP_LAST_HISTORY_QOS){
-            logger.log_message("    HistoryDepth = " + std::to_string(dr_qos.history.depth), Verbosity::DEBUG);
+        logger.log_message("    History = " + QosUtils::to_string(dr_qos.history FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+        if (dr_qos.history FIELD_ACCESSOR.kind == KEEP_LAST_HISTORY_QOS){
+            logger.log_message("    HistoryDepth = " + std::to_string(dr_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
         if ( options->color != NULL ) {
             /*  filter on specified color */
-            ContentFilteredTopic *cft;
+            ContentFilteredTopic *cft = NULL;
             StringSeq              cf_params;
 
 #if   defined(RTI_CONNEXT_DDS)
@@ -941,6 +964,10 @@ public:
             StringSeq_push(cf_params, options->color);
             cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+#elif defined(EPROSIMA_FAST_DDS)
+            cf_params.push_back(std::string("'") + options->color + std::string("'"));
+            cft = dp->create_contentfilteredtopic(std::string(options->topic_name) + "_filtered", topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
 #endif
             if (cft == NULL) {
                 logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
@@ -948,11 +975,11 @@ public:
             }
 
             printf("Create reader for topic: %s color: %s\n", options->topic_name, options->color );
-            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, 0));
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
         }
         else  {
             printf("Create reader for topic: %s\n", options->topic_name );
-            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topic, dr_qos, NULL, 0));
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topic, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
         }
 
 
@@ -975,12 +1002,15 @@ public:
             ShapeTypeSeq          samples;
 #elif defined(TWINOAKS_COREDX)
             ShapeTypePtrSeq       samples;
+#elif defined(EPROSIMA_FAST_DDS)
+            FASTDDS_CONST_SEQUENCE(DataSeq, ShapeType);
+            DataSeq samples;
 #endif
 
             InstanceHandle_t previous_handle = HANDLE_NIL;
 
             do {
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
                 retval = dr->take_next_instance ( samples,
                         sample_infos,
                         LENGTH_UNLIMITED,
@@ -1008,18 +1038,21 @@ public:
 #elif defined(TWINOAKS_COREDX)
                         ShapeType          *sample      = samples[i];
                         SampleInfo         *sample_info = sample_infos[i];
+#elif defined(EPROSIMA_FAST_DDS)
+                        const ShapeType    *sample      = &samples[i];
+                        SampleInfo         *sample_info = &sample_infos[i];
 #endif
 
                         if (sample_info->valid_data)  {
-                            printf("%-10s %-10s %03d %03d [%d]\n", dr->get_topicdescription()->get_name(),
-                                    sample->color STRING_IN,
-                                    sample->x,
-                                    sample->y,
-                                    sample->shapesize );
+                            printf("%-10s %-10s %03d %03d [%d]\n", dr->get_topicdescription()->get_name() NAME_ACCESSOR,
+                                    sample->color FIELD_ACCESSOR STRING_IN,
+                                    sample->x FIELD_ACCESSOR,
+                                    sample->y FIELD_ACCESSOR,
+                                    sample->shapesize FIELD_ACCESSOR );
                         }
                     }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
                     previous_handle = sample_infos[0].instance_handle;
                     dr->return_loan( samples, sample_infos );
 #elif defined(TWINOAKS_COREDX)
@@ -1041,23 +1074,23 @@ public:
     {
         int w2;
 
-        w2 = 1 + shape->shapesize / 2;
-        shape->x = shape->x + xvel;
-        shape->y = shape->y + yvel;
-        if (shape->x < w2) {
-            shape->x = w2;
+        w2 = 1 + shape->shapesize FIELD_ACCESSOR / 2;
+        shape->x FIELD_ACCESSOR = shape->x FIELD_ACCESSOR + xvel;
+        shape->y FIELD_ACCESSOR = shape->y FIELD_ACCESSOR + yvel;
+        if (shape->x FIELD_ACCESSOR < w2) {
+            shape->x FIELD_ACCESSOR = w2;
             xvel = -xvel;
         }
-        if (shape->x > da_width - w2) {
-            shape->x = (da_width - w2);
+        if (shape->x FIELD_ACCESSOR > da_width - w2) {
+            shape->x FIELD_ACCESSOR = (da_width - w2);
             xvel = -xvel;
         }
-        if (shape->y < w2) {
-            shape->y = w2;
+        if (shape->y FIELD_ACCESSOR < w2) {
+            shape->y FIELD_ACCESSOR = w2;
             yvel = -yvel;
         }
-        if (shape->y > (da_height - w2) )  {
-            shape->y = (da_height - w2);
+        if (shape->y FIELD_ACCESSOR > (da_height - w2) )  {
+            shape->y FIELD_ACCESSOR = (da_height - w2);
             yvel = -yvel;
         }
     }
@@ -1076,27 +1109,31 @@ public:
 #define STRING_ALLOC(A, B)
 #endif
         STRING_ALLOC(shape.color, std::strlen(color));
+#ifndef STRING_ASSIGN
         strcpy(shape.color STRING_INOUT, color);
+#else
+        STRING_ASSIGN(shape.color, color);
+#endif
 
-        shape.shapesize = options->shapesize;
-        shape.x    =  random() % da_width;
-        shape.y    =  random() % da_height;
-        xvel       =  ((random() % 5) + 1) * ((random()%2)?-1:1);
-        yvel       =  ((random() % 5) + 1) * ((random()%2)?-1:1);;
+        shape.shapesize FIELD_ACCESSOR = options->shapesize;
+        shape.x FIELD_ACCESSOR =  random() % da_width;
+        shape.y FIELD_ACCESSOR =  random() % da_height;
+        xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
+        yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);;
 
         while ( ! all_done )  {
             moveShape(&shape);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
             dw->write( shape, HANDLE_NIL );
-#elif defined(TWINOAKS_COREDX)
+#elif defined(TWINOAKS_COREDX) || defined(EPROSIMA_FAST_DDS)
             dw->write( &shape, HANDLE_NIL );
 #endif
             if (options->print_writer_samples)
-                printf("%-10s %-10s %03d %03d [%d]\n", dw->get_topic()->get_name(),
-                                        shape.color STRING_IN,
-                                        shape.x,
-                                        shape.y,
-                                        shape.shapesize);
+                printf("%-10s %-10s %03d %03d [%d]\n", dw->get_topic()->get_name() NAME_ACCESSOR,
+                                        shape.color FIELD_ACCESSOR STRING_IN,
+                                        shape.x FIELD_ACCESSOR,
+                                        shape.y FIELD_ACCESSOR,
+                                        shape.shapesize FIELD_ACCESSOR);
             usleep(33000);
         }
 
