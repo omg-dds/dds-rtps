@@ -38,6 +38,9 @@
 #ifndef NAME_ACCESSOR
 #define NAME_ACCESSOR
 #endif
+#ifndef LISTENER_STATUS_MASK_NONE
+#define LISTENER_STATUS_MASK_NONE 0
+#endif
 
 using namespace DDS;
 
@@ -740,7 +743,7 @@ public:
         REGISTER_TYPE(dp, "ShapeType");
 
         printf("Create topic: %s\n", options->topic_name );
-        topic = dp->create_topic( options->topic_name, "ShapeType", TOPIC_QOS_DEFAULT, NULL, StatusMask::none());
+        topic = dp->create_topic( options->topic_name, "ShapeType", TOPIC_QOS_DEFAULT, NULL, LISTENER_STATUS_MASK_NONE);
         if (topic == NULL) {
             logger.log_message("failed to create topic", Verbosity::ERROR);
             return false;
@@ -780,7 +783,7 @@ public:
             StringSeq_push(pub_qos.partition(), options->partition);
         }
 
-        pub = dp->create_publisher(pub_qos, NULL, StatusMask::none());
+        pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
         if (pub == NULL) {
             logger.log_message("failed to create publisher", Verbosity::ERROR);
             return false;
@@ -843,7 +846,7 @@ public:
         }
 
         printf("Create writer for topic: %s color: %s\n", options->topic_name, options->color );
-        dw = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topic, dw_qos, NULL, StatusMask::none()));
+        dw = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topic, dw_qos, NULL, LISTENER_STATUS_MASK_NONE));
 
         if (dw == NULL) {
             logger.log_message("failed to create datawriter", Verbosity::ERROR);
@@ -876,7 +879,7 @@ public:
             StringSeq_push(sub_qos.partition(), options->partition);
         }
 
-        sub = dp->create_subscriber( sub_qos, NULL, StatusMask::none() );
+        sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
         if (sub == NULL) {
             logger.log_message("failed to create subscriber", Verbosity::ERROR);
             return false;
@@ -960,11 +963,11 @@ public:
             }
 
             printf("Create reader for topic: %s color: %s\n", options->topic_name, options->color );
-            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, StatusMask::none()));
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
         }
         else  {
             printf("Create reader for topic: %s\n", options->topic_name );
-            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topic, dr_qos, NULL, StatusMask::none()));
+            dr = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topic, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
         }
 
 
