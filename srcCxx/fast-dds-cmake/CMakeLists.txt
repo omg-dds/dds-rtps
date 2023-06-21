@@ -46,6 +46,7 @@ add_executable(eprosima-fast-dds_shape_main_linux
     ../shape_main.cxx
     ../generated/shape.cxx
     ../generated/shapePubSubTypes.cxx
+    ../generated/shapeTypeObject.cxx
     )
 target_compile_definitions(eprosima-fast-dds_shape_main_linux PRIVATE EPROSIMA_FAST_DDS=1)
 target_link_libraries(eprosima-fast-dds_shape_main_linux fastrtps pthread)

@@ -946,6 +946,10 @@ public:
             StringSeq_push(cf_params, options->color);
             cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+#elif defined(EPROSIMA_FAST_DDS)
+            cf_params.push_back(std::string("'") + options->color + std::string("'"));
+            cft = dp->create_contentfilteredtopic(std::string(options->topic_name) + "_filtered", topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
 #endif
             if (cft == NULL) {
                 logger.log_message("failed to create content filtered topic", Verbosity::ERROR);

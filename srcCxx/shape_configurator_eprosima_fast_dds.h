@@ -13,9 +13,10 @@
 
 #include "generated/shape.h"
 #include "generated/shapePubSubTypes.h"
+#include "generated/shapeTypeObject.h"
 
 #define LISTENER_STATUS_MASK_ALL StatusMask::all()
-#define REGISTER_TYPE TypeSupport ts(new ShapeTypePubSubType()); ts.register_type
+#define REGISTER_TYPE registershapeTypes(); TypeSupport ts(new ShapeTypePubSubType()); ts.register_type
 #define STRING_IN .c_str()
 
 #define ShapeTypeDataReader DataReader

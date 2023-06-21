@@ -27,6 +27,7 @@ char dummy;
 #endif  // _WIN32
 
 #include "shape.h"
+#include "shapeTypeObject.h"
 #include <fastcdr/Cdr.h>
 
 #include <fastcdr/exceptions/BadParamException.h>
@@ -48,6 +49,8 @@ ShapeType::ShapeType()
     // long m_shapesize
     m_shapesize = 0;
 
+    // Just to register all known types
+    registershapeTypes();
 }
 
 ShapeType::~ShapeType()
