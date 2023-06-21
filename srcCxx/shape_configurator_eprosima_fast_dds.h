@@ -20,6 +20,7 @@
 #define REGISTER_TYPE registershapeTypes(); TypeSupport ts(new ShapeTypePubSubType()); ts.register_type
 #define STRING_IN .c_str()
 #define NAME_ACCESSOR .c_str()
+#define SECONDS_FIELD_NAME seconds
 
 #define ShapeTypeDataReader DataReader
 #define ShapeTypeDataWriter DataWriter

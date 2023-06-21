@@ -41,6 +41,9 @@
 #ifndef LISTENER_STATUS_MASK_NONE
 #define LISTENER_STATUS_MASK_NONE 0
 #endif
+#ifndef SECONDS_FIELD_NAME
+#define SECONDS_FIELD_NAME sec
+#endif
 
 using namespace DDS;
 
@@ -827,10 +830,10 @@ public:
         }
 
         if ( options->deadline_interval > 0 ) {
-            dw_qos.deadline().period.seconds      = options->deadline_interval;
+            dw_qos.deadline().period.SECONDS_FIELD_NAME = options->deadline_interval;
             dw_qos.deadline().period.nanosec  = 0;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline().period.seconds), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline().period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
@@ -913,16 +916,16 @@ public:
         }
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership().kind), Verbosity::DEBUG);
         if ( options->timebasedfilter_interval > 0) {
-            dr_qos.time_based_filter().minimum_separation.seconds      = options->timebasedfilter_interval;
+            dr_qos.time_based_filter().minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval;
             dr_qos.time_based_filter().minimum_separation.nanosec  = 0;
         }
-        logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter().minimum_separation.seconds), Verbosity::DEBUG);
+        logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter().minimum_separation.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         if ( options->deadline_interval > 0 ) {
-            dr_qos.deadline().period.seconds      = options->deadline_interval;
+            dr_qos.deadline().period.SECONDS_FIELD_NAME = options->deadline_interval;
             dr_qos.deadline().period.nanosec  = 0;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline().period.seconds), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline().period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
