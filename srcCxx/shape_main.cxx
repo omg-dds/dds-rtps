@@ -1028,7 +1028,6 @@ public:
 #endif
 
                 if (retval == RETCODE_OK) {
-                    printf("Take returned %d samples\n", samples.length());
                     int i;
                     for (i = 0; i < samples.length(); i++)  {
 
