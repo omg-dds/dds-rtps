@@ -21,6 +21,7 @@
 #define STRING_IN .c_str()
 #define NAME_ACCESSOR .c_str()
 #define FIELD_ACCESSOR ()
+#define GET_TOPIC_DESCRIPTION(dr) const_cast<TopicDescription*>(dr->get_topicdescription())
 #define SECONDS_FIELD_NAME seconds
 
 #define ShapeTypeDataReader DataReader

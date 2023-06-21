@@ -47,6 +47,9 @@
 #ifndef FIELD_ACCESSOR
 #define FIELD_ACCESSOR
 #endif
+#ifndef GET_TOPIC_DESCRIPTION
+#define GET_TOPIC_DESCRIPTION(dr) dr->get_topicdescription()
+#endif
 
 using namespace DDS;
 
@@ -638,7 +641,7 @@ public:
     }
 
     void on_requested_incompatible_qos (DataReader *dr, const RequestedIncompatibleQosStatus & status) {
-        TopicDescription *td         = const_cast<TopicDescription*>(dr->get_topicdescription( ));
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
         const char       *topic_name = td->get_name() NAME_ACCESSOR;
         const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         const char *policy_name = NULL;
@@ -649,7 +652,7 @@ public:
     }
 
     void on_subscription_matched (DataReader *dr, const SubscriptionMatchedStatus & status) {
-        TopicDescription *td         = const_cast<TopicDescription*>(dr->get_topicdescription( ));
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
         const char       *topic_name = td->get_name() NAME_ACCESSOR;
         const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : matched writers %d (change = %d)\n", __FUNCTION__,
@@ -657,7 +660,7 @@ public:
     }
 
     void on_requested_deadline_missed (DataReader *dr, const RequestedDeadlineMissedStatus & status) {
-        TopicDescription *td         = const_cast<TopicDescription*>(dr->get_topicdescription( ));
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
         const char       *topic_name = td->get_name() NAME_ACCESSOR;
         const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (total = %d, change = %d)\n", __FUNCTION__,
@@ -665,7 +668,7 @@ public:
     }
 
     void on_liveliness_changed (DataReader *dr, const LivelinessChangedStatus & status) {
-        TopicDescription *td         = const_cast<TopicDescription*>(dr->get_topicdescription( ));
+        TopicDescription *td         = GET_TOPIC_DESCRIPTION(dr);
         const char       *topic_name = td->get_name() NAME_ACCESSOR;
         const char       *type_name  = td->get_type_name() NAME_ACCESSOR;
         printf("%s() topic: '%s'  type: '%s' : (alive = %d, not_alive = %d)\n", __FUNCTION__,
