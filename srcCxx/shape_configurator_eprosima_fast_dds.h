@@ -17,7 +17,7 @@
 
 #define LISTENER_STATUS_MASK_ALL StatusMask::all()
 #define LISTENER_STATUS_MASK_NONE StatusMask::none()
-#define REGISTER_TYPE registershapeTypes(); TypeSupport ts(new ShapeTypePubSubType()); ts.register_type
+#define REGISTER_TYPE registershapeTypes(); TypeSupport ts(new ShapeTypePubSubType()); ts->auto_fill_type_object(false); ts->auto_fill_type_information(false); ts.register_type
 #define STRING_ASSIGN(field, value) field() = value
 #define STRING_IN .c_str()
 #define NAME_ACCESSOR .c_str()
