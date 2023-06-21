@@ -18,6 +18,7 @@
 #define LISTENER_STATUS_MASK_ALL StatusMask::all()
 #define REGISTER_TYPE registershapeTypes(); TypeSupport ts(new ShapeTypePubSubType()); ts.register_type
 #define STRING_IN .c_str()
+#define NAME_ACCESSOR .c_str()
 
 #define ShapeTypeDataReader DataReader
 #define ShapeTypeDataWriter DataWriter
