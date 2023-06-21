@@ -1007,7 +1007,7 @@ public:
             InstanceHandle_t previous_handle = HANDLE_NIL;
 
             do {
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
                 retval = dr->take_next_instance ( samples,
                         sample_infos,
                         LENGTH_UNLIMITED,
@@ -1023,8 +1023,6 @@ public:
                         ANY_SAMPLE_STATE,
                         ANY_VIEW_STATE,
                         ANY_INSTANCE_STATE );
-#elif defined(EPROSIMA_FAST_DDS)
-                retval = dr->take(samples, sample_infos);
 #endif
 
                 if (retval == RETCODE_OK) {
