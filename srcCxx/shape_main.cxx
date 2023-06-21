@@ -1106,8 +1106,11 @@ public:
 #define STRING_ALLOC(A, B)
 #endif
         STRING_ALLOC(shape.color, std::strlen(color));
-        // strcpy(shape.color STRING_INOUT, color);
-        shape.color() = color;
+#ifndef STRING_ASSIGN
+        strcpy(shape.color STRING_INOUT, color);
+#else
+        STRING_ASSIGN(shape.color, color);
+#endif
 
         shape.shapesize FIELD_ACCESSOR = options->shapesize;
         shape.x FIELD_ACCESSOR =  random() % da_width;
