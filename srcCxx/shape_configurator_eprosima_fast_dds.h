@@ -11,9 +11,9 @@
 #include <fastdds/dds/subscriber/SampleInfo.hpp>
 #include <fastdds/dds/topic/TypeSupport.hpp>
 
-#include "generated/shape.h"
-#include "generated/shapePubSubTypes.h"
-#include "generated/shapeTypeObject.h"
+#include "GeneratedCode/shape.h"
+#include "GeneratedCode/shapePubSubTypes.h"
+#include "GeneratedCode/shapeTypeObject.h"
 
 #define LISTENER_STATUS_MASK_ALL StatusMask::all()
 #define LISTENER_STATUS_MASK_NONE StatusMask::none()

@@ -17,36 +17,38 @@ cmake_minimum_required(VERSION 3.16.3)
 project(eprosima-fast-dds_shape_main_linux LANGUAGES CXX)
 
 # Find requirements
+set(FASTDDS_STATIC ON)
 find_package(fastcdr REQUIRED)
 find_package(fastrtps REQUIRED)
+find_program(FASTDDSGEN fastddsgen)
 
-#Check C++11
-include(CheckCXXCompilerFlag)
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-    check_cxx_compiler_flag(-std=c++11 SUPPORTS_CXX11)
-    if(NOT SUPPORTS_CXX11)
-        message(FATAL_ERROR "Compiler doesn't support C++11")
-    endif()
-endif()
-
-# include(fastddsgen.cmake)
-# 
-# message(STATUS "Generating code from IDL...")
-# fastddsgen(
-#     ${CMAKE_CURRENT_SOURCE_DIR}/../..
-#     "srcCxx"
-#     ${CMAKE_CURRENT_SOURCE_DIR}/generated
-#     myproject_idl_header
-#     myproject_idl_source
-#     myproject_idl_include_directories
-#     )
+# Generate code from IDL
+file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../GeneratedCode)
+set(
+  GENERATED_TYPE_SUPPORT_FILES
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.cxx
+)
+add_custom_command(
+  OUTPUT ${GENERATED_TYPE_SUPPORT_FILES}
+  COMMAND ${FASTDDSGEN}
+  -replace
+  -typeobject
+  -d ${CMAKE_SOURCE_DIR}/../GeneratedCode
+  ${CMAKE_SOURCE_DIR}/../shape.idl
+  DEPENDS ${CMAKE_SOURCE_DIR}/../shape.idl
+  COMMENT "Generating code with Fast DDS Gen" VERBATIM
+)
 
 message(STATUS "Configuring application...")
-add_executable(eprosima-fast-dds_shape_main_linux
+set(EXECUTABLE_NAME "eprosima_fast_dds_${fastrtps_VERSION}_shape_main_linux")
+add_executable(${EXECUTABLE_NAME}
     ../shape_main.cxx
-    ../generated/shape.cxx
-    ../generated/shapePubSubTypes.cxx
-    ../generated/shapeTypeObject.cxx
+    ${GENERATED_TYPE_SUPPORT_FILES}
     )
-target_compile_definitions(eprosima-fast-dds_shape_main_linux PRIVATE EPROSIMA_FAST_DDS=1)
-target_link_libraries(eprosima-fast-dds_shape_main_linux fastrtps pthread)
+target_compile_definitions(${EXECUTABLE_NAME} PRIVATE EPROSIMA_FAST_DDS=1)
+target_link_libraries(${EXECUTABLE_NAME} fastrtps)
