@@ -825,10 +825,18 @@ public:
 #elif   defined(OPENDDS)
         dw_qos.representation.value.length(1);
         dw_qos.representation.value[0] = options->data_representation;
+
+#elif  defined(EPROSIMA_FAST_DDS)
+        dw_qos.representation().m_value.clear( );
+        dw_qos.representation().m_value.push_back( options->data_representation );
 #endif
-#if !defined(EPROSIMA_FAST_DDS)
+
+#if  defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.m_value[0]), Verbosity::DEBUG);
+#else
         logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
 #endif
+
         if ( options->ownership_strength != -1 ) {
             dw_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
             dw_qos.ownership_strength FIELD_ACCESSOR.value = options->ownership_strength;
@@ -921,8 +929,15 @@ public:
 #elif   defined(OPENDDS)
         dr_qos.representation.value.length(1);
         dr_qos.representation.value[0] = options->data_representation;
+
+#elif   defined(EPROSIMA_FAST_DDS)
+        dr_qos.type_consistency().representation.m_value.clear();
+        dr_qos.type_consistency().representation.m_value.push_back( options->data_representation );
 #endif
-#if !defined(EPROSIMA_FAST_DDS)
+
+#if defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.type_consistency().representation.m_value[0]), Verbosity::DEBUG);
+#else
         logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
 #endif
         if ( options->ownership_strength != -1 ) {
