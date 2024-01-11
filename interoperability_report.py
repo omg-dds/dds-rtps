@@ -86,13 +86,13 @@ def run_subscriber_shape_main(
         produced_code[produced_code_index] and the process finishes.
 
     """
-    # Step 1 : run the executable
+    # Step 1: run the executable
     log_message(f'Running shape_main application Subscriber {subscriber_index}',
             verbosity)
     child_sub = pexpect.spawnu(f'{name_executable} {parameters}')
     child_sub.logfile = file
 
-    # Step 2 : Check if the topic is created
+    # Step 2: Check if the topic is created
     log_message(f'Subscriber {subscriber_index}: Waiting for topic creation',
             verbosity)
     index = child_sub.expect(
@@ -107,7 +107,7 @@ def run_subscriber_shape_main(
     if index == 1 or index == 2:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
     elif index == 0:
-        # Step 3 : Check if the reader is created
+        # Step 3: Check if the reader is created
         log_message(f'Subscriber {subscriber_index}: Waiting for DataReader '
                 'creation', verbosity)
         index = child_sub.expect(
@@ -124,14 +124,20 @@ def run_subscriber_shape_main(
         elif index == 2:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
         elif index == 0:
-            # Step 4 : Check if the reader matches the writer
+            # Step 4: Check if the reader matches the writer
             log_message(f'Subscriber {subscriber_index}: Waiting for matching '
                     'DataWriter', verbosity)
+            # the normal flow of the application is to find on_subscription_matched()
+            # and then on_liveliness_changed(). However, in some cases the
+            # situation is the opposite. This will handle those cases.
+            # pexpect searches the results in order, so a matching on
+            # on_subscription_matched() takes precedence over on_liveliness_changed()
             index = child_sub.expect(
                 [
                     'on_subscription_matched()', # index = 0
                     pexpect.TIMEOUT, # index = 1
-                    'on_requested_incompatible_qos()' # index = 2
+                    'on_requested_incompatible_qos()', # index = 2
+                    'on_liveliness_changed()' # index = 3
                 ],
                 timeout
             )
@@ -140,22 +146,35 @@ def run_subscriber_shape_main(
                 produced_code[produced_code_index] = ReturnCode.WRITER_NOT_MATCHED
             elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
-            elif index == 0:
+            # This case handles when on_liveliness_changed() happens before
+            # on_subscription_matched()
+            elif index == 0 or index == 3:
                 # Step 5: Check if the reader detects the writer as alive
-                log_message(f'Subscriber {subscriber_index}: Waiting for '
-                        'detecting DataWriter alive', verbosity)
-                index = child_sub.expect(
-                    [
-                        'on_liveliness_changed()', # index = 0
-                        pexpect.TIMEOUT # index = 1
-                    ],
-                    timeout
-                )
+                if index == 3:
+                    log_message(f'Subscriber {subscriber_index}: Found alive '
+                        'DataWriter. Waiting for matching DataWriter.', verbosity)
+                    index = child_sub.expect(
+                        [
+                            'on_subscription_matched()', # index = 0
+                            pexpect.TIMEOUT # index = 1
+                        ],
+                        timeout
+                    )
+                else:
+                    log_message(f'Subscriber {subscriber_index}: Waiting for '
+                            'detecting DataWriter alive', verbosity)
+                    index = child_sub.expect(
+                        [
+                            'on_liveliness_changed()', # index = 0
+                            pexpect.TIMEOUT # index = 1
+                        ],
+                        timeout
+                    )
 
                 if index == 1:
                     produced_code[produced_code_index] = ReturnCode.WRITER_NOT_ALIVE
                 elif index == 0:
-                    # Step 6 : Check if the reader receives the samples
+                    # Step 6: Check if the reader receives the samples
                     log_message(f'Subscriber {subscriber_index}: Receiving '
                             'samples', verbosity)
                     index = child_sub.expect(
@@ -240,13 +259,13 @@ def run_publisher_shape_main(
         produced_code[produced_code_index] and the process finishes.
     """
 
-    # Step 1 : run the executable
+    # Step 1: run the executable
     log_message(f'Running shape_main application Publisher {publisher_index}',
             verbosity)
     child_pub = pexpect.spawnu(f'{name_executable} {parameters}')
     child_pub.logfile = file
 
-    # Step 2 : Check if the topic is created
+    # Step 2: Check if the topic is created
     log_message(f'Publisher {publisher_index}: Waiting for topic creation',
             verbosity)
     index = child_pub.expect(
@@ -261,7 +280,7 @@ def run_publisher_shape_main(
     if index == 1 or index == 2:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
     elif index == 0:
-        # Step 3 : Check if the writer is created
+        # Step 3: Check if the writer is created
         log_message(f'Publisher {publisher_index}: Waiting for DataWriter '
                 'creation', verbosity)
         index = child_pub.expect(
@@ -274,7 +293,7 @@ def run_publisher_shape_main(
         if index == 1:
             produced_code[produced_code_index] = ReturnCode.WRITER_NOT_CREATED
         elif index == 0:
-            # Step 4 : Check if the writer matches the reader
+            # Step 4: Check if the writer matches the reader
             log_message(f'Publisher {publisher_index}: Waiting for matching '
                     'DataReader', verbosity)
             index = child_pub.expect(
@@ -510,7 +529,7 @@ def run_test(
         print (f'{test_case.name} : Ok')
 
     else:
-        print(f'Error in : {test_case.name}')
+        print(f'{test_case.name} : ERROR')
         for i in range(0, num_entities):
             print(f'{entity_type[i]} expected code: {expected_codes[i]}; '
                 f'Code found: {return_codes[i].name}')
@@ -686,7 +705,7 @@ def main():
     # applications. A TestSuite contains a collection of TestCases.
     suite = junitparser.TestSuite(f"{name_publisher}---{name_subscriber}")
 
-    timeout = 6
+    timeout = 5
     now = datetime.now()
 
     t_suite_module = importlib.import_module(options['test_suite'])
@@ -746,6 +765,7 @@ def main():
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
+                    log_message(f'Running test: {test_case_name}', options['verbosity'])
                     run_test(name_executable_pub=options['publisher'],
                             name_executable_sub=options['subscriber'],
                             test_case=case,
