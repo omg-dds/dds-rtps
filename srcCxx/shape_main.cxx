@@ -959,10 +959,14 @@ public:
             ContentFilteredTopic *cft = NULL;
             StringSeq              cf_params;
 
+            const std::string filtered_topic_name_str = std::string(options->topic_name) + "_filtered";
+            const char* filtered_topic_name = filtered_topic_name_str.c_str();
+
 #if   defined(RTI_CONNEXT_DDS)
             char parameter[64];
             sprintf(parameter, "'%s'",  options->color);
             StringSeq_push(cf_params, parameter);
+<<<<<<< HEAD
             cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color MATCH %0", cf_params);
             logger.log_message("    ContentFilterTopic = \"color MATCH "
                 + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
@@ -977,6 +981,18 @@ public:
             cft = dp->create_contentfilteredtopic(std::string(options->topic_name) + "_filtered", topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = \"color = "
                 + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
+=======
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color MATCH %0", cf_params);
+            logger.log_message("    ContentFilterTopic = color MATCH " + std::string(parameter), Verbosity::DEBUG);
+#elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
+            StringSeq_push(cf_params, options->color);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+#elif defined(EPROSIMA_FAST_DDS)
+            cf_params.push_back(std::string("'") + options->color + std::string("'"));
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+>>>>>>> e5bee1e (Update the Content-Filtered Topic creation logic)
 #endif
             if (cft == NULL) {
                 logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
@@ -1041,10 +1057,15 @@ public:
 #endif
 
                 if (retval == RETCODE_OK) {
+<<<<<<< HEAD
                     int i;
                     logger.log_message("Read " + std::to_string(samples.length())
                         + " sample(s), printing them...", Verbosity::DEBUG);
                     for (i = 0; i < samples.length(); i++) {
+=======
+                    unsigned int i;
+                    for (i = 0; i < samples.length(); i++)  {
+>>>>>>> e5bee1e (Update the Content-Filtered Topic creation logic)
 
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
                         ShapeType          *sample      = &samples[i];
