@@ -1044,9 +1044,9 @@ public:
 
                 if (retval == RETCODE_OK) {
                     auto n_samples = samples.length();
-                    logger.log_message("Read " + std::to_string(samples.length())
-                        + " sample(s), printing them...", Verbosity::DEBUG);
-                    for (decltype(n_samples) i = 0; i < n_samples; i++) {
+                    logger.log_message("Read " << std::to_string(samples.length())
+                            + " sample(s), printing them...", Verbosity::DEBUG);
+                    for (decltype(n_samples) i = 0; i < n_samples; i++)  {
 #if   defined(RTI_CONNEXT_DDS)
                         ShapeType          *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
