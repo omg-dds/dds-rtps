@@ -954,19 +954,22 @@ public:
             ContentFilteredTopic *cft = NULL;
             StringSeq              cf_params;
 
+            const std::string filtered_topic_name_str = std::string(options->topic_name) + "_filtered";
+            const char* filtered_topic_name = filtered_topic_name_str.c_str();
+
 #if   defined(RTI_CONNEXT_DDS)
             char parameter[64];
             sprintf(parameter, "'%s'",  options->color);
             StringSeq_push(cf_params, parameter);
-            cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color MATCH %0", cf_params);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color MATCH %0", cf_params);
             logger.log_message("    ContentFilterTopic = color MATCH " + std::string(parameter), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
             StringSeq_push(cf_params, options->color);
-            cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color = %0", cf_params);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
 #elif defined(EPROSIMA_FAST_DDS)
             cf_params.push_back(std::string("'") + options->color + std::string("'"));
-            cft = dp->create_contentfilteredtopic(std::string(options->topic_name) + "_filtered", topic, "color = %0", cf_params);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
 #endif
             if (cft == NULL) {
@@ -1029,16 +1032,16 @@ public:
 #endif
 
                 if (retval == RETCODE_OK) {
-                    int i;
-                    for (i = 0; i < samples.length(); i++)  {
+                    auto n_samples = samples.length();
+                    for (decltype(n_samples) i = 0; i < n_samples; i++)  {
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS)
                         ShapeType          *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #elif defined(TWINOAKS_COREDX)
                         ShapeType          *sample      = samples[i];
                         SampleInfo         *sample_info = sample_infos[i];
-#elif defined(EPROSIMA_FAST_DDS)
+#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS)
                         const ShapeType    *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #endif
