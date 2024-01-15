@@ -1032,16 +1032,16 @@ public:
 #endif
 
                 if (retval == RETCODE_OK) {
-                    unsigned int i;
-                    for (i = 0; i < samples.length(); i++)  {
+                    auto n_samples = samples.length();
+                    for (decltype(n_samples) i = 0; i < n_samples; i++)  {
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS)
                         ShapeType          *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #elif defined(TWINOAKS_COREDX)
                         ShapeType          *sample      = samples[i];
                         SampleInfo         *sample_info = sample_infos[i];
-#elif defined(EPROSIMA_FAST_DDS)
+#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS)
                         const ShapeType    *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #endif
