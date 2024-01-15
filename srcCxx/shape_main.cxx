@@ -309,6 +309,7 @@ public:
     //-------------------------------------------------------------
     bool parse(int argc, char *argv[])
     {
+        logger.log_message("Running parse() function", Verbosity::DEBUG);
         int opt;
         bool parse_ok = true;
         // double d;
@@ -733,6 +734,8 @@ public:
 #ifndef OBTAIN_DOMAIN_PARTICIPANT_FACTORY
 #define OBTAIN_DOMAIN_PARTICIPANT_FACTORY DomainParticipantFactory::get_instance()
 #endif
+        logger.log_message("Running initialize() function", Verbosity::DEBUG);
+
         DomainParticipantFactory *dpf = OBTAIN_DOMAIN_PARTICIPANT_FACTORY;
         if (dpf == NULL) {
             logger.log_message("failed to create participant factory (missing license?).", Verbosity::ERROR);
@@ -772,6 +775,7 @@ public:
     //-------------------------------------------------------------
     bool run(ShapeOptions *options)
     {
+        logger.log_message("Running run() function", Verbosity::DEBUG);
         if ( pub != NULL ) {
             return run_publisher(options);
         }
@@ -785,7 +789,7 @@ public:
     //-------------------------------------------------------------
     bool init_publisher(ShapeOptions *options)
     {
-        logger.log_message("Initializing Publisher", Verbosity::DEBUG);
+        logger.log_message("Running init_publisher() function", Verbosity::DEBUG);
         PublisherQos  pub_qos;
         DataWriterQos dw_qos;
         ShapeType     shape;
@@ -817,7 +821,7 @@ public:
 #elif  defined(TWINOAKS_COREDX)
         dw_qos.representation.value.clear( );
         dw_qos.representation.value.push_back( options->data_representation );
-        
+
 #elif   defined(OPENDDS)
         dw_qos.representation.value.length(1);
         dw_qos.representation.value[0] = options->data_representation;
@@ -883,6 +887,7 @@ public:
     //-------------------------------------------------------------
     bool init_subscriber(ShapeOptions *options)
     {
+        logger.log_message("Running init_subscriber() function", Verbosity::DEBUG);
         SubscriberQos sub_qos;
         DataReaderQos dr_qos;
 
@@ -926,7 +931,7 @@ public:
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if ( options->timebasedfilter_interval > 0) {
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval;
-            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec  = 0;
+            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = 0;
         }
         logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
@@ -959,15 +964,19 @@ public:
             sprintf(parameter, "'%s'",  options->color);
             StringSeq_push(cf_params, parameter);
             cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color MATCH %0", cf_params);
-            logger.log_message("    ContentFilterTopic = color MATCH " + std::string(parameter), Verbosity::DEBUG);
+            logger.log_message("    ContentFilterTopic = \"color MATCH "
+                + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
             StringSeq_push(cf_params, options->color);
             cft = dp->create_contentfilteredtopic(options->topic_name, topic, "color = %0", cf_params);
-            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+            logger.log_message("    ContentFilterTopic = \"color = "
+                    + std::string(options->color) + std::string("\""),
+                Verbosity::DEBUG);
 #elif defined(EPROSIMA_FAST_DDS)
             cf_params.push_back(std::string("'") + options->color + std::string("'"));
             cft = dp->create_contentfilteredtopic(std::string(options->topic_name) + "_filtered", topic, "color = %0", cf_params);
-            logger.log_message("    ContentFilterTopic = color = " + std::string(options->color), Verbosity::DEBUG);
+            logger.log_message("    ContentFilterTopic = \"color = "
+                + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
 #endif
             if (cft == NULL) {
                 logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
@@ -994,7 +1003,9 @@ public:
     //-------------------------------------------------------------
     bool run_subscriber()
     {
-        while ( ! all_done )  {
+        logger.log_message("Running run_subscriber() function", Verbosity::DEBUG);
+
+        while ( ! all_done ) {
             ReturnCode_t     retval;
             SampleInfoSeq    sample_infos;
 
@@ -1010,6 +1021,7 @@ public:
             InstanceHandle_t previous_handle = HANDLE_NIL;
 
             do {
+                logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
                 retval = dr->take_next_instance ( samples,
                         sample_infos,
@@ -1030,7 +1042,9 @@ public:
 
                 if (retval == RETCODE_OK) {
                     int i;
-                    for (i = 0; i < samples.length(); i++)  {
+                    logger.log_message("Read " << std::to_string(samples.length())
+                        + " sample(s), printing them...", Verbosity::DEBUG);
+                    for (i = 0; i < samples.length(); i++) {
 
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
                         ShapeType          *sample      = &samples[i];
@@ -1098,6 +1112,7 @@ public:
     //-------------------------------------------------------------
     bool run_publisher(ShapeOptions *options)
     {
+        logger.log_message("Running run_subscriber() function", Verbosity::DEBUG);
         ShapeType shape;
 #if defined(RTI_CONNEXT_DDS)
         ShapeType_initialize(&shape);
@@ -1121,7 +1136,7 @@ public:
         xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
         yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);;
 
-        while ( ! all_done )  {
+        while ( ! all_done ) {
             moveShape(&shape);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
             dw->write( shape, HANDLE_NIL );
@@ -1147,16 +1162,19 @@ int main( int argc, char * argv[] )
     install_sig_handlers();
 
     ShapeOptions options;
+    logger.log_message("Parsing command line parameters...", Verbosity::DEBUG);
     bool parseResult = options.parse(argc, argv);
-    if ( !parseResult  ) {
+    if ( !parseResult ) {
         exit(1);
     }
+    logger.log_message("Initializing ShapeApp...", Verbosity::DEBUG);
     ShapeApplication shapeApp;
     if ( !shapeApp.initialize(&options) ) {
         exit(2);
     }
+    logger.log_message("Running ShapeApp...", Verbosity::DEBUG);
     if ( !shapeApp.run(&options) ) {
-        exit(2);
+        exit(3);
     }
 
     printf("Done.\n");
