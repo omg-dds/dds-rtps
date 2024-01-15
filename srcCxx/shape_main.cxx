@@ -1042,7 +1042,7 @@ public:
 
                 if (retval == RETCODE_OK) {
                     int i;
-                    logger.log_message("Read " << std::to_string(samples.length())
+                    logger.log_message("Read " + std::to_string(samples.length())
                         + " sample(s), printing them...", Verbosity::DEBUG);
                     for (i = 0; i < samples.length(); i++) {
 
