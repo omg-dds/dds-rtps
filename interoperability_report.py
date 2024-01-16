@@ -531,7 +531,7 @@ def run_test(
     else:
         print(f'{test_case.name} : ERROR')
         for i in range(0, num_entities):
-            print(f'{entity_type[i]} expected code: {expected_codes[i]}; '
+            print(f'{entity_type[i]} expected code: {expected_codes[i].name}; '
                 f'Code found: {return_codes[i].name}')
 
             log_message(f'\nInformation about {entity_type[i]}:\n '
