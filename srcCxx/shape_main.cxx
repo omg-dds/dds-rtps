@@ -256,9 +256,9 @@ public:
     //-------------------------------------------------------------
     ~ShapeOptions()
     {
-        if (topic_name)  free(topic_name);
-        if (color)       free(color);
-        if (partition)   free(partition);
+        free(topic_name);
+        free(color);
+        free(partition);
     }
 
     //-------------------------------------------------------------
@@ -725,7 +725,7 @@ public:
         if (dp)  dp->delete_contained_entities( );
         if (dpf) dpf->delete_participant( dp );
 
-        if (color) free(color);
+        free(color);
     }
 
     //-------------------------------------------------------------
