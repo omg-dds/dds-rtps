@@ -1046,7 +1046,7 @@ public:
 
                 if (retval == RETCODE_OK) {
                     auto n_samples = samples.length();
-                    logger.log_message("Read " + std::to_string(samples.length())
+                    logger.log_message("Read " + std::to_string(n_samples)
                             + " sample(s), printing them...", Verbosity::DEBUG);
                     for (decltype(n_samples) i = 0; i < n_samples; i++)  {
                         logger.log_message("Processing sample " + std::to_string(i),
