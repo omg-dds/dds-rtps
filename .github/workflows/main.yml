@@ -35,7 +35,7 @@ jobs:
         uses: AutoModality/action-xunit-viewer@v1
         with:
           results: ./junit_interoperability_report.xml
-      - name: Attach the html report
+      - name: Attach the report
         if: always()
         uses: actions/upload-artifact@v4
         with:
