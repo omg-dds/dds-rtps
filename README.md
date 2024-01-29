@@ -355,10 +355,10 @@ Test Case and Test Suite:
                         (Default: test_suite).
   -t test_cases [test_cases ...], --test test_cases [test_cases ...]
                         Test Case that the script will run. This option is not
-                        supported with --disable_test. This allows to set
+                        supported with --disable-test. This allows to set
                         multiple values separated by a space. (Default: run
                         all Test Cases from the Test Suite.)
-  -d test_cases_disabled [test_cases_disabled ...], --disable_test test_cases_disabled [test_cases_disabled ...]
+  -d test_cases_disabled [test_cases_disabled ...], --disable-test test_cases_disabled [test_cases_disabled ...]
                         Test Case that the script will skip. This allows to
                         set multiple values separated by a space. This option
                         is not supported with --test. (Default: None)
