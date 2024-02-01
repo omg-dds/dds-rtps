@@ -46,4 +46,5 @@ jobs:
           name: interoperability_report
           path: |
             ./index.html
-            ./junit_interoperability_report.xml            
+            ./junit_interoperability_report.xml
+            ./interoperability_report.xlsx
