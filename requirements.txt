@@ -1,3 +1,5 @@
 argcomplete==2.0.0
 pexpect==4.8.0
-junitparser==2.8.0
+junitparser==3.1.0
+XlsxWriter==3.1.9
+lxml==5.1.0

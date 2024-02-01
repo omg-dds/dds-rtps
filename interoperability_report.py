@@ -682,8 +682,8 @@ def main():
     #  ./srcCxx/objs/x64Linux4gcc7.3.0/rti_connext_dds-6.1.1_shape_main_linux
     # we will take the substring rti_connext_dds-6.1.1.
     # That will be the name that will appear in the report.
-    name_publisher = (options['publisher'].split('_shape')[0]).split('/')[-1]
-    name_subscriber = (options['subscriber'].split('_shape')[0]).split('/')[-1]
+    name_publisher = options['publisher'].split('_shape')[0].split('-shape')[0].split('/')[-1]
+    name_subscriber = options['subscriber'].split('_shape')[0].split('-shape')[0].split('/')[-1]
 
     if args.output_name is None:
         now = datetime.now()

@@ -14,11 +14,13 @@ jobs:
           fileName: "*"
       - name: Unzip
         run: unzip '*.zip' -d executables
-      - name: Run Interoperability script
+      - name: Setting up environment
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
+      - name: Run Interoperability script
+        run: |
           cd executables
           for i in ./* ; do \
             for j in ./* ; do \
@@ -30,6 +32,8 @@ jobs:
               fi; \
             done; \
           done
+      - name: Generate xlsx report
+        run: python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
       - name: XUnit Viewer
         id: xunit-viewer
         uses: AutoModality/action-xunit-viewer@v1
