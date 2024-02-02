@@ -60,16 +60,13 @@ class JunitAggregatedData:
         return f'({self.data[0]}, {self.data[1]})'
 
 class JunitTesCaseAggregatedData:
-    # [subscriber_product_name, test_name, test_passed]]
+    # [publisher or subscriber name, test_name, test_passed]]
     data: tuple[str,str,bool] = None
 
-    def __init__(self, subscriber_product: str, test_name: str, passed: bool) -> None:
-        self.data = (subscriber_product, test_name, passed)
+    def __init__(self, product: str, test_name: str, passed: bool) -> None:
+        self.data = (product, test_name, passed)
 
-    def get_passed(self, subscriber_product: str):
-        return self.data[subscriber_product][0]
-
-    def get_subscriber_name(self):
+    def get_product_name(self):
         return self.data[0]
 
     def get_test_name(self):
@@ -81,108 +78,12 @@ class JunitTesCaseAggregatedData:
     def __str__(self) -> str:
         return f'{self.data}'
 
-# class JunitProductAggregatedData:
-#     # [subscriber_product, [tests_passed, total_tests]]
-#     data: dict[str, tuple[int,int]]
-
-#     def __init__(self, subscriber_product: str, passed_tests: int, total_tests: int) -> None:
-#         self.data = [subscriber_product, passed_tests, total_tests]
-
-#     def get_passed_tests(self, subscriber_product: str):
-#         return self.data[subscriber_product][0]
-
-#     def get_total_tests(self, subscriber_product: str):
-#         return self.data[subscriber_product][1]
-
-#     def __str__(self) -> str:
-#         str_representation = ''
-#         for e in self.data.keys():
-#             str_representation += f'"{e}": ({self.data[0]}, {self.data[1]})\n'
-
-# class JunitTesCaseAggregatedData:
-#     data: tuple[int,int] # [tests_passed, total_tests]
-
-#     def __init__(self, passed_tests: int, total_tests: int) -> None:
-#         self.data = [passed_tests, total_tests]
-
-#     def get_passed_tests(self):
-#         return self.data[0]
-
-#     def get_total_tests(self):
-#         return self.data[1]
-
-#     def __str__(self) -> str:
-#         return f'({self.data[0]}, {self.data[1]})'
-
-class JunitTestCaseData:
-    # [product_name_publisher, product_name_subscriber, passed]
-    data: tuple[str,str,bool] = None
-    # list of tuples that contains the XML attributes, [name, value]
-    attributes: list(tuple[str,str]) = None
-    current_attribute: int = 0
-
-    def __init__(self, publisher: str, subscriber: str, passed: bool, case: junitparser.TestCase) -> None:
-        self.data = [publisher, subscriber, passed]
-        self.add_custom_attributes(case)
-
-    def get_publisher_name(self):
-        return self.data[0]
-
-    def get_subscriber_name(self):
-        return self.data[1]
-
-    def get_passed(self):
-        return self.data[2]
-
-    def get_attributes(self):
-        return self.attributes
-
-    def get_next_attribute(self):
-        current = (self.attributes[self.current_attribute]
-                if self.current_attribute < len(self.attributes)
-                else None)
-        self.current_attribute += 1
-        return current
-
-    def add_custom_attributes(self, case: junitparser.TestCase) -> list(tuple[str,str]):
-        self.attributes = re.findall(r'((?:(?:Publisher)|(?:Subscriber))_\d+)="([\w\-\s]+)"',
-                    str(case))
-
-        # check that our tuples contain always 2 elements
-        for a in self.attributes:
-            if (len(a) % 2 != 0):
-                raise Exception("Error retrieving custom attributes")
-
-    def __str__(self) -> str:
-        return f'{self.data}; {self.attributes}'
-
-
-# class JunitTestCaseFeatureData:
-#     # [product_name, passed_tests, total_tests]
-#     data: tuple[str,int,int] = None
-
-#     def __init__(self, product_name: str, passed: bool) -> None:
-#         self.data = [product_name, passed]
-
-#     def get_product_name(self):
-#         return self.data[0]
-
-#     def get_passed_tests(self):
-#         return self.data[1]
-
-#     def get_total_tests(self):
-#         return self.data[2]
-
-#     def __str__(self) -> str:
-#         return f'{self.data}'
-
-
 class JunitData:
     summary_dict: dict[str,JunitAggregatedData] = {}
-    test_dict: dict[str,list[JunitTestCaseData]] = {}
-    #feature_dict: dict[str,list[JunitTestCaseFeatureData]] = {}
-    product_test_dict: dict[str,list[JunitTesCaseAggregatedData]] = {}
     product_summary_dict: dict[(str,str),JunitAggregatedData] = {}
+
+    publisher_product_dict: dict[str,list[JunitTesCaseAggregatedData]] = {}
+    subscriber_product_dict: dict[str,list[JunitTesCaseAggregatedData]] = {}
 
     @staticmethod
     def xml_parser(file):
@@ -202,13 +103,6 @@ class JunitData:
         else:
             self.summary_dict[key] = value
 
-    # def update_value_to_testcase_dict(self, key: str, value: JunitTestCaseData) -> None:
-    #     if key in self.test_dict:
-    #         updated_data = self.test_dict[key].append(value)
-    #         self.summary_dict[key] = updated_data
-    #     else:
-    #         self.test_dict[key] = [value]
-
     def update_value_to_product_summary_dict(self, key: tuple[str,str], value: JunitAggregatedData) -> None:
         if key in self.product_summary_dict:
             updated_data = JunitAggregatedData(
@@ -219,22 +113,15 @@ class JunitData:
         else:
             self.product_summary_dict[key] = value
 
-    def update_value_to_product_test_dict(self, key: str, value: JunitTesCaseAggregatedData) -> None:
-        if key in self.product_test_dict:
-            self.product_test_dict[key].append(value)
-            # self.product_test_dict[key] = updated_data
+    def update_value_to_product_dict(self,
+            key: str,
+            product_dict: dict[str,list[JunitTesCaseAggregatedData]],
+            value: JunitTesCaseAggregatedData) -> None:
+        if key in product_dict:
+            product_dict[key].append(value)
+            # self.product_dict[key] = updated_data
         else:
-            self.product_test_dict[key] = [value]
-
-    # def update_value_to_feature_dict(self, key: str, value: JunitTestCaseFeatureData) -> None:
-    #     if key in self.feature_dict:
-    #         updated_data = JunitTestCaseFeatureData(
-    #             self.feature_dict[key].get_passed_tests() + value.get_passed_tests(),
-    #             self.feature_dict[key].get_total_tests() + value.get_total_tests(),
-    #         )
-    #         self.feature_dict[key] = updated_data
-    #     else:
-    #         self.feature_dict[key] = [value]
+            product_dict[key] = [value]
 
     def get_info(self, input: pathlib.Path = None):
         xml = junitparser.JUnitXml.fromfile(input, parse_func=self.xml_parser)
@@ -264,93 +151,36 @@ class JunitData:
             for case in list(iter(suite)):
                 test_name = re.search(r'((?:Test_)[\S]+_\d+)', case.name).group(1)
 
-                # test_result = JunitTestCaseData(
-                #     publisher=publisher_name,
-                #     subscriber=subscriber_name,
-                #     passed=case.is_passed,
-                #     case=case)
-
-                # self.update_value_to_testcase_dict(key=test_name, value=test_result)
-
-                product_test_result = JunitTesCaseAggregatedData(
-                    subscriber_product=subscriber_name,
+                publisher_test_result = JunitTesCaseAggregatedData(
+                    product=subscriber_name,
                     test_name=test_name,
                     passed=case.is_passed
                 )
 
-                self.update_value_to_product_test_dict(key=publisher_name, value=product_test_result)
+                self.update_value_to_product_dict(
+                        key=publisher_name,
+                        value=publisher_test_result,
+                        product_dict=self.publisher_product_dict
+                )
 
-                # Get the results per feature
-                #feature = re.search(f'(?:Test_)([\S]+)_\d', case.name).group(1)
+                subscriber_test_result = JunitTesCaseAggregatedData(
+                    product=publisher_name,
+                    test_name=test_name,
+                    passed=case.is_passed
+                )
 
+                self.update_value_to_product_dict(
+                        key=subscriber_name,
+                        value=subscriber_test_result,
+                        product_dict=self.subscriber_product_dict
+                )
 
-        # for k in self.product_summary_dict.keys():
-        #     print(f'{k}: {self.product_summary_dict[k]}')
-        # return
-
-        # for k in self.product_test_dict.keys():
-        #     print(f'{k}:')
-        #     for e in self.product_test_dict[k]:
-        #         print(f'\t{e}')
-        # return
-
-        # for k in self.test_dict.keys():
-        #     print(f'{k}:')
-        #     for e in self.test_dict[k]:
-        #         print(f'\t{e}')
-        # return
-        # for k in self.summary_dict.keys():
-        #     print(f'{k}: {self.summary_dict[k]}')
-        # return
 class ColorUtils:
     GREEN = '#4EB168'
     LIME = '#86A336'
     YELLOW ='#B58F19'
     ORANGE = '#DB722e'
     RED = '#F2505A'
-    # @staticmethod
-    # def interpolate_color(highest_color, lowest_color, ratio):
-    #     r1, g1, b1 = int(highest_color[1:3], 16), int(highest_color[3:5], 16), int(highest_color[5:7], 16)
-    #     r2, g2, b2 = int(lowest_color[1:3], 16), int(lowest_color[3:5], 16), int(lowest_color[5:7], 16)
-    #     if r1 < r2:
-    #         r = int(r1 + (1 - ratio) * (r2 - r1))
-    #         print(f'{r} = int({r1} + (1 - {ratio}) * ({r2} - {r1})')
-    #     else:
-    #         r = int(r2 + ratio * (r1 - r2))
-    #         print(f'{r} = int({r2} + {ratio} * ({r1} - {r2})')
-    #     if g1 < g2:
-    #         g = int(g1 + (1 - ratio) * (g2 - g1))
-    #         print(f'{r} = int({g1} + (1 - {ratio}) * ({g2} - {g1})')
-    #     else:
-    #         g = int(g2 + ratio * (g1 - g2))
-    #         print(f'{g} = int({g2} + {ratio} * ({g1} - {g2})')
-    #     if b1 < b2:
-    #         b = int(b1 + (1 - ratio) * (b2 - b1))
-    #         print(f'{b} = int({b1} + (1 - {ratio}) * ({b2} - {b1})')
-    #     else:
-    #         b = int(b2 + ratio * (b1 - b2))
-    #         print(f'{b} = int({b2} + {ratio} * ({b1} - {b2})')
-    #     return "#{:02X}{:02X}{:02X}".format(r, g, b)
-
-    # @staticmethod
-    # def interpolate_color_at_index(color_higher, color_lower, num_elements, index):
-    #     ratio = index / (num_elements)
-    #     if ratio < 0.25:
-    #         return ColorUtils.RED
-    #     elif ratio < 0.5:
-    #         return ColorUtils.ORANGE
-    #     elif ratio < 0.75:
-    #         return ColorUtils.YELLOW
-    #     elif ratio < 1:
-    #         return ColorUtils.LIME
-    #     else: # ratio == 1
-    #         return ColorUtils.GREEN
-    #     return ColorUtils.interpolate_color(color_higher, color_lower, ratio)
-
-    # @staticmethod
-    # def interpolate_green_red_at_index(num_elements, index):
-    #     return ColorUtils.interpolate_color_at_index(
-    #         ColorUtils.GREEN, ColorUtils.RED, num_elements, index)
 
 class XlsxReport:
     workbook: xlsxwriter.Workbook
@@ -359,6 +189,8 @@ class XlsxReport:
 
     def __init__(self, output: pathlib.Path, data: JunitData):
         self.workbook = xlsxwriter.Workbook(output)
+        # set the default workbook size
+        self.workbook.set_size(2000,1500)
         self.__data = data
         self.add_formats()
         self.create_summary_worksheet()
@@ -386,9 +218,21 @@ class XlsxReport:
             'font_size': 36,
             'text_wrap': True
         })
+        self.formats['product_title'] = self.workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
+            'font_size': 16,
+            'text_wrap': False
+        })
         self.formats['subtitle'] = self.workbook.add_format({
             'align': 'center',
             'font_size': 26
+        })
+        self.formats['product_subtitle'] = self.workbook.add_format({
+            'bold': True,
+            'align': 'center',
+            'valign': 'vcenter',
         })
         self.formats['bold_w_border'] = self.workbook.add_format(properties={'bold': True, 'border': 1})
         self.formats['result_green'] = value_format = self.workbook.add_format(
@@ -421,67 +265,148 @@ class XlsxReport:
         else:
             return self.get_format_color(0,1)
 
+    def add_static_data_test(self,
+            worksheet: xlsxwriter.Workbook.worksheet_class,
+            product_name: str,
+            product_count: int):
+        # the last column of the publisher table is
+        # `2 (column C) + product_count - 1`
+        # the -1 is because the column C is already counted
+        last_column_publisher = 1 + product_count
+        worksheet.merge_range(
+            # row 1, from column C till last_column_publisher
+            0, 2, 0, last_column_publisher,
+            "Publisher: " + product_name,
+            self.formats['product_title'])
+        worksheet.merge_range(
+            # row 2, from column C till last_column_publisher
+            1, 2, 1, last_column_publisher,
+            "Subscriber: ",
+            self.formats['product_subtitle'])
+
+        # the subscriber table starts at last_column_publisher + 1
+        last_column_subscriber = last_column_publisher + 1 + product_count
+        worksheet.merge_range(
+            # row 1, from column last_column_publisher + 1 till last_column_subscriber
+            0, last_column_publisher + 1, 0, last_column_subscriber,
+            "Subscriber: " + product_name,
+            self.formats['product_title'])
+        worksheet.merge_range(
+            # row 2, from column last_column_publisher + 1 till last_column_subscriber
+            1, last_column_publisher + 1, 1, last_column_subscriber,
+            "Publisher: ",
+            self.formats['product_subtitle'])
+        return (1,last_column_subscriber)
+
     def add_data_test_worksheet(self):
-        for publisher_name, value in self.__data.product_test_dict.items():
+        # create a list that contains the worksheet names per product. These
+        # product names are the same for the publisher and the subscriber
+        product_names = []
+        for name in self.__data.publisher_product_dict.keys():
+            product_names.append(name)
+
+        for name in product_names:
             # truncate the name of the string to 31 chars
-            worksheet = self.workbook.add_worksheet(('Pub ' + publisher_name)[:31])
+            worksheet = self.workbook.add_worksheet((name)[:31])
             self.set_worksheet_defaults(worksheet)
-            worksheet.set_column('B:B', 35)
 
+            current_cell = self.add_static_data_test(
+                    worksheet=worksheet,
+                    product_name=name,
+                    product_count=len(product_names))
 
-            worksheet.write('B2', 'Publisher ' + publisher_name + ' / Subscriber' , self.formats['bold_w_border'])
+            # next row
+            starting_row = current_cell[0] + 1
 
-            current_column = 1 # column B
-            current_row = 1 # row 2
-            subscriber_row = 1 # row 2
-            test_column = 1 # column B
-            # This column dictionary will keep the colum for the subscriber product
-            column_dict = {}
-            row_dict = {}
-            for element in value:
-                if element.get_subscriber_name() in column_dict:
-                    process_column = column_dict[element.get_subscriber_name()]
-                else:
-                    current_column += 1
-                    process_column = current_column
-                    column_dict[element.get_subscriber_name()] = current_column
-                    worksheet.write(
-                            subscriber_row,
-                            current_column,
-                            element.get_subscriber_name(),
-                            self.formats['bold_w_border'])
+            # Add table with the product as publisher
+            worksheet.set_column(1, 1, 22)
+            current_cell = self.add_product_table(
+                worksheet=worksheet,
+                product_name=name,
+                is_publisher= True,
+                starting_column=1, # B
+                starting_row=starting_row,
+                value=self.__data.publisher_product_dict[name],
+                print_test_name=True
+            )
 
-                if element.get_test_name() in row_dict:
-                    process_row = row_dict[element.get_test_name()]
-                else:
-                    current_row += 1
-                    process_row = current_row
-                    row_dict[element.get_test_name()] = current_row
+            worksheet.set_column(current_cell[1] + 1, current_cell[1] + 1, 4)
+
+            # Add table with the product as subscriber
+
+            # as the test_name is not printed, the starting_column does not
+            # write anything, so, the table starts at starting_column + 1
+            self.add_product_table(
+                worksheet=worksheet,
+                product_name=name,
+                is_publisher=True,
+                starting_column=current_cell[1] + 1, # next column
+                starting_row=starting_row,
+                value=self.__data.subscriber_product_dict[name],
+                print_test_name=False
+            )
+
+    def add_product_table(self,
+            worksheet: xlsxwriter.Workbook.worksheet_class,
+            product_name: str,
+            is_publisher: bool,
+            starting_row: int,
+            starting_column: int,
+            value: list[JunitTesCaseAggregatedData],
+            print_test_name: bool):
+
+        current_column = starting_column
+        current_row = starting_row
+        subscriber_row = starting_row
+        test_column = starting_column
+        # This column dictionary will keep the colum for the subscriber product
+        column_dict = {}
+        row_dict = {}
+        for element in value:
+            if element.get_product_name() in column_dict:
+                process_column = column_dict[element.get_product_name()]
+            else:
+                current_column += 1
+                process_column = current_column
+                column_dict[element.get_product_name()] = current_column
+                worksheet.write(
+                        subscriber_row,
+                        current_column,
+                        element.get_product_name(),
+                        self.formats['bold_w_border'])
+
+            if element.get_test_name() in row_dict:
+                process_row = row_dict[element.get_test_name()]
+            else:
+                current_row += 1
+                process_row = current_row
+                row_dict[element.get_test_name()] = current_row
+                if print_test_name:
                     worksheet.write(
                             current_row,
                             test_column,
                             element.get_test_name(),
                             self.formats['bold_w_border'])
 
-                str_result = 'OK' if element.get_passed() else 'ERROR'
-                worksheet.write(
-                        process_row,
-                        process_column,
-                        str_result,
-                        self.get_format_color_bool(element.get_passed()))
-
+            str_result = 'OK' if element.get_passed() else 'ERROR'
+            worksheet.write(
+                    process_row,
+                    process_column,
+                    str_result,
+                    self.get_format_color_bool(element.get_passed()))
+        return (current_row, current_column)
 
     def add_data_summary_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class):
 
-        worksheet.write('B18', 'Product', self.formats['bold_w_border'])
-        worksheet.write('C18', 'Test Passed', self.formats['bold_w_border'])
+        worksheet.write('B17', 'Product', self.formats['bold_w_border'])
+        worksheet.write('C17', 'Test Passed', self.formats['bold_w_border'])
 
         # Add AggregatedData
         # column and rows start counting at 0, the spreadsheet column/row number
         # is 1 number higher
         current_column = 1 # column B
-        current_row = 18 # row 19
+        current_row = 17 # row 18
         for key, value in self.__data.summary_dict.items():
             worksheet.write(current_row, current_column, key, self.formats['bold_w_border'])
             worksheet.write(current_row, current_column + 1,
