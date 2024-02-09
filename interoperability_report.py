@@ -204,6 +204,7 @@ def run_subscriber_shape_main(
             'finish', verbosity)
     for element in publishers_finished:
         element.wait()   # wait for all publishers to finish
+    # Send SIGINT to nicely close the application
     child_sub.sendintr()
     return
 
@@ -362,6 +363,7 @@ def run_publisher_shape_main(
     for element in subscribers_finished:
         element.wait() # wait for all subscribers to finish
     publisher_finished.set()   # set publisher as finished
+    # Send SIGINT to nicely close the application
     child_pub.sendintr()
     return
 
