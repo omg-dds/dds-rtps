@@ -296,7 +296,7 @@ def test_durability_transient_local(child_sub, samples_sent, timeout):
     return produced_code
 
 
-def test_deadline_4(child_sub, samples_sent, timeout):
+def test_deadline_missed(child_sub, samples_sent, timeout):
     """
     This function tests the volatile durability, it checks that the sample the
     Subscriber receives is not the first one. The Publisher application sends
@@ -360,7 +360,9 @@ rtps_test_suite_1 = {
     # This test checks that the deadline is missed in both, publisher and subscriber
     # because the write-period is higher than the deadline period, that means
     # that the samples won't be send and received on time
-    'Test_Deadline_4' : [['-P -t Square -w -f 2 --write-period 3000', '-S -t Square -f 2'], [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED], test_deadline_4],
+    'Test_Deadline_4' : [['-P -t Square -w -f 2 --write-period 3000', '-S -t Square -f 2'],
+                         [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED],
+                         test_deadline_missed],
 
     # TOPIC
     'Test_Topic_0' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
