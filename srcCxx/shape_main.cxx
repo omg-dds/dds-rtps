@@ -1164,6 +1164,7 @@ public:
             if (options->shapesize == 0) {
                 shape.shapesize FIELD_ACCESSOR += 1;
             }
+
             moveShape(&shape);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
             dw->write( shape, HANDLE_NIL );
