@@ -45,6 +45,42 @@ class XlxsReportArgumentParser:
 
         return parser
 
+
+class ProductUtils:
+    @staticmethod
+    def get_company_name(product:str) -> str:
+        """Returns the company name"""
+        if 'connext' in product.lower():
+            return 'Real-Time Innovations (RTI)'
+        elif 'opendds' in product.lower():
+            return 'Object Computing Incorporated (OCI)'
+        elif 'coredx' in product.lower():
+            return 'Twin Oaks Computing'
+        elif 'intercom' in product.lower():
+            return 'Kongsberg'
+        elif 'fastdds' in product.lower():
+            return 'eProsima'
+        else:
+            raise RuntimeError('Impossible to get company name: ' + product)
+
+    @staticmethod
+    def get_product_name(product:str) -> str:
+        """Returns a beautified product name and version"""
+        # set the beautified name and version
+        if 'connext' in product.lower():
+            return 'Connext ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'opendds' in product.lower():
+            return 'OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'coredx' in product.lower():
+            return 'CoreDX ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'intercom' in product.lower():
+            return 'InterCOM DDS ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'fastdds' in product.lower():
+            return 'FastDDS ' + re.search(r'([\d.]+)', product).group(1)
+        else:
+            raise RuntimeError('Impossible to get product name: ' + product)
+
+
 class JunitAggregatedData:
     """
     Class that contains the JUnit aggregated data as a tuple of 2 integers
@@ -161,22 +197,6 @@ class JunitData:
         else:
             product_dict[key] = [value]
 
-    def beautify_product_name(self, product:str) -> str:
-        """Returns a beautified name and version"""
-        # set the beautified name and version
-        if 'connext' in product.lower():
-            return 'RTI Connext ' + re.search(r'([\d.]+)', product).group(1)
-        elif 'opendds' in product.lower():
-            return 'OCI OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
-        elif 'coredx' in product.lower():
-            return 'TOC CoreDX ' + re.search(r'([\d.]+)', product).group(1)
-        elif 'intercom' in product.lower():
-            return 'Kongsberg InterCOM DDS ' + re.search(r'([\d.]+)', product).group(1)
-        elif 'fastdds' in product.lower():
-            return 'eProsima FastDDS ' + re.search(r'([\d.]+)', product).group(1)
-        else:
-            raise RuntimeError('Impossible to beautify the name: ' + product)
-
     def get_info(self, input: pathlib.Path = None):
         """
         Get the information from the JUnit XML file and store it in the
@@ -190,8 +210,8 @@ class JunitData:
             # get beautified publisher and subscriber names from the test suite
             # name
             product_names = re.search(r'([\S]+)\-\-\-([\S]+)', suite.name)
-            publisher_name = self.beautify_product_name(product_names.group(1))
-            subscriber_name = self.beautify_product_name(product_names.group(2))
+            publisher_name = ProductUtils.get_product_name(product_names.group(1))
+            subscriber_name = ProductUtils.get_product_name(product_names.group(2))
 
             # get the value of the passed_tests and total_tests as a
             # JunitAggregatedData
@@ -582,9 +602,12 @@ class XlsxReport:
         current_column = starting_column
         worksheet.write(
             current_row, current_column,
-            'Product', self.__formats['bold_w_border'])
+            'Company', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 1,
+            'Product', self.__formats['bold_w_border'])
+        worksheet.write(
+            current_row, current_column + 2,
             'Test Passed', self.__formats['bold_w_border'])
 
         current_row += 1
@@ -592,10 +615,15 @@ class XlsxReport:
         # Create table with the total passed_tests/total_tests per product
         for product_name, value in self.__data.summary_dict.items():
             worksheet.write(
-                current_row, current_column, product_name,
+                current_row, current_column,
+                ProductUtils.get_company_name(product_name),
                 self.__formats['bold_w_border'])
             worksheet.write(
                 current_row, current_column + 1,
+                product_name,
+                self.__formats['bold_w_border'])
+            worksheet.write(
+                current_row, current_column + 2,
                 str(value.get_passed_tests()) + ' / ' +
                 str(value.get_total_tests()),
                 self.get_format_color(value.get_passed_tests(),
