@@ -51,7 +51,14 @@ srcCxx/shape.*
 srcCxx/shapePlugin.*
 srcCxx/shapeSupport.*
 
+srcCxx/shape_micro.cxx
+srcCxx/shape_micro.h
+srcCxx/shape_microPlugin.*
+srcCxx/shape_microSupport.*
+
 .vscode/
 
 # Generated reports
 *.html
+
+.DS_Store
