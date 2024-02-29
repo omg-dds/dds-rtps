@@ -53,7 +53,7 @@ class ProductUtils:
         if 'connext' in product.lower():
             return 'Real-Time Innovations (RTI)'
         elif 'opendds' in product.lower():
-            return 'Object Computing Incorporated (OCI)'
+            return 'OpenDDS Foundation'
         elif 'coredx' in product.lower():
             return 'Twin Oaks Computing'
         elif 'intercom' in product.lower():
