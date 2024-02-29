@@ -12,6 +12,7 @@ import re
 import pexpect
 import queue
 import time
+
 # rtps_test_suite_1 is a dictionary that defines the TestSuite. Each element of
 # the dictionary is a Test Case that the interoperability_report.py
 # executes.
@@ -238,17 +239,19 @@ def test_durability_volatile(child_sub, samples_sent, timeout):
     This function tests the volatile durability, it checks that the sample the
     Subscriber receives is not the first one. The Publisher application sends
     samples increasing the value of the size, so if the first sample that the
-    Subscriber app doesn't have the size == 1, the test is correct.
+    Subscriber app doesn't have the size > 5, the test is correct.
+
+    Note: size > 5 to avoid checking only the first sample, that may be an edge
+          case where the DataReader hasn't matched with the DataWriter yet and
+          the first samples are not received.
 
     child_sub: child program generated with pexpect
-    samples_sent: list of multiprocessing Queues with the samples
-                the Publishers send. Element 1 of the list is for
-                Publisher 1, etc.
-    timeout: time pexpect waits until it matches a pattern.
+    samples_sent: not used
+    timeout: not used
     """
 
-    # Read the first sample, if it has the size == 1, it is using transient
-    # local durability correctly
+    # Read the first sample, if it has the size > 5, it is using volatile
+    # durability correctly
     sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
 
@@ -273,14 +276,12 @@ def test_durability_transient_local(child_sub, samples_sent, timeout):
     the Subscriber app does have the size == 1, the test is correct.
 
     child_sub: child program generated with pexpect
-    samples_sent: list of multiprocessing Queues with the samples
-                the Publishers send. Element 1 of the list is for
-                Publisher 1, etc.
-    timeout: time pexpect waits until it matches a pattern.
+    samples_sent: not used
+    timeout: not used
     """
 
-    # Read the first sample, if it has the size != 1, it is using volatile
-    # durability correctly
+    # Read the first sample, if it has the size == 1, it is using transient
+    # local durability correctly
     sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
 
@@ -298,16 +299,13 @@ def test_durability_transient_local(child_sub, samples_sent, timeout):
 
 def test_deadline_missed(child_sub, samples_sent, timeout):
     """
-    This function tests the volatile durability, it checks that the sample the
-    Subscriber receives is not the first one. The Publisher application sends
-    samples increasing the value of the size, so if the first sample that the
-    Subscriber app doesn't have the size == 1, the test is correct.
+    This function tests whether the subscriber application misses the requested
+    deadline or not. This is needed in case the subscriber application receives
+    some samples and then missed the requested deadline.
 
     child_sub: child program generated with pexpect
-    samples_sent: list of multiprocessing Queues with the samples
-                the Publishers send. Element 1 of the list is for
-                Publisher 1, etc.
-    timeout: time pexpect waits until it matches a pattern.
+    samples_sent: not used
+    timeout: time pexpect waits until it matches a pattern
     """
 
     # At this point, the subscriber app has already received one sample

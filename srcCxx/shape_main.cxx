@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <iostream>
 #include <getopt.h>
+#include <sys/types.h>
 
 #if defined(RTI_CONNEXT_DDS)
 #include "shape_configurator_rti_connext_dds.h"
@@ -296,7 +297,6 @@ public:
         printf("   -x [1|2]        : set data representation [1: XCDR, 2: XCDR2]\n");
         printf("   -w              : print Publisher's samples\n");
         printf("   -z <int>        : set shapesize (0: increase the size for every sample)\n");
-        printf("   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]\n");
         printf("   -R              : use 'read()' instead of 'take()'\n");
         printf("   --write-period <ms>: waiting period between 'write()' operations in ms.\n");
         printf("                        Default: 33ms\n");
@@ -407,8 +407,8 @@ public:
                             Verbosity::ERROR);
                         parse_ok = false;
                 }
-                break;
             }
+            break;
             case 'i': {
                 int converted_param = sscanf(optarg, "%d", &timebasedfilter_interval);
                 if (converted_param == 0) {
@@ -530,12 +530,6 @@ public:
                     parse_ok = false;
                 }
                 write_period_us = (useconds_t) converted_param * 1000;
-                if (write_period_us < 0) {
-                    logger.log_message("incorrect value for write-period "
-                                + std::to_string(write_period_us),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
                 break;
             }
             case 'A': {
@@ -548,12 +542,6 @@ public:
                     parse_ok = false;
                 }
                 read_period_us = (useconds_t) converted_param * 1000;
-                if (read_period_us < 0) {
-                    logger.log_message("incorrect value for read-period "
-                                + std::to_string(read_period_us),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
                 break;
             }
             case '?':
@@ -795,7 +783,6 @@ public:
         logger.log_message("Running init_publisher() function", Verbosity::DEBUG);
         PublisherQos  pub_qos;
         DataWriterQos dw_qos;
-        ShapeType     shape;
 
         dp->get_default_publisher_qos( pub_qos );
         if ( options->partition != NULL ) {

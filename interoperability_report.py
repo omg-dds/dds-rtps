@@ -488,7 +488,7 @@ def run_test(
             entity_type.append(f'Publisher_{publisher_number}')
 
         elif('-S ' in parameters[i] or parameters[i].endswith('-S')):
-            # Wait 1 second before running the a subscriber if durability is
+            # Wait 1 second before running the subscriber if durability is
             # provided
             if '-D ' in parameters[i]:
                 time.sleep(1)
