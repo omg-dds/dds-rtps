@@ -7,6 +7,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
       - name: Downloads assets
         uses: robinraju/release-downloader@v1.7
         with:
@@ -14,11 +17,14 @@ jobs:
           fileName: "*"
       - name: Unzip
         run: unzip '*.zip' -d executables
-      - name: Run Interoperability script
+      - name: Setting up environment
         run: |
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
+      - name: Run Interoperability script
+        run: |
+          source .venv/bin/activate
           cd executables
           for i in ./* ; do \
             for j in ./* ; do \
@@ -30,6 +36,10 @@ jobs:
               fi; \
             done; \
           done
+      - name: Generate xlsx report
+        run: |
+          source .venv/bin/activate
+          python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
       - name: XUnit Viewer
         id: xunit-viewer
         uses: AutoModality/action-xunit-viewer@v1
@@ -37,7 +47,10 @@ jobs:
           results: ./junit_interoperability_report.xml
       - name: Attach the report
         if: always()
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         with:
-          name: report
-          path: ./index.html
+          name: interoperability_report
+          path: |
+            ./index.html
+            ./junit_interoperability_report.xml
+            ./interoperability_report.xlsx

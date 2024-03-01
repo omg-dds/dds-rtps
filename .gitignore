@@ -55,3 +55,8 @@ srcCxx/shapeSupport.*
 
 # Generated reports
 *.html
+*.xlsx
+*.xml
+*.zip
+
+.DS_Store
