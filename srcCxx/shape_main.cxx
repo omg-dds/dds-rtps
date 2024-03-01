@@ -528,6 +528,11 @@ public:
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
                     parse_ok = false;
+                } else if (converted_param < 0) {
+                    logger.log_message("incorrect value for write-period "
+                                + std::to_string(converted_param),
+                            Verbosity::ERROR);
+                    parse_ok = false;
                 }
                 write_period_us = (useconds_t) converted_param * 1000;
                 break;
@@ -538,6 +543,11 @@ public:
                 if (sscanf(optarg, "%d", &converted_param) == 0) {
                     logger.log_message("unrecognized value for read-period "
                                 + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (converted_param < 0) {
+                    logger.log_message("incorrect value for read-period "
+                                + std::to_string(converted_param),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
