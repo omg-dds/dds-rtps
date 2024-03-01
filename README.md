@@ -164,6 +164,9 @@ different executables (built with different DDS implementations).
 The Shape application allows the following parameters:
 
 ~~~
+   --help, -h      : print this menu
+   -P              : publish samples
+   -S              : subscribe samples
    -d <int>        : domain id (default: 0)
    -b              : BEST_EFFORT reliability
    -r              : RELIABLE reliability
@@ -176,12 +179,16 @@ The Shape application allows the following parameters:
    -p <partition>  : set a 'partition' string
    -D [v|l|t|p]    : set durability [v: VOLATILE,  l: TRANSIENT_LOCAL]
                                      t: TRANSIENT, p: PERSISTENT]
-   -P              : publish samples
-   -S              : subscribe samples
    -x [1|2]        : set data representation [1: XCDR, 2: XCDR2]
    -w              : print Publisher's samples
-   -z <int>        : set shapesize (between 10-99)
+   -z <int>        : set shapesize (0: increase the size for every sample)
+   -R              : use 'read()' instead of 'take()'
+   --write-period <ms>: waiting period between 'write()' operations in ms.
+                        Default: 33ms
+   --read-period <ms> : waiting period between 'read()' or 'take()' operations
+                        in ms. Default: 100ms
    -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
+
 ~~~
 
 ## Return Code
