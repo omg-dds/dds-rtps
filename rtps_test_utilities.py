@@ -26,6 +26,7 @@ class ReturnCode(Enum):
     DATA_NOT_CORRECT     : Subscriber does not find the data expected
     RECEIVING_FROM_ONE   : Subscriber receives from one Publisher
     RECEIVING_FROM_BOTH  : Subscriber receives from two Publishers
+    DEADLINE_MISSED      : Publisher/Subscriber missed the deadline period
     """
     OK = 0
     TOPIC_NOT_CREATED = 1
@@ -41,6 +42,7 @@ class ReturnCode(Enum):
     DATA_NOT_CORRECT = 11
     RECEIVING_FROM_ONE = 12
     RECEIVING_FROM_BOTH = 13
+    DEADLINE_MISSED = 14
 
 def log_message(message, verbosity):
     if verbosity:

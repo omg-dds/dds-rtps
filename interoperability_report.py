@@ -84,8 +84,8 @@ def run_subscriber_shape_main(
         an expected pattern in the specified timeout),
         the corresponding ReturnCode is saved in
         produced_code[produced_code_index] and the process finishes.
-
     """
+
     # Step 1: run the executable
     log_message(f'Running shape_main application Subscriber {subscriber_index}',
             verbosity)
@@ -179,13 +179,16 @@ def run_subscriber_shape_main(
                             'samples', verbosity)
                     index = child_sub.expect(
                             [
-                                '\[[0-9]{2}\]', # index = 0
-                                pexpect.TIMEOUT # index = 1
+                                '\[[0-9]+\]', # index = 0
+                                'on_requested_deadline_missed()', # index = 1
+                                pexpect.TIMEOUT # index = 2
                             ],
                             timeout
                         )
 
                     if index == 1:
+                        produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
+                    elif index == 2:
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
                     elif index == 0:
                         # this is used to check how the samples are arriving
@@ -201,6 +204,8 @@ def run_subscriber_shape_main(
             'finish', verbosity)
     for element in publishers_finished:
         element.wait()   # wait for all publishers to finish
+    # Send SIGINT to nicely close the application
+    child_sub.sendintr()
     return
 
 
@@ -318,32 +323,38 @@ def run_publisher_shape_main(
                 # will only save the ReturnCode OK.
                 if '-w' in parameters:
                     #Step  5: Check if the writer sends the samples
-                    index = child_pub.expect(
-                            [
-                                '\[[0-9]{2}\]', # index = 0
-                                pexpect.TIMEOUT # index = 1
-                            ],
-                            timeout
-                        )
-                    if index == 0:
+                    index = child_pub.expect([
+                            '\[[0-9]+\]', # index = 0
+                            'on_offered_deadline_missed()', # index = 1
+                            pexpect.TIMEOUT # index = 2
+                        ],
+                        timeout)
+                    if index == 1:
+                        produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
+                    elif index == 2:
+                        produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
+                    elif index == 0:
                         produced_code[produced_code_index] = ReturnCode.OK
                         log_message(f'Publisher {publisher_index}: Sending '
                                 'samples', verbosity)
                         for x in range(0, MAX_SAMPLES_SAVED, 1):
-                            # We select the numbers that identify the samples
-                            # and we add them to samples_sent.
-                            pub_string = re.search('[0-9]{3} [0-9]{3} \[[0-9]{2}\]',
+                            # At this point, at least one sample has been printed
+                            # Therefore, that sample is added to samples_sent.
+                            pub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
                                     child_pub.before + child_pub.after)
                             samples_sent.put(pub_string.group(0))
-                            child_pub.expect([
-                                            '\[[0-9]{2}\]', # index = 0
-                                            pexpect.TIMEOUT # index = 1
-                                                ],
-                                            timeout
-                            )
-
-                    elif index == 1:
-                        produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
+                            index = child_pub.expect([
+                                    '\[[0-9]+\]', # index = 0
+                                    'on_offered_deadline_missed()', # index = 1
+                                    pexpect.TIMEOUT # index = 2
+                                ],
+                                timeout)
+                            if index == 1:
+                                produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
+                                break
+                            elif index == 2:
+                                produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
+                                break
                 else:
                     produced_code[produced_code_index] = ReturnCode.OK
 
@@ -352,6 +363,8 @@ def run_publisher_shape_main(
     for element in subscribers_finished:
         element.wait() # wait for all subscribers to finish
     publisher_finished.set()   # set publisher as finished
+    # Send SIGINT to nicely close the application
+    child_pub.sendintr()
     return
 
 
@@ -387,6 +400,7 @@ def run_test(
         the list of parameters.
         Then it checks that the codes obtained are the expected ones.
     """
+
     log_message(f'run_test parameters:\n'
             f'    name_executable_pub: {name_executable_pub}\n'
             f'    name_executable_sub: {name_executable_sub}\n'
@@ -474,6 +488,10 @@ def run_test(
             entity_type.append(f'Publisher_{publisher_number}')
 
         elif('-S ' in parameters[i] or parameters[i].endswith('-S')):
+            # Wait 1 second before running the subscriber if durability is
+            # provided
+            if '-D ' in parameters[i]:
+                time.sleep(1)
             entity_process.append(multiprocessing.Process(
                     target=run_subscriber_shape_main,
                     kwargs={
@@ -526,7 +544,7 @@ def run_test(
             test_result_correct = False
 
     if test_result_correct:
-        print (f'{test_case.name} : Ok')
+        print(f'{test_case.name} : OK')
 
     else:
         print(f'{test_case.name} : ERROR')
@@ -537,8 +555,11 @@ def run_test(
             log_message(f'\nInformation about {entity_type[i]}:\n '
                       f'{shape_main_application_output[i]} ', verbosity)
 
+            # Change the '\n' and SIGINT chars to html <br>
             shape_main_application_output_edited.append(
-                        shape_main_application_output[i].replace('\n', '<br>'))
+                        shape_main_application_output[i]
+                        .replace('\n', '<br>')
+                        .replace(chr(3),'<br>'))
 
         # generate the table for the html code.
         message = \
@@ -602,6 +623,16 @@ class Arguments:
                 'shape_main application output in case of error. '
                 'If this option is not used, only the test results are printed '
                 'in the stdout. (Default: False).')
+        optional.add_argument('-x','--data-representation',
+            default="2",
+            required=None,
+            type=str,
+            choices=["1","2"],
+            help='Data Representation used if no provided when running the '
+                'shape_main application. If this application already sets the '
+                'data representation, this parameter is not used.'
+                'The potential values are 1 for XCDR1 and 2 for XCDR2.'
+                'Default value 2.')
 
         tests = parser.add_argument_group(title='Test Case and Test Suite')
         tests.add_argument('-s', '--suite',
@@ -625,10 +656,10 @@ class Arguments:
             type=str,
             metavar='test_cases',
             help='Test Case that the script will run. '
-                'This option is not supported with --disable_test. '
+                'This option is not supported with --disable-test. '
                 'This allows to set multiple values separated by a space. '
                 '(Default: run all Test Cases from the Test Suite.)')
-        enable_disable.add_argument('-d', '--disable_test',
+        enable_disable.add_argument('-d', '--disable-test',
             nargs='+',
             default=None,
             required=False,
@@ -672,7 +703,9 @@ def main():
         'verbosity': args.verbose,
         'test_suite': args.suite,
         'test_cases': args.test,
-        'test_cases_disabled': args.disable_test
+        'test_cases_disabled': args.disable_test,
+        'data_representation': args.data_representation
+
     }
 
     # The executables's names are supposed to follow the pattern: name_shape_main
@@ -762,6 +795,10 @@ def main():
                         break
 
                     assert(len(parameters) == len(expected_codes))
+
+                    for element in parameters:
+                        if not '-x ' in element:
+                            element += f'-x {options["data_representation"]}'
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
