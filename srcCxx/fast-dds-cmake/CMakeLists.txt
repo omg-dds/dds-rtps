@@ -12,6 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+cmake_minimum_required(VERSION 3.16.3)
+
 project(eprosima-fastdds_shape_main_linux LANGUAGES CXX)
 
 # Find requirements
@@ -24,20 +26,20 @@ find_program(FASTDDSGEN fastddsgen)
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../GeneratedCode)
 set(
   GENERATED_TYPE_SUPPORT_SOURCES
-  ${CMAKE_SOURCE_DIR}/../shape.cxx
-  ${CMAKE_SOURCE_DIR}/../shapePubSubTypes.cxx
-  ${CMAKE_SOURCE_DIR}/../shapeTypeObject.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.cxx
 )
 set(
   GENERATED_TYPE_SUPPORT_FILES
-  ${CMAKE_SOURCE_DIR}/../shape.cxx
-  ${CMAKE_SOURCE_DIR}/../shape.h
-  ${CMAKE_SOURCE_DIR}/../shapeCdrAux.hpp
-  ${CMAKE_SOURCE_DIR}/../shapeCdrAux.ipp
-  ${CMAKE_SOURCE_DIR}/../shapePubSubTypes.cxx
-  ${CMAKE_SOURCE_DIR}/../shapePubSubTypes.h
-  ${CMAKE_SOURCE_DIR}/../shapeTypeObject.cxx
-  ${CMAKE_SOURCE_DIR}/../shapeTypeObject.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeCdrAux.hpp
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeCdrAux.ipp
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.h
 )
 add_custom_command(
   OUTPUT ${GENERATED_TYPE_SUPPORT_FILES}
