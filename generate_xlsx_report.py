@@ -224,8 +224,11 @@ class JunitData:
             # the information of the publisher and the subscriber
             self.update_value_aggregated_data_dict(
                 self.summary_dict, publisher_name, element)
-            self.update_value_aggregated_data_dict(
-                self.summary_dict, subscriber_name, element)
+            if publisher_name != subscriber_name:
+                # do not add duplicated data if the publisher and subscriber
+                # names are the same
+                self.update_value_aggregated_data_dict(
+                    self.summary_dict, subscriber_name, element)
 
             # Get table with the summary of the test passed/total_tests for
             # every product as publisher and as subscriber
