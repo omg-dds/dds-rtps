@@ -338,8 +338,8 @@ rtps_test_suite_1 = {
 
     # DOMAIN
     'Test_Domain_0' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Domain_1' : [['-P -t Square', '-S -t Square -d 1'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
-    'Test_Domain_2' : [['-P -t Square -d 1', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
+    'Test_Domain_1' : [['-P -t Square', '-S -t Square -d 1'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
+    'Test_Domain_2' : [['-P -t Square -d 1', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
     'Test_Domain_3' : [['-P -t Square -d 1', '-S -t Square -d 1'], [ReturnCode.OK, ReturnCode.OK]],
 
     # RELIABILITY
@@ -364,8 +364,8 @@ rtps_test_suite_1 = {
 
     # TOPIC
     'Test_Topic_0' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Topic_1' : [['-P -t Square', '-S -t Circle'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
-    'Test_Topic_2' : [['-P -t Circle', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
+    'Test_Topic_1' : [['-P -t Square', '-S -t Circle'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
+    'Test_Topic_2' : [['-P -t Circle', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
     'Test_Topic_3' : [['-P -t Circle', '-S -t Circle'], [ReturnCode.OK, ReturnCode.OK]],
 
     # COLOR
@@ -381,8 +381,8 @@ rtps_test_suite_1 = {
 
     # PARTITION
     'Test_Partition_0' : [['-P -t Square -p "p1"', '-S -t Square -p "p1"'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Partition_1' : [['-P -t Square -p "p1"', '-S -t Square -p "p2"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
-    'Test_Partition_2' : [['-P -t Square -p "p2"', '-S -t Square -p "p1"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.WRITER_NOT_MATCHED]],
+    'Test_Partition_1' : [['-P -t Square -p "p1"', '-S -t Square -p "p2"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
+    'Test_Partition_2' : [['-P -t Square -p "p2"', '-S -t Square -p "p1"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
 
     # DURABILITY
     'Test_Durability_0' : [['-P -t Square -D v', '-S -t Square -D v'], [ReturnCode.OK, ReturnCode.OK]],

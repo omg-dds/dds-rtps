@@ -227,8 +227,9 @@ These printed strings and the corresponding Return Codes follows this workflow
     * `'on_publication_matched()'`:
       * case '-w' not in parameters -> `OK`
       * case '-w' in parameters:
-        * `'[10-99]'`-> `OK`
-        * `'[10-99]'` not found -> `DATA_NOT_SENT`
+        * `'[[0-9]+]'`-> `OK`
+        * `'on_offered_deadline_missed'` -> `DEADLINE_MISSED`
+        * No string matched -> `DATA_NOT_SENT`
 
 **Subscriber**:
 
@@ -238,17 +239,14 @@ These printed strings and the corresponding Return Codes follows this workflow
   * No string matched -> `READER_NOT_CREATED`
   * `'Create reader for topic'`:
     * `'on_requested_incompatible_qos()'`-> `INCOMPATIBLE_QOS`
-    * None string matched ->  `WRITER_NOT_MATCHED`
-    * `'on_subscription_matched()'`:
-      * `'on_liveliness_changed()'` not found -> `WRITER_NOT_ALIVE`
-      * `'on_liveliness_changed()'`:
-        * `'[10-99]'` not found -> `DATA_NOT_RECEIVED`
-        * `'[10-99]'`:
-          * `checking_function` not defined in Test Case -> `OK`
-          * `checking_function` defined in Test Case -> `OK`, `DATA_NOT_CORRECT`,
-          `RECEIVING_FROM_ONE` or `RECEIVING_FROM_BOTH`, depending on the function.
+    * `'on_requested_deadline_missed'` -> `DEADLINE_MISSED`
+    * `'[[0-9]+]'`:
+        * `checking_function` not defined in Test Case -> `OK`
+        * `checking_function` defined in Test Case -> `OK`, `DATA_NOT_CORRECT`,
+        `RECEIVING_FROM_ONE` or `RECEIVING_FROM_BOTH`, depending on the function.
+    * No string matched -> `DATA_NOT_RECEIVED`
 
-> **Note**: `'[10-99]'` is the shapesize of the samples. The
+> **Note**: `'[[0-9]+]'` is the shapesize of the samples. The
 > `interoperability_report` script is only taking into account the shapesize in
 > order to match a printed shape sample. This does not prevent the script to
 > recover the other information: x, y and color.

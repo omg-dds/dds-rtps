@@ -19,8 +19,6 @@ class ReturnCode(Enum):
     FILTER_NOT_CREATED   : Subscriber does not create the content filter
     INCOMPATIBLE_QOS     : Publisher/Subscriber with incompatible QoS.
     READER_NOT_MATCHED   : Publisher does not find any compatible Data Reader
-    WRITER_NOT_MATCHED   : Subscriber does not find any compatible Data Writer
-    WRITER_NOT_ALIVE     : Subscriber does not find any live Data Writer
     DATA_NOT_RECEIVED    : Subscriber does not receive the data
     DATA_NOT_SENT        : Publisher does not send the data
     DATA_NOT_CORRECT     : Subscriber does not find the data expected
@@ -35,8 +33,6 @@ class ReturnCode(Enum):
     FILTER_NOT_CREATED = 4
     INCOMPATIBLE_QOS = 5
     READER_NOT_MATCHED = 6
-    WRITER_NOT_MATCHED = 7
-    WRITER_NOT_ALIVE = 8
     DATA_NOT_RECEIVED = 9
     DATA_NOT_SENT = 10
     DATA_NOT_CORRECT = 11

@@ -134,70 +134,30 @@ def run_subscriber_shape_main(
             # on_subscription_matched() takes precedence over on_liveliness_changed()
             index = child_sub.expect(
                 [
-                    'on_subscription_matched()', # index = 0
-                    pexpect.TIMEOUT, # index = 1
-                    'on_requested_incompatible_qos()', # index = 2
-                    'on_liveliness_changed()' # index = 3
+                    '\[[0-9]+\]', # index = 0
+                    'on_requested_incompatible_qos()', # index = 1
+                    'on_requested_deadline_missed()', # index = 2
+                    pexpect.TIMEOUT, # index = 3
                 ],
                 timeout
             )
 
             if index == 1:
-                produced_code[produced_code_index] = ReturnCode.WRITER_NOT_MATCHED
-            elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
-            # This case handles when on_liveliness_changed() happens before
-            # on_subscription_matched()
-            elif index == 0 or index == 3:
-                # Step 5: Check if the reader detects the writer as alive
-                if index == 3:
-                    log_message(f'Subscriber {subscriber_index}: Found alive '
-                        'DataWriter. Waiting for matching DataWriter.', verbosity)
-                    index = child_sub.expect(
-                        [
-                            'on_subscription_matched()', # index = 0
-                            pexpect.TIMEOUT # index = 1
-                        ],
-                        timeout
-                    )
-                else:
-                    log_message(f'Subscriber {subscriber_index}: Waiting for '
-                            'detecting DataWriter alive', verbosity)
-                    index = child_sub.expect(
-                        [
-                            'on_liveliness_changed()', # index = 0
-                            pexpect.TIMEOUT # index = 1
-                        ],
-                        timeout
-                    )
+            elif index == 2:
+                produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
+            elif index == 3:
+                produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
+            elif index == 0:
+                # Step 5: Receiving samples
+                log_message(f'Subscriber {subscriber_index}: Receiving samples',
+                    verbosity)
 
-                if index == 1:
-                    produced_code[produced_code_index] = ReturnCode.WRITER_NOT_ALIVE
-                elif index == 0:
-                    # Step 6: Check if the reader receives the samples
-                    log_message(f'Subscriber {subscriber_index}: Receiving '
-                            'samples', verbosity)
-                    index = child_sub.expect(
-                            [
-                                '\[[0-9]+\]', # index = 0
-                                'on_requested_deadline_missed()', # index = 1
-                                pexpect.TIMEOUT # index = 2
-                            ],
-                            timeout
-                        )
-
-                    if index == 1:
-                        produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
-                    elif index == 2:
-                        produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
-                    elif index == 0:
-                        # this is used to check how the samples are arriving
-                        # to the Subscriber. By default it does not check
-                        # anything and returns ReturnCode.OK.
-                        produced_code[produced_code_index] = check_function(
-                                                                child_sub,
-                                                                samples_sent,
-                                                                timeout)
+                # this is used to check how the samples are arriving
+                # to the Subscriber. By default it does not check
+                # anything and returns ReturnCode.OK.
+                produced_code[produced_code_index] = check_function(
+                    child_sub, samples_sent, timeout)
 
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
@@ -316,13 +276,12 @@ def run_publisher_shape_main(
             elif index == 0:
                 # In the case that the option -w is selected, the Publisher
                 # saves the samples sent in order, so the Subscriber can check
-                # them. In this way, the script can check the functionality of
-                # reliability (all the samples are received and in the same
-                # order).
+                # them. In this way, the script can check some functionality
+                # such as reliability.
                 # In the case that the option -w is not selected, the Publisher
                 # will only save the ReturnCode OK.
                 if '-w' in parameters:
-                    #Step  5: Check if the writer sends the samples
+                    # Step 5: Check whether the writer sends the samples
                     index = child_pub.expect([
                             '\[[0-9]+\]', # index = 0
                             'on_offered_deadline_missed()', # index = 1
