@@ -55,7 +55,7 @@ class ProductUtils:
         elif 'opendds' in product.lower():
             return 'OpenDDS Foundation'
         elif 'coredx' in product.lower():
-            return 'Twin Oaks Computing'
+            return 'Twin Oaks Computing, Inc'
         elif 'intercom' in product.lower():
             return 'Kongsberg'
         elif 'fastdds' in product.lower():
@@ -72,7 +72,7 @@ class ProductUtils:
         elif 'opendds' in product.lower():
             return 'OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'coredx' in product.lower():
-            return 'CoreDX ' + re.search(r'([\d.]+)', product).group(1)
+            return 'CoreDX DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'intercom' in product.lower():
             return 'InterCOM DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'fastdds' in product.lower():
