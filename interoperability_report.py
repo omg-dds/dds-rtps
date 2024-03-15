@@ -20,7 +20,7 @@ import tempfile
 from os.path import exists
 import inspect
 
-from rtps_test_utilities import ReturnCode, log_message, no_check
+from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_colors
 
 # This parameter is used to save the samples the Publisher sends.
 # MAX_SAMPLES_SAVED is the maximum number of samples saved.
@@ -539,6 +539,7 @@ def run_test(
         for i in range(0, num_entities):
             message += f'<strong> Information {entity_type[i]} </strong>' \
                     f'<br> {shape_main_application_output_edited[i]} <br>'
+        message = remove_ansi_colors(message)
         test_case.result = [junitparser.Failure(message)]
 
     for element in temporary_file:

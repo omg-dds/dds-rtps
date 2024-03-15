@@ -6,6 +6,7 @@
 # https://github.com/omg-dds/dds-rtps/blob/master/LICENSE.md
 #
 #################################################################
+import re
 
 from enum import Enum
 class ReturnCode(Enum):
@@ -43,6 +44,11 @@ class ReturnCode(Enum):
 def log_message(message, verbosity):
     if verbosity:
         print(message)
+
+def remove_ansi_colors(text):
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+    cleaned_str = ansi_escape.sub('', text)
+    return cleaned_str
 
 def no_check(child_sub, samples_sent, timeout):
     return ReturnCode.OK
