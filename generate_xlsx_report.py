@@ -438,7 +438,7 @@ class XlsxReport:
         worksheet.merge_range(
             # row 2, from column C till last_column_publisher
             1, 2, 1, last_column_publisher,
-            'Subscriber (see next row): ',
+            'Subscriber (next row): ',
             self.__formats['product_title'])
 
         # the subscriber table starts at last_column_publisher + 1
@@ -454,8 +454,8 @@ class XlsxReport:
             # row 2, from column last_column_publisher + 2 till last_column_subscriber
             # +2 = next_column + gap_between_tables
             1, last_column_publisher + 2, 1, last_column_subscriber,
-            'Publisher: ',
-            self.__formats['product_subtitle'])
+            'Publisher (next row): ',
+            self.__formats['product_title'])
         return (1, last_column_subscriber)
 
     def add_data_test_worksheet(self):
