@@ -49,8 +49,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report_$(date '+%Y-%m-%d-%H_%M_%S')
+          name: interoperability_report
           path: |
             ./index.html
             ./junit_interoperability_report.xml
-            ./interoperability_report.xlsx
+            ./interoperability_report*.xlsx
