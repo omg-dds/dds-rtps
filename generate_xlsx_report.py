@@ -438,8 +438,8 @@ class XlsxReport:
         worksheet.merge_range(
             # row 2, from column C till last_column_publisher
             1, 2, 1, last_column_publisher,
-            'Subscriber: ',
-            self.__formats['product_subtitle'])
+            'Subscriber (see next row): ',
+            self.__formats['product_title'])
 
         # the subscriber table starts at last_column_publisher + 1
         # the +1 is the gap between the publisher and subscriber tables
