@@ -27,6 +27,8 @@
 #include "shape_configurator_opendds.h"
 #elif defined(EPROSIMA_FAST_DDS)
 #include "shape_configurator_eprosima_fast_dds.h"
+#elif defined(INTERCOM_DDS)
+#include "shape_configurator_intercom_dds.h"
 #else
 #error "Must define the DDS vendor"
 #endif
@@ -61,6 +63,10 @@ using namespace DDS;
 #define ERROR_PARSING_ARGUMENTS 1
 #define ERROR_INITIALIZING 2
 #define ERROR_RUNNING 3
+
+#ifndef STRING_FREE
+#define STRING_FREE free
+#endif
 
 /*************************************************************/
 int  all_done  = 0;
@@ -270,9 +276,9 @@ public:
     //-------------------------------------------------------------
     ~ShapeOptions()
     {
-        free(topic_name);
-        free(color);
-        free(partition);
+        STRING_FREE(topic_name);
+        STRING_FREE(color);
+        STRING_FREE(partition);
     }
 
     //-------------------------------------------------------------
@@ -726,7 +732,7 @@ public:
         if (dp)  dp->delete_contained_entities( );
         if (dpf) dpf->delete_participant( dp );
 
-        free(color);
+        STRING_FREE(color);
     }
 
     //-------------------------------------------------------------
@@ -820,6 +826,10 @@ public:
 
 #elif  defined(TWINOAKS_COREDX)
         dw_qos.rtps_writer.apply_filters = 0; 
+        dw_qos.representation.value.clear( );
+        dw_qos.representation.value.push_back( options->data_representation );
+
+#elif  defined(INTERCOM_DDS)
         dw_qos.representation.value.clear( );
         dw_qos.representation.value.push_back( options->data_representation );
 
@@ -929,6 +939,10 @@ public:
         dr_qos.representation.value.clear( );
         dr_qos.representation.value.push_back( options->data_representation );
 
+#elif  defined(INTERCOM_DDS)
+        dr_qos.representation.value.clear( );
+        dr_qos.representation.value.push_back( options->data_representation );
+
 #elif   defined(OPENDDS)
         dr_qos.representation.value.length(1);
         dr_qos.representation.value[0] = options->data_representation;
@@ -992,6 +1006,15 @@ public:
             cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = \"color = "
                 + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
+
+#elif defined(INTERCOM_DDS)
+            char parameter[64];
+            sprintf(parameter, "'%s'",  options->color);
+            StringSeq_push(cf_params, parameter);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = \"color = "
+                + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
+
 #elif defined(EPROSIMA_FAST_DDS)
             cf_params.push_back(std::string("'") + options->color + std::string("'"));
             cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
@@ -1029,7 +1052,7 @@ public:
             ReturnCode_t     retval;
             SampleInfoSeq    sample_infos;
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS)
             ShapeTypeSeq          samples;
 #elif defined(TWINOAKS_COREDX)
             ShapeTypePtrSeq       samples;
@@ -1043,7 +1066,7 @@ public:
             do {
                 if (!options->use_read) {
                     logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     retval = dr->take_next_instance ( samples,
                             sample_infos,
                             LENGTH_UNLIMITED,
@@ -1061,7 +1084,7 @@ public:
                             ANY_INSTANCE_STATE );
 #endif
                 } else { /* Use read_next_instance*/
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
                     retval = dr->read_next_instance ( samples,
                             sample_infos,
@@ -1094,7 +1117,7 @@ public:
 #elif defined(TWINOAKS_COREDX)
                         ShapeType          *sample      = samples[i];
                         SampleInfo         *sample_info = sample_infos[i];
-#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS)
+#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS)
                         const ShapeType    *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #endif
@@ -1108,7 +1131,7 @@ public:
                         }
                     }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     previous_handle = sample_infos[0].instance_handle;
                     dr->return_loan( samples, sample_infos );
 #elif defined(TWINOAKS_COREDX)
@@ -1181,7 +1204,7 @@ public:
             }
 
             moveShape(&shape);
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS)
             dw->write( shape, HANDLE_NIL );
 #elif defined(TWINOAKS_COREDX) || defined(EPROSIMA_FAST_DDS)
             dw->write( &shape, HANDLE_NIL );

@@ -51,7 +51,10 @@ srcCxx/shape.*
 srcCxx/shapePlugin.*
 srcCxx/shapeSupport.*
 
+# VSCode default folders
 .vscode/
+build/
+.cache/
 
 # Generated reports
 *.html
