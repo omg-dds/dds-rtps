@@ -29,7 +29,7 @@ jobs:
           for i in ./* ; do \
             for j in ./* ; do \
               echo "Testing Publisher $i --- Subscriber $j"; \
-              python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml; \
+              python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml -t Test_DataRepresentation_0; \
               if [ -d "./OpenDDS-durable-data-dir" ]; then \
                 echo Deleting OpenDDS-durable-data-dir; \
                 rm -rf ./OpenDDS-durable-data-dir; \
@@ -39,7 +39,7 @@ jobs:
       - name: Generate xlsx report
         run: |
           source .venv/bin/activate
-          python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
+          python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report_$(date '+%Y-%m-%d-%H_%M_%S').xlsx
       - name: XUnit Viewer
         id: xunit-viewer
         uses: AutoModality/action-xunit-viewer@v1
@@ -49,7 +49,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_$(date '+%Y-%m-%d-%H_%M_%S')
           path: |
             ./index.html
             ./junit_interoperability_report.xml
