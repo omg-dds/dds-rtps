@@ -72,6 +72,7 @@ void configure_rtps()
   TransportRegistry::instance()->global_config(config);
 
   RtpsDiscovery_rch disc = make_rch<RtpsDiscovery>("RtpsDiscovery");
+  disc->use_xtypes(RtpsDiscoveryConfig::XTYPES_NONE);
   TheServiceParticipant->add_discovery(static_rchandle_cast<Discovery>(disc));
   TheServiceParticipant->set_default_discovery(disc->key());
 }
