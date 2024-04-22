@@ -998,8 +998,8 @@ public:
             char parameter[64];
             sprintf(parameter, "'%s'",  options->color);
             StringSeq_push(cf_params, parameter);
-            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color MATCH %0", cf_params);
-            logger.log_message("    ContentFilterTopic = \"color MATCH "
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = \"color = "
                 + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
             StringSeq_push(cf_params, options->color);
