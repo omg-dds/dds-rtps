@@ -9,6 +9,6 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report.zip
 
       - run: ls
