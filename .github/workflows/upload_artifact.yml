@@ -1,4 +1,4 @@
-name: Testing Interoperability
+name: Upload Artifact
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
