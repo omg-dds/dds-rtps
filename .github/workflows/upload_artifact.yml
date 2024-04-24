@@ -7,9 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/download-artifact@v4
+      - uses: dawidd6/action-download-artifact@v3
         with:
           name: interoperability_report
-          github-token: ${{ secrets.ANGEL_DOWNLOAD_ARTIFACT }}
+          workflow: main.yml
 
       - run: ls
