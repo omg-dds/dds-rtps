@@ -9,6 +9,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: interoperability_report.zip
+          name: interoperability_report
+          run-id: ${{ github.event.workflow_run.id }}
 
       - run: ls
