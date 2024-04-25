@@ -36,3 +36,5 @@ jobs:
           folderId: ${{ secrets.DRIVE_FOLDER_ID }}
           overwrite: "true"
           mirrorDirectoryStructure: "true"
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
