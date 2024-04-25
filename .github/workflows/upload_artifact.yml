@@ -24,6 +24,6 @@ jobs:
         env:
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: |
-            ls \
+            ls
             echo $DRIVE_FOLDER_ID
 
