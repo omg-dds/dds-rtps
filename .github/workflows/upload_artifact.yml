@@ -13,7 +13,7 @@ jobs:
             current_date=$(date '+%Y-%m-%d-%H_%M_%S')
             for file in *; do \
                 mv "$file" "${file%.*}_$current_date.${file##*.}"; \
-            done \
+            done
             zip interoperability_report_$current_date.zip *
   upload_artifact:
     runs-on: ubuntu-latest
