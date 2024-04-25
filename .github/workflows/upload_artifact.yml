@@ -19,4 +19,11 @@ jobs:
             mkdir report_$current_date
             mv *.zip report_$current_date/
             mv *.xlsx report_$current_date/
-      - run: tree
+      - name: Upload Artifact
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GCP_CREDENTIAL }}
+          filename: report_*/*.zip
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mirrorDirectoryStructure: "true"
