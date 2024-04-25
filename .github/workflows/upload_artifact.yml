@@ -10,7 +10,8 @@ jobs:
         with:
           name: interoperability_report
           workflow: main.yml
-      - run: |
+      - name: Create files to upload
+        run: |
             current_date=$(date '+%Y-%m-%d-%H_%M_%S')
             for file in *; do \
                 mv "$file" "${file%.*}_$current_date.${file##*.}"; \
