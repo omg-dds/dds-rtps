@@ -5,7 +5,8 @@ jobs:
   download_artifact:
     runs-on: ubuntu-latest
     steps:
-      - uses: dawidd6/action-download-artifact@v3
+      - name: Get Artifact
+        uses: dawidd6/action-download-artifact@v3
         with:
           name: interoperability_report
           workflow: main.yml
@@ -15,15 +16,14 @@ jobs:
                 mv "$file" "${file%.*}_$current_date.${file##*.}"; \
             done
             zip interoperability_report_$current_date.zip *
-  upload_artifact:
-    runs-on: ubuntu-latest
-    needs: download_artifact
-    steps:
-
+            mkdir report_$current_date
+            mv *.zip report_$current_date/
+            mv *.xlsx report_$current_date/
       - name: Upload Artifact
-        env:
-          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-        run: |
-            ls
-            echo $DRIVE_FOLDER_ID
-
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GCP_CREDENTIAL }}
+          filename: report_*
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mirrorDirectoryStructure: "true"
