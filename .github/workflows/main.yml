@@ -6,12 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
       - name: Downloads assets
-        uses: robinraju/release-downloader@v1.7
+        uses: robinraju/release-downloader@v1.10
         with:
           latest: true
           fileName: "*"
@@ -55,5 +55,5 @@ jobs:
           path: |
             ./index.html
             ./junit_interoperability_report.xml
-            ./interoperability_report*.xlsx
+            ./interoperability_report.xlsx
             ./timestamp

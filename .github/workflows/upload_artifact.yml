@@ -2,7 +2,7 @@ name: Upload Artifact
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
-  download_artifact:
+  upload_artifact:
     runs-on: ubuntu-latest
     steps:
       - name: Get Artifact
@@ -38,3 +38,9 @@ jobs:
           overwrite: "true"
           mirrorDirectoryStructure: "true"
           mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      - name: Attach detailed report html
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./index*.html

@@ -712,7 +712,7 @@ class XlsxReport:
        # Add DDS logo pic
         current_row += 2
         script_folder = os.path.dirname(__file__)
-        dds_logo_path = os.path.join(script_folder, 'resource/DDS-logo.jpg')
+        dds_logo_path = os.path.join(script_folder, 'doc/static/img/DDS-logo.jpg')
         worksheet.insert_image(
             row=current_row, col=starting_column,
             filename=dds_logo_path,
