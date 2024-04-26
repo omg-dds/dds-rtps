@@ -22,6 +22,8 @@ jobs:
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
+      - name: Generate timestamp file
+        run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
       - name: Run Interoperability script
         run: |
           source .venv/bin/activate
@@ -45,7 +47,6 @@ jobs:
         uses: AutoModality/action-xunit-viewer@v1
         with:
           results: ./junit_interoperability_report.xml
-          output: ./interoperability_report.html
       - name: Attach the report
         if: always()
         uses: actions/upload-artifact@v4
@@ -55,3 +56,4 @@ jobs:
             ./index.html
             ./junit_interoperability_report.xml
             ./interoperability_report*.xlsx
+            ./timestamp
