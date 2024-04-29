@@ -13,8 +13,8 @@ jobs:
 
       - name: Move the detailed report to output folder
         run: |
-          mkdir -p doc/_static/html
-          mv *.html doc/_static/html
+          mkdir -p doc/_static/html/
+          mv *.html doc/_static/html/
           ls doc/_static/html
 
       - name: Checkout repository
@@ -29,6 +29,7 @@ jobs:
         run: |
           python -m venv .venv
           source .venv/bin/activate
+          ls doc/_static
 
       - name: Install Google API dependencies
         run: pip install google-auth google-auth-httplib2 google-api-python-client
