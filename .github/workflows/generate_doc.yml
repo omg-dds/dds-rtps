@@ -54,7 +54,7 @@ jobs:
       - name: Attach html documentation
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: detailed_report
           path: |
             ./html/*.*
 
