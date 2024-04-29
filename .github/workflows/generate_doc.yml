@@ -54,7 +54,7 @@ jobs:
       - name: Attach html documentation
         uses: actions/upload-artifact@v4
         with:
-          name: detailed_report
+          name: documentation
           path: |
             ./html/*.*
 

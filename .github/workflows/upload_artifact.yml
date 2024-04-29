@@ -41,6 +41,6 @@ jobs:
       - name: Attach detailed report html
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: detailed_report
           path: |
             ./interoperability_report*.html
