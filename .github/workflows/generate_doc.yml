@@ -13,8 +13,9 @@ jobs:
 
       - name: Move the detailed report to output folder
         run: |
-          mkdir -p html/detailed_report
-          mv *.html html/detailed_report/
+          mkdir -p doc/_static/html
+          mv *.html doc/_static/html
+          ls doc/_static/html
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -36,10 +37,7 @@ jobs:
         env:
           GCP_CREDENTIAL_STR: ${{ secrets.GCP_CREDENTIAL_STR }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
-        run: |
-          pwd
-          ls
-          python get_latest_file_urls.py gdrive_url.py
+        run: python get_latest_file_urls.py gdrive_url.py
 
       - name: Install Sphinx dependencies
         run: |

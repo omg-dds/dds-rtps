@@ -29,19 +29,16 @@ def find_index_html():
     # Get the directory of the script
     script_directory = os.path.dirname(os.path.abspath(__file__))
 
-    # Get the parent directory of the script directory
-    parent_directory = os.path.abspath(os.path.join(script_directory, '..'))
-
     # Define the pattern to search for
-    pattern = os.path.join(parent_directory,
-            'html/detailed_report/interoperability_report_*.html')
+    pattern = os.path.join(script_directory,
+            '_static/html/interoperability_report_*.html')
 
     # Use glob to find files matching the pattern
     matching_files = glob.glob(pattern)
 
     # Return the first matching file, if any
     if matching_files:
-        return os.path.relpath(matching_files[0], parent_directory + '/html')
+        return os.path.relpath(matching_files[0], script_directory + '/html')
     return None
 
 
