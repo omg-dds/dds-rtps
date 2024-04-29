@@ -1,6 +1,10 @@
 name: Generate Doc
 run-name: ${{ github.actor }} is generating doc in GitHub Actions 🚀
-on: workflow_dispatch
+on:
+  workflow_run:
+      workflows: ["Upload Artifact"]
+      types:
+          - completed
 jobs:
   generate_doc:
     runs-on: ubuntu-latest
@@ -25,12 +29,12 @@ jobs:
           python-version: '3.11.4'
 
       - name: Create virtual environment
-        run: python -m venv .venv
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
 
       - name: Install Google API dependencies
-        run: |
-          source .venv/bin/activate
-          pip install google-api-python-client
+        run: pip install google-auth google-auth-httplib2 google-api-python-client
 
       - name: Get latest XLSX and ZIP urls
         env:
