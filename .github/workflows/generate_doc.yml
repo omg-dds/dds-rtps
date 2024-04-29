@@ -5,6 +5,9 @@ jobs:
   generate_doc:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Get Artifact
         uses: dawidd6/action-download-artifact@v3
         with:
@@ -16,9 +19,6 @@ jobs:
           mkdir -p doc/_static/html/
           mv *.html doc/_static/html/
           ls doc/_static/html
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
 
       - name: Set up Python
         uses: actions/setup-python@v5
