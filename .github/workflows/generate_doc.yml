@@ -1,10 +1,6 @@
 name: Generate Doc
 run-name: ${{ github.actor }} is generating doc in GitHub Actions 🚀
-on:
-  workflow_run:
-      workflows: ["Upload Artifact"]
-      types:
-          - completed
+on: workflow_dispatch
 jobs:
   generate_doc:
     runs-on: ubuntu-latest
