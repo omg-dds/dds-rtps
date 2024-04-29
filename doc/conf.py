@@ -33,13 +33,16 @@ def find_index_html():
     parent_directory = os.path.abspath(os.path.join(script_directory, '..'))
 
     # Define the pattern to search for
-    pattern = os.path.join(parent_directory, 'index_*.html')
+    pattern = os.path.join(parent_directory,
+            'html/detailed_report/interoperability_report_*.html')
 
     # Use glob to find files matching the pattern
     matching_files = glob.glob(pattern)
 
     # Return the first matching file, if any
-    return matching_files[0] if matching_files else None
+    if matching_files:
+        return os.path.relpath(matching_files[0], parent_directory + '/html')
+    return None
 
 
 # replacement is defined as
@@ -52,13 +55,13 @@ def replace_in_rst_files(replacements):
     # Get the directory of the script
     directory = os.path.dirname(os.path.abspath(__file__))
 
-    # Get a list of all _template.rst files in the directory
-    template_files = [f for f in os.listdir(directory) if f.endswith('_template.rst')]
+    # Get a list of all .template.rst files in the directory
+    template_files = [f for f in os.listdir(directory) if f.endswith('.template.rst')]
 
     for template_file in template_files:
         # Construct paths for template and output files
         template_file_path = os.path.join(directory, template_file)
-        output_file_path = os.path.join(directory, template_file.replace('_template.rst', '.rst'))
+        output_file_path = os.path.join(directory, template_file.replace('.template.rst', '.rst'))
 
         # Read the content of the template file
         with open(template_file_path, 'r') as file:
@@ -120,7 +123,7 @@ language = "en"
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This patterns also effect to html_static_path and html_extra_path
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '*_template.rst']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', '*.template.rst']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
@@ -197,6 +200,4 @@ zip_url = LINK_ZIP_URL,
 
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'DDS_Interoperability_Tests'
-
-
 

@@ -43,4 +43,4 @@ jobs:
         with:
           name: interoperability_report
           path: |
-            ./index*.html
+            ./interoperability_report*.html

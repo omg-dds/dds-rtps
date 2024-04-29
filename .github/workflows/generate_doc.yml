@@ -15,6 +15,11 @@ jobs:
           name: detailed_report
           workflow: upload_artifact.yml
 
+      - name: Move the detailed report to output folder
+        run: |
+          mkdir -p html/detailed_report
+          mv *.html html/detailed_report/
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -45,3 +50,11 @@ jobs:
         run: |
           sphinx-build -b html doc html
           working-directory: ${{ github.workspace }}
+
+      - name: Attach html documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./html/*.*
+
