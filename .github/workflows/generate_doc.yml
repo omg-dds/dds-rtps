@@ -48,7 +48,9 @@ jobs:
         run: sphinx-build -b html doc html
 
       - name: Zip the documentation
-        run: zip ./documentation.zip html/*
+        run: |
+          cd html
+          zip -r ../documentation.zip .
 
       - name: Attach html documentation
         uses: actions/upload-artifact@v4
