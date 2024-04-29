@@ -38,7 +38,7 @@ def find_index_html():
 
     # Return the first matching file, if any
     if matching_files:
-        return os.path.relpath(matching_files[0], script_directory + '/html')
+        return './' + os.path.relpath(matching_files[0], script_directory + '/html')
     return None
 
 
