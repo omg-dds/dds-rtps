@@ -63,3 +63,9 @@ build/
 *.zip
 
 .DS_Store
+
+# Generated documentation files
+gdrive_url.py
+html/
+doc/detailed_report.rst
+doc/test_results.rst
