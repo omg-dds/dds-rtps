@@ -1,4 +1,4 @@
-name: Generate Doc
+name: 3 - Generate Test Report
 run-name: ${{ github.actor }} is generating doc in GitHub Actions 🚀
 on: workflow_dispatch
 jobs:

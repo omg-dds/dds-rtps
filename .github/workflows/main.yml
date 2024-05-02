@@ -1,4 +1,4 @@
-name: Testing Interoperability
+name: 1 - Run Interoperability Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
