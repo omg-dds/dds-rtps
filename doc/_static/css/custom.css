@@ -21,3 +21,8 @@ table p {
 table input {
     float: right !important;
 }
+
+.icon {
+    height: auto !important;
+    width: auto !important;
+}

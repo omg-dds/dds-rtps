@@ -150,7 +150,7 @@ def setup(app):
 # documentation.
 #
 # html_theme_options = {}
-html_logo = "_static/img/DDS-logo.jpg"
+html_logo = "_static/img/DDS-logo-nobg.png"
 html_favicon = "_static/img/favicon.ico"
 html_css_files = ['css/custom.css']
 html_js_files = ['js/custom.js']

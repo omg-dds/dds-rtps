@@ -15,7 +15,6 @@ Welcome to |INTEROPERABILITY_TESTS|
    :glob:
    :caption: Contents
 
-   introduction
    test_results
    detailed_report
    copyright
