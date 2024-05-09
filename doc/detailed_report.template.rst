@@ -13,8 +13,14 @@ and the corresponding program output.
 
 |br|
 
-To display all test suites, click on `Advanced Filter` / `Suites` /
-`Empty hidden`. As shown in the image:
+.. raw:: html
+
+    <div style="font-weight: bold; font-size: 1.5em; margin-top: 1em;">Using the Detailed Report</div>
+
+|br|
+
+To display all test suites, click on ``Advanced Filter`` / ``Suites`` /
+``Empty hidden``. As shown in the image:
 
 |br|
 
@@ -34,8 +40,10 @@ product used as a **Subscriber** (on the right):
 
 By default, in case of an error in a test case, the |SHAPE_APP| output is shown
 as raw HTML code. You can enable a pretty print of that text by clicking the
-`</>raw` button. However, you may want to enable this option for all test output
-by clicking the option `</>raw` in `Advanced Filter` / `Tests` / `All` row.
+``</>raw`` button. However, you may want to enable this option for all test output
+by clicking the option ``</>raw`` in ``Advanced Filter`` / ``Tests`` / ``All`` row.
+
+|br|
 
 .. image:: _static/img/show_pretty_output.png
    :alt: Show All Tests
@@ -43,7 +51,13 @@ by clicking the option `</>raw` in `Advanced Filter` / `Tests` / `All` row.
 
 |br|
 
-Detailed report:
+.. raw:: html
+
+    <div style="font-weight: bold; font-size: 1.5em; margin-top: 1em;">Detailed Report HTML</div>
+
+|br|
+
+The following section is the HTML report that you can interact with:
 
 |br|
 

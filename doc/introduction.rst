@@ -41,7 +41,7 @@ that is part of this repository. By default, a test case is considered as
 *passed* if there is communication between the **Publisher** and **Subscriber**
 applications. Additionally, some test cases may require additional checks to
 ensure that the behavior is correct. Each test case may include a
-`checking_function` to do so. These `checking functions` are defined in the test
+``checking_function`` to do so. These ``checking functions`` are defined in the test
 suite as well and determine whether the test case should be considered as
 *passed* or *error* depending on some additional checks.
 
