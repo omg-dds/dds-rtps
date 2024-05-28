@@ -86,7 +86,7 @@ extensions = ['sphinx.ext.imgmath',
               'sphinx.ext.imgconverter',]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+# templates_path = ['_templates']
 
 # The suffix(es) of source filenames.
 # You can specify multiple suffix as a list of string:
@@ -99,17 +99,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'DDS Interoperability Tests'
-copyright = (
-    '2024, Real-Time Innovations, Inc',
-    '2024, Atostek Oy',
-    '2024, Kongsberg Defence & Aerospace',
-    '2024, Object Computing, Inc',
-    '2024, OpenDDS Foundation',
-    '2024, Twin Oaks Computing, Inc',
-    '2024, Proyectos y Sistemas de Mantenimiento SL (eProsima)',
-)
-
-author = 'Object Management Group, Inc'
+html_show_sphinx = False
+html_show_copyright = False
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
