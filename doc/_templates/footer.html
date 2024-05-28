@@ -1,0 +1,77 @@
+<!--
+Copyright (c) 2007-2024 by the Sphinx team (see AUTHORS file).
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are
+met:
+
+* Redistributions of source code must retain the above copyright
+  notice, this list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright
+  notice, this list of conditions and the following disclaimer in the
+  documentation and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+
+{%- macro copyright_block() %}
+  {%- if hasdoc('copyright') %}
+    {%- set copyright_prefix = '<a href="' + pathto('copyright') + '">' + _('Copyright') + '</a>' -%}
+  {%- else %}
+    {%- set copyright_prefix = _('Copyright') %}
+  {%- endif %}
+  {%- if copyright is iterable and copyright is not string %}
+    {% for copyright_line in copyright %}
+      {% trans trimmed copyright_prefix=copyright_prefix, copyright=copyright_line|e %}
+        &#169; {{ copyright_prefix }} {{ copyright }}.
+      {% endtrans %}
+      {%- if not loop.last %}<br/>{%- endif %}
+    {% endfor %}
+  {%- else %}
+    {% trans trimmed copyright_prefix=copyright_prefix, copyright=copyright|e %}
+      &#169; {{ copyright_prefix }} {{ copyright }}.
+    {% endtrans %}
+  {%- endif %}
+{%- endmacro %}
+
+<!--
+Copyright (c) 2013-2018 Dave Snider, Read the Docs, Inc. & contributors
+-->
+{% extends '!footer.html' %} {% block contentinfo %}
+      <p>
+      {%- if show_copyright %}
+        {{ copyright_block() }}
+      {%- endif %}
+
+      {%- if build_id and build_url %}
+        <span class="build">
+          {#- Translators: Build is a noun, not a verb -#}
+          {%- trans %}Build{% endtrans -%}
+          <a href="{{ build_url }}">{{ build_id }}</a>.
+        </span>
+      {%- elif commit %}
+        <span class="commit">
+          {#- Translators: the phrase "revision" comes from Git, referring to a commit #}
+          {%- trans %}Revision{% endtrans %} <code>{{ commit }}</code>.
+        </span>
+      {%- endif %}
+      {%- if last_updated %}
+        <span class="lastupdated">
+          {%- trans last_updated=last_updated|e %}Last updated on {{ last_updated }}.{% endtrans %}
+        </span>
+      {%- endif -%}
+
+      </p>
+  {% endblock %}
