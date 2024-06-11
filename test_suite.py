@@ -60,9 +60,10 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     second_received = False
     list_data_received_second = []
     list_data_received_first = []
-    max_samples_received = 125
+    max_samples_received = 500
+    samples_read = 0
 
-    for x in range(0, max_samples_received, 1):
+    while(samples_read < max_samples_received):
         # take the topic, color, position and size of the ShapeType.
         # child_sub.before contains x and y, and child_sub.after contains
         # [shapesize]
@@ -118,6 +119,8 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
         )
         if index == 1:
             break
+
+        samples_read += 1
 
         # A potential case is that the reader gets data from one writer and
         # then start receiving from a different writer with a higher
