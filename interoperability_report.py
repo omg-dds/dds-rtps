@@ -24,7 +24,7 @@ from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_c
 
 # This parameter is used to save the samples the Publisher sends.
 # MAX_SAMPLES_SAVED is the maximum number of samples saved.
-MAX_SAMPLES_SAVED = 100
+MAX_SAMPLES_SAVED = 500
 
 def run_subscriber_shape_main(
         name_executable: str,
@@ -445,6 +445,7 @@ def run_test(
                         'publisher_finished':publishers_finished[publisher_number]}))
             publisher_number += 1
             entity_type.append(f'Publisher_{publisher_number}')
+            time.sleep(1)
 
         elif('-S ' in parameters[i] or parameters[i].endswith('-S')):
             # Wait 1 second before running the subscriber to avoid conflicts between
