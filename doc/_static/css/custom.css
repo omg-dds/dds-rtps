@@ -1,0 +1,28 @@
+.wy-nav-content {
+    max-width: none !important;
+}
+
+table {
+    width: 100% !important;
+}
+
+table a {
+    color: #a1ae14 !important;
+    font-weight: bold !important;
+    font-size: 18px !important;
+}
+
+table p {
+    white-space: normal !important;
+    margin-bottom: 0 !important;
+    display: inline-block;
+}
+
+table input {
+    float: right !important;
+}
+
+.icon {
+    height: auto !important;
+    width: auto !important;
+}

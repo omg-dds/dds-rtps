@@ -1,4 +1,4 @@
-name: Testing Interoperability
+name: 1 - Run Interoperability Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
@@ -6,12 +6,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
       - name: Downloads assets
-        uses: robinraju/release-downloader@v1.7
+        uses: robinraju/release-downloader@v1.10
         with:
           latest: true
           fileName: "*"
@@ -22,6 +22,8 @@ jobs:
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
+      - name: Generate timestamp file
+        run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
       - name: Run Interoperability script
         run: |
           source .venv/bin/activate
@@ -39,7 +41,7 @@ jobs:
       - name: Generate xlsx report
         run: |
           source .venv/bin/activate
-          python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report_$(date '+%Y-%m-%d-%H_%M_%S').xlsx
+          python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
       - name: XUnit Viewer
         id: xunit-viewer
         uses: AutoModality/action-xunit-viewer@v1
@@ -53,4 +55,5 @@ jobs:
           path: |
             ./index.html
             ./junit_interoperability_report.xml
-            ./interoperability_report*.xlsx
+            ./interoperability_report.xlsx
+            ./timestamp

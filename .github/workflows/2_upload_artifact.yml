@@ -1,0 +1,46 @@
+name: 2 - Upload Test Results to Drive
+run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+on: workflow_dispatch
+jobs:
+  upload_artifact:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get Artifact
+        uses: dawidd6/action-download-artifact@v3
+        with:
+          name: interoperability_report
+          workflow: main.yml
+      - name: Create files to upload
+        run: |
+            current_date=$(cat timestamp)
+            mv index.html interoperability_report.html
+            for file in *; do \
+                mv "$file" "${file%.*}_$current_date.${file##*.}"; \
+            done
+            zip interoperability_report_$current_date.zip *
+            mkdir report_$current_date
+            mv *.zip report_$current_date/
+            mv *.xlsx report_$current_date/
+      - name: Upload zip artifact
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GCP_CREDENTIAL }}
+          filename: report_*/*.zip
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mirrorDirectoryStructure: "true"
+      - name: Upload spreadsheet
+        uses: adityak74/google-drive-upload-git-action@main
+        with:
+          credentials: ${{ secrets.GCP_CREDENTIAL }}
+          filename: report_*/*.xlsx
+          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
+          overwrite: "true"
+          mirrorDirectoryStructure: "true"
+          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      - name: Attach detailed report html
+        uses: actions/upload-artifact@v4
+        with:
+          name: detailed_report
+          path: |
+            ./interoperability_report*.html

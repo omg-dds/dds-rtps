@@ -57,9 +57,18 @@ build/
 .cache/
 
 # Generated reports
-*.html
 *.xlsx
 *.xml
 *.zip
+*.html
+
+# Do not ignore templates
+!doc/_templates/*.html
 
 .DS_Store
+
+# Generated documentation files
+gdrive_url.py
+html/
+doc/detailed_report.rst
+doc/test_results.rst
