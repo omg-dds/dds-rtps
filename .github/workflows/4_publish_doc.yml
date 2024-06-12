@@ -27,7 +27,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           name: documentation
-          workflow: generate_doc.yml
+          workflow: 3_generate_doc.yml
       - run: |
           mkdir html
           unzip documentation.zip -d html

@@ -12,7 +12,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           name: detailed_report
-          workflow: upload_artifact.yml
+          workflow: 2_upload_artifact.yml
 
       - name: Move the detailed report to output folder
         run: |

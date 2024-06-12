@@ -9,7 +9,7 @@ jobs:
         uses: dawidd6/action-download-artifact@v3
         with:
           name: interoperability_report
-          workflow: main.yml
+          workflow: 1_run_interoperability_tests.yml
       - name: Create files to upload
         run: |
             current_date=$(cat timestamp)
