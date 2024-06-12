@@ -11,7 +11,7 @@ jobs:
           name: interoperability_report
           workflow: 1_run_interoperability_tests.yml
           allow_forks: false
-          run_id: 9475568290
+          run_id: 9485635241
       - name: Create files to upload
         run: |
             current_date=$(cat timestamp)
