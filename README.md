@@ -13,6 +13,10 @@ QoS settings. The goal is to validate that the implementations perform
 these functions in compliance with OMG DDS-RTPS standard
 and can interoperate with each other.
 
+**Find the latest test report here**: https://omg-dds.github.io/dds-rtps/
+
+**Find the latest test result summary here**: https://omg-dds.github.io/dds-rtps/test_results.html
+
 ## Table of contents
 
 * 1\. [Introduction](#introduction)
