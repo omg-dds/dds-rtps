@@ -6,10 +6,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Get Artifact
-        uses: dawidd6/action-download-artifact@v3
+        uses: dawidd6/action-download-artifact@v6
         with:
           name: interoperability_report
           workflow: 1_run_interoperability_tests.yml
+          workflow_conclusion: completed
       - name: Create files to upload
         run: |
             current_date=$(cat timestamp)
