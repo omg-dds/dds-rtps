@@ -72,3 +72,4 @@ gdrive_url.py
 html/
 doc/detailed_report.rst
 doc/test_results.rst
+test_description.rst

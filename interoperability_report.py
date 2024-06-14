@@ -688,6 +688,8 @@ def main():
 
     if args.test_description_file is None:
         options['test_description_file'] = 'test_descriptions.rst'
+    else:
+        options['test_description_file'] = args.test_description_file
 
     if args.output_name is None:
         now = datetime.now()
