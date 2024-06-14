@@ -31,6 +31,8 @@ is named after the respective product and contains two tables:
 * Left-side table: Current product as publisher and all products as subscribers.
 * Righ-side table: Current product as subscriber and all products as publishers.
 
+Access the report at: |LINK_XLSX_URL|
+
 .. raw:: html
 
     <iframe src="|LINK_XLSX_URL|" width="100%" height="800"></iframe>
