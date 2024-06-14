@@ -25,6 +25,8 @@ jobs:
       - name: Generate timestamp file
         run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
       - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
         run: |
           source .venv/bin/activate
           cd executables

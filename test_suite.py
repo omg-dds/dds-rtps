@@ -344,88 +344,88 @@ rtps_test_suite_1 = {
     'Test_DataRepresentation_0' : {
         'apps' : ['-P -t Square -x 1', '-S -t Square -x 1'],
         'expected_codes' : [ ReturnCode.OK, ReturnCode.OK],
-        'description' : 'Test description'},
+        'description' : 'Default communication using XCDR1'},
 
     'Test_DataRepresentation_1' : {
         'apps' : ['-P -t Square -x 1', '-S -t Square -x 2'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'Compatibility publishing XCDR1 and subscribing XCDR2'},
 
     'Test_DataRepresentation_2' : {
         'apps' : ['-P -t Square -x 2', '-S -t Square -x 1'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'Compatibility publishing XCDR2 and subscribing XCDR1'},
 
     'Test_DataRepresentation_3' : {
         'apps' : ['-P -t Square -x 2', '-S -t Square -x 2'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Default communication using XCDR2'},
 
     # DOMAIN
     'Test_Domain_0' : {
         'apps' : ['-P -t Square', '-S -t Square'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using default domain'},
 
     'Test_Domain_1' : {
         'apps' : ['-P -t Square', '-S -t Square -d 1'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher in the default DDS domain and subscriber in a different one'},
 
     'Test_Domain_2' : {
         'apps' : ['-P -t Square -d 1', '-S -t Square'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher in a non-default DDS domain and subscriber in the default one'},
 
     'Test_Domain_3' : {
         'apps' : ['-P -t Square -d 1', '-S -t Square -d 1'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using non default DDS domain'},
 
     # RELIABILITY
     'Test_Reliability_0' : {
         'apps' : ['-P -t Square -b', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using reliability BEST_EFFORT'},
 
     'Test_Reliability_1' : {
         'apps' : ['-P -t Square -b', '-S -t Square -r'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between BEST_EFFORT publisher and RELIABLE subscriber'},
 
     'Test_Reliability_2' : {
         'apps' : ['-P -t Square -r', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between RELIABLE publisher and BEST_EFFORT subscriber'},
 
     # This test only checks that data is received correctly
     'Test_Reliability_3' : {
         'apps' : ['-P -t Square -r -k 3', '-S -t Square -r'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using reliability RELIABLE'},
 
     # This test checks that data is received in the right order
     'Test_Reliability_4' : {
         'apps' : ['-P -t Square -r -k 0 -w', '-S -t Square -r -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_reliability_4,
-        'description' : ' '},
+        'description' : 'Reliable communication with no sample losses'},
 
     # DEADLINE
     'Test_Deadline_0' : {
         'apps' : ['-P -t Square -f 3', '-S -t Square -f 5'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication with publisher deadline smaller than subscriber deadline'},
 
     'Test_Deadline_1' : {
         'apps' : ['-P -t Square -f 5', '-S -t Square -f 5'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication with the same publisher and subscriber deadlines'},
 
     'Test_Deadline_2' : {
         'apps' : ['-P -t Square -f 7', '-S -t Square -f 5'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility with publisher deadline higher than subscriber deadline'},
 
     # This test checks that the deadline is missed in both, publisher and subscriber
     # because the write-period is higher than the deadline period, that means
@@ -434,182 +434,183 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -w -f 2 --write-period 3000', '-S -t Square -f 2'],
         'expected_codes' : [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED],
         'check_function' : test_deadline_missed,
-        'description' : ' '},
+        'description' : 'Test that deadline is missed in both, publisher and subscriber'},
 
     # TOPIC
     'Test_Topic_0' : {
         'apps' : ['-P -t Square', '-S -t Square'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using the same topic: Square'},
 
     'Test_Topic_1' : {
         'apps' : ['-P -t Square', '-S -t Circle'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication, publisher topic Square and subscriber topic Circle'},
 
     'Test_Topic_2' : {
         'apps' : ['-P -t Circle', '-S -t Square'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication, publisher topic Circle and subscriber topic Square'},
 
     'Test_Topic_3' : {
         'apps' : ['-P -t Circle', '-S -t Circle'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication using the same topic: Circle'},
 
     # COLOR
     'Test_Color_0' : {
         'apps' : ['-P -t Square -c BLUE', '-S -t Square -c BLUE'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with instance BLUE and content filtered topic in the subscriber color=BLUE'},
 
     'Test_Color_1' : {
         'apps' : ['-P -t Square -c BLUE', '-S -t Square -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher with instance BLUE and content filtered topic in the subscriber color=RED'},
 
     'Test_Color_2' : {
         'apps' : ['-P -t Square -c BLUE', '-S -t Square'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with instance BLUE and no content filtered topic in the subscriber'},
 
     'Test_Color_3' : {
         'apps' : ['-P -t Square -c RED', '-S -t Square -c BLUE'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher with instance RED and content filtered topic in the subscriber color=BLUE'},
 
     'Test_Color_4' : {
         'apps' : ['-P -t Square -c RED', '-S -t Square -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with instance RED and content filtered topic in the subscriber color=RED'},
 
     'Test_Color_5' : {
         'apps' : ['-P -t Square -c RED', '-S -t Square'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with instance RED and no content filtered topic'},
 
     'Test_Color_6' : {
         'apps' : ['-P -t Square', '-S -t Square -c BLUE'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with default instance (BLUE) and content filtered topic in the subscriber color=BLUE'},
 
     'Test_Color_7' : {
         'apps' : ['-P -t Square', '-S -t Square -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher with instance (BLUE) and content filtered topic in the subscriber color=RED'},
 
     'Test_Color_8' : {
         'apps' : ['-P -t Square', '-S -t Square'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher with default instance (BLUE) and no content filtered topic in the subscriber1'},
 
     # PARTITION
     'Test_Partition_0' : {
         'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p1"'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between publisher and subscriber using the same partition'},
 
     'Test_Partition_1' : {
         'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p2"'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher and subscriber using different partitions'},
 
     'Test_Partition_2' : {
         'apps' : ['-P -t Square -p "p2"', '-S -t Square -p "p1"'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'description' : ' '},
+        'description' : 'No communication between publisher and subscriber using different partitions'},
 
     # DURABILITY
     'Test_Durability_0' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between VOLATILE publisher and VOLATILE subscriber'},
 
     'Test_Durability_1' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between VOLATILE publisher and TRANSIENT_LOCAL subscriber'},
 
     'Test_Durability_2' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between VOLATILE publisher and TRANSIENT subscriber'},
 
     'Test_Durability_3' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D p'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between VOLATILE publisher and PERSISTENT subscriber'},
 
     'Test_Durability_4' : {
         'apps' : ['-P -t Square -D l', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between TRANSIENT_LOCAL publisher and VOLATILE subscriber'},
 
     'Test_Durability_5' : {
         'apps' : ['-P -t Square -D l', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between TRANSIENT_LOCAL publisher and TRANSIENT_LOCAL subscriber'},
 
     'Test_Durability_6' : {
         'apps' : ['-P -t Square -D l', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between TRANSIENT_LOCAL publisher and TRANSIENT subscriber'},
 
     'Test_Durability_7' : {
         'apps' : ['-P -t Square -D l', '-S -t Square -D p'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between TRANSIENT_LOCAL publisher and PERSISTENT subscriber'},
 
     'Test_Durability_8' : {
         'apps' : ['-P -t Square -D t', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between TRANSIENT publisher and VOLATILE subscriber'},
 
     'Test_Durability_9' : {
         'apps' : ['-P -t Square -D t', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between TRANSIENT publisher and TRANSIENT_LOCAL subscriber'},
 
     'Test_Durability_10' : {
         'apps' : ['-P -t Square -D t', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between TRANSIENT publisher and TRANSIENT subscriber'},
 
     'Test_Durability_11' : {
         'apps' : ['-P -t Square -D t', '-S -t Square -D p'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'No compatibility between TRANSIENT publisher and PERSISTENT subscriber'},
 
     'Test_Durability_12' : {
         'apps' : ['-P -t Square -D p', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between PERSISTENT publisher and VOLATILE subscriber'},
 
     'Test_Durability_13' : {
         'apps' : ['-P -t Square -D p', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between PERSISTENT publisher and TRANSIENT_LOCAL subscriber'},
 
     'Test_Durability_14' : {
         'apps' : ['-P -t Square -D p', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between PERSISTENT publisher and TRANSIENT subscriber'},
 
     'Test_Durability_15' : {
         'apps' : ['-P -t Square -D p', '-S -t Square -D p'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between PERSISTENT publisher and PERSISTENT subscriber'},
 
     # Test durability behavior
     # This test sends all samples with reliable reliability and check that the
-    # first sample that the subscriber app reads are not the first one
+    # first sample that the subscriber app reads is not the first one
     # (the interoperability_test waits 1 second before creating the second
     # entity, the subscriber, if durability is set)
     'Test_Durability_16' : {
         'apps' : ['-P -t Square -z 0 -r -k 0 -D v -w', '-S -t Square -r -k 0 -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_durability_volatile,
-        'description' : ' '},
+        'description' : 'Test the behavior of the VOLATILE durability. This test checks that the first sample received by the '
+                        'subscriber application is not the first one that the publisher application sent.'},
 
     # This test checks that the subscriber application reads the first sample that
     # have been sent by the publisher before creating the subscriber
@@ -617,44 +618,45 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -z 0 -r -k 0 -D t -w', '-S -t Square -r -k 0 -D t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_durability_transient_local,
-        'description' : ' '},
+        'description' : 'Test the behavior of the TRANSIENT_LOCAL durability. This test checks that the first sample received by the '
+                        'subscriber application is the first one that the publisher application sent.'},
 
     # HISTORY
     'Test_History_0' : {
         'apps' : ['-P -t Square -k 3', '-S -t Square -k 3'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between KEEP_LAST publisher and KEEP_LAST subscriber'},
 
     'Test_History_1' : {
         'apps' : ['-P -t Square -k 3', '-S -t Square -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between KEEP_LAST publisher and KEEP_ALL subscriber'},
 
     'Test_History_2' : {
         'apps' : ['-P -t Square -k 0', '-S -t Square -k 3'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between KEEP_ALL publisher and KEEP_LAST subscriber'},
 
     'Test_History_3' : {
         'apps' : ['-P -t Square -k 0', '-S -t Square -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between KEEP_ALL publisher and KEEP_ALL subscriber'},
 
     # OWNERSHIP
     'Test_Ownership_0' : {
         'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Communication between SHARED OWNERSHIP publisher and subscriber'},
 
     'Test_Ownership_1' : {
         'apps' : ['-P -t Square -s -1', '-S -t Square -s 1'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'Incompatibility between SHARED OWNERSHIP publisher and EXCLUSIVE OWNERSHIP subscriber'},
 
     'Test_Ownership_2' : {
         'apps' : ['-P -t Square -s 3', '-S -t Square -s -1'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'description' : ' '},
+        'description' : 'Incompatibility between EXCLUSIVE OWNERSHIP publisher and SHARED OWNERSHIP subscriber'},
 
     # For Test_Ownership_[3|4|5|6]: each publisher application publishes samples
     # with a different shapesize to allow the subscriber app to recognize from
@@ -672,7 +674,8 @@ rtps_test_suite_1 = {
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
         'check_function' : test_ownership_receivers,
-        'description' : ' '},
+        'description' : 'Behavior of EXCLUSIVE OWNERSHIP QoS. This test checks that if there are two publisher applications '
+                        'for different instances, the subscriber application receives data from both.'},
 
     # The DataReader should only receive samples from the DataWriter with higher
     # ownership. There may be the situation that the DataReader starts receiving
@@ -688,7 +691,9 @@ rtps_test_suite_1 = {
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : test_ownership_receivers,
-        'description' : ' '},
+        'description' : 'Behavior of EXCLUSIVE OWNERSHIP QoS. This test checks that if there are two publisher applications '
+                        'for the same instance and different strength, the subscriber application receives data from the '
+                        'higher strength ownership publisher application.'},
 
     # The DataReader should receive from both publisher apps because they have
     # shared ownership.
@@ -702,7 +707,8 @@ rtps_test_suite_1 = {
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
         'check_function' : test_ownership_receivers,
-        'description' : ' '},
+        'description' : 'Behavior of SHARED OWNERSHIP QoS. This test checks that if there are two publisher applications '
+                        'for different instances, the subscriber application receives data from both of them.'},
 
     # The DataReader should receive from both publisher apps because they have
     # shared ownership.
@@ -716,5 +722,6 @@ rtps_test_suite_1 = {
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
         'check_function' : test_ownership_receivers,
-        'description' : ' '},
+        'description' : 'Behavior of SHARED OWNERSHIP QoS. This test checks that if there are two publisher applications '
+                        'for the same instance, the subscriber application receives data from both of them.'},
 }
