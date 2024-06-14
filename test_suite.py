@@ -344,7 +344,7 @@ rtps_test_suite_1 = {
     'Test_DataRepresentation_0' : {
         'apps' : ['-P -t Square -x 1', '-S -t Square -x 1'],
         'expected_codes' : [ ReturnCode.OK, ReturnCode.OK],
-        'description' : ' '},
+        'description' : 'Test description'},
 
     'Test_DataRepresentation_1' : {
         'apps' : ['-P -t Square -x 1', '-S -t Square -x 2'],
