@@ -172,6 +172,13 @@ html_sidebars = {
     ]
 }
 
+
+# Add test description
+with open('../test_description.rst', "r") as file:
+    test_description_content = file.read()
+
+TEST_DESCRIPTION = test_description_content
+
 # -- links
 LINK_XLSX_URL = xlsx_url
 LINK_ZIP_URL = zip_url
@@ -183,6 +190,7 @@ if INDEX_HTML_PATH is None:
 replacements = {
     '|LINK_XLSX_URL|': LINK_XLSX_URL,
     '|INDEX_HTML_PATH|': INDEX_HTML_PATH,
+    '|TEST_DESCRIPTION|': TEST_DESCRIPTION,
     # Add more replacements as needed
 }
 replace_in_rst_files(replacements)

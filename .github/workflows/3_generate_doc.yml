@@ -14,6 +14,13 @@ jobs:
           name: detailed_report
           workflow: 2_upload_artifact.yml
 
+      - name: Get Artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: test_description
+          workflow: 1_run_interoperability_tests.yml
+          workflow_conclusion: completed
+
       - name: Move the detailed report to output folder
         run: |
           mkdir -p doc/_static/html/

@@ -17,21 +17,28 @@ import time
 # the dictionary is a Test Case that the interoperability_report.py
 # executes.
 # The dictionary has the following structure:
-#       'name' : [[parameter_list], [expected_return_code_list], checking_function]
+#       'name' : {
+#           'apps' : [parameter_list],
+#           'expected_codes' : [expected_return_code_list],
+#           'check_function' : checking_function,
+#           'description' : 'This is the description of the test'}
 # where:
 #       * name: TestCase's name
-#       * parameter_list: list in which each element is the parameters that
-#         the shape_main application will use.
-#       * expected_return_code_list: list with expected ReturnCodes
+#       * apps: list in which each element contains the parameters that
+#         the shape_main application will use. Each element of the list
+#         will run a new app.
+#       * expected_codes: list with expected ReturnCodes
 #         for a succeed test execution.
-#       * checking_function [OPTIONAL]: function to check how the Subscribers receive
+#       * check_function [OPTIONAL]: function to check how the Subscribers receive
 #         the samples from the Publishers. By default, it just checks that
 #         the data is received. In case that it has a different behavior, that
 #         function must be implemented in the test_suite file and the test case
 #         should reference it in this parameter.
-# The number of elements in parameter_list defines how many shape_main
+#       * description [OPTIONAL]: human-readable description of the test
+#
+# The number of elements in 'apps' list defines how many shape_main
 # applications the interoperability_report will run. It should be the same as
-# the number of elements in expected_return_code_list.
+# the number of elements in expected_codes.
 
 
 def test_ownership_receivers(child_sub, samples_sent, timeout):
@@ -334,100 +341,320 @@ def test_deadline_missed(child_sub, samples_sent, timeout):
 
 rtps_test_suite_1 = {
     # DATA REPRESENTATION
-    'Test_DataRepresentation_0' : [['-P -t Square -x 1', '-S -t Square -x 1'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_DataRepresentation_1' : [['-P -t Square -x 1', '-S -t Square -x 2'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_DataRepresentation_2' : [['-P -t Square -x 2', '-S -t Square -x 1'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_DataRepresentation_3' : [['-P -t Square -x 2', '-S -t Square -x 2'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_DataRepresentation_0' : {
+        'apps' : ['-P -t Square -x 1', '-S -t Square -x 1'],
+        'expected_codes' : [ ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_DataRepresentation_1' : {
+        'apps' : ['-P -t Square -x 1', '-S -t Square -x 2'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_DataRepresentation_2' : {
+        'apps' : ['-P -t Square -x 2', '-S -t Square -x 1'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_DataRepresentation_3' : {
+        'apps' : ['-P -t Square -x 2', '-S -t Square -x 2'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # DOMAIN
-    'Test_Domain_0' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Domain_1' : [['-P -t Square', '-S -t Square -d 1'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Domain_2' : [['-P -t Square -d 1', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Domain_3' : [['-P -t Square -d 1', '-S -t Square -d 1'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Domain_0' : {
+        'apps' : ['-P -t Square', '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Domain_1' : {
+        'apps' : ['-P -t Square', '-S -t Square -d 1'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Domain_2' : {
+        'apps' : ['-P -t Square -d 1', '-S -t Square'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Domain_3' : {
+        'apps' : ['-P -t Square -d 1', '-S -t Square -d 1'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # RELIABILITY
-    'Test_Reliability_0' : [['-P -t Square -b', '-S -t Square -b'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Reliability_1' : [['-P -t Square -b', '-S -t Square -r'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Reliability_2' : [['-P -t Square -r', '-S -t Square -b'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Reliability_0' : {
+        'apps' : ['-P -t Square -b', '-S -t Square -b'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Reliability_1' : {
+        'apps' : ['-P -t Square -b', '-S -t Square -r'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Reliability_2' : {
+        'apps' : ['-P -t Square -r', '-S -t Square -b'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
     # This test only checks that data is received correctly
-    'Test_Reliability_3' : [['-P -t Square -r -k 3', '-S -t Square -r'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Reliability_3' : {
+        'apps' : ['-P -t Square -r -k 3', '-S -t Square -r'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
     # This test checks that data is received in the right order
-    'Test_Reliability_4' : [['-P -t Square -r -k 0 -w', '-S -t Square -r -k 0'], [ReturnCode.OK, ReturnCode.OK], test_reliability_4],
+    'Test_Reliability_4' : {
+        'apps' : ['-P -t Square -r -k 0 -w', '-S -t Square -r -k 0'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : test_reliability_4,
+        'description' : ' '},
 
     # DEADLINE
-    'Test_Deadline_0' : [['-P -t Square -f 3', '-S -t Square -f 5'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Deadline_1' : [['-P -t Square -f 5', '-S -t Square -f 5'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Deadline_2' : [['-P -t Square -f 7', '-S -t Square -f 5'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Deadline_0' : {
+        'apps' : ['-P -t Square -f 3', '-S -t Square -f 5'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Deadline_1' : {
+        'apps' : ['-P -t Square -f 5', '-S -t Square -f 5'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Deadline_2' : {
+        'apps' : ['-P -t Square -f 7', '-S -t Square -f 5'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
     # This test checks that the deadline is missed in both, publisher and subscriber
     # because the write-period is higher than the deadline period, that means
     # that the samples won't be send and received on time
-    'Test_Deadline_4' : [['-P -t Square -w -f 2 --write-period 3000', '-S -t Square -f 2'],
-                         [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED],
-                         test_deadline_missed],
+    'Test_Deadline_4' : {
+        'apps' : ['-P -t Square -w -f 2 --write-period 3000', '-S -t Square -f 2'],
+        'expected_codes' : [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED],
+        'check_function' : test_deadline_missed,
+        'description' : ' '},
 
     # TOPIC
-    'Test_Topic_0' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Topic_1' : [['-P -t Square', '-S -t Circle'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Topic_2' : [['-P -t Circle', '-S -t Square'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Topic_3' : [['-P -t Circle', '-S -t Circle'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Topic_0' : {
+        'apps' : ['-P -t Square', '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Topic_1' : {
+        'apps' : ['-P -t Square', '-S -t Circle'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Topic_2' : {
+        'apps' : ['-P -t Circle', '-S -t Square'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Topic_3' : {
+        'apps' : ['-P -t Circle', '-S -t Circle'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # COLOR
-    'Test_Color_0' : [['-P -t Square -c BLUE', '-S -t Square -c BLUE'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Color_1' : [['-P -t Square -c BLUE', '-S -t Square -c RED'], [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Color_2' : [['-P -t Square -c BLUE', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Color_3' : [['-P -t Square -c RED', '-S -t Square -c BLUE'], [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Color_4' : [['-P -t Square -c RED', '-S -t Square -c RED'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Color_5' : [['-P -t Square -c RED', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Color_6' : [['-P -t Square', '-S -t Square -c BLUE'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Color_7' : [['-P -t Square', '-S -t Square -c RED'], [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Color_8' : [['-P -t Square', '-S -t Square'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Color_0' : {
+        'apps' : ['-P -t Square -c BLUE', '-S -t Square -c BLUE'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Color_1' : {
+        'apps' : ['-P -t Square -c BLUE', '-S -t Square -c RED'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Color_2' : {
+        'apps' : ['-P -t Square -c BLUE', '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Color_3' : {
+        'apps' : ['-P -t Square -c RED', '-S -t Square -c BLUE'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Color_4' : {
+        'apps' : ['-P -t Square -c RED', '-S -t Square -c RED'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Color_5' : {
+        'apps' : ['-P -t Square -c RED', '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Color_6' : {
+        'apps' : ['-P -t Square', '-S -t Square -c BLUE'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Color_7' : {
+        'apps' : ['-P -t Square', '-S -t Square -c RED'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Color_8' : {
+        'apps' : ['-P -t Square', '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # PARTITION
-    'Test_Partition_0' : [['-P -t Square -p "p1"', '-S -t Square -p "p1"'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Partition_1' : [['-P -t Square -p "p1"', '-S -t Square -p "p2"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
-    'Test_Partition_2' : [['-P -t Square -p "p2"', '-S -t Square -p "p1"'], [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED]],
+    'Test_Partition_0' : {
+        'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p1"'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Partition_1' : {
+        'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p2"'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
+
+    'Test_Partition_2' : {
+        'apps' : ['-P -t Square -p "p2"', '-S -t Square -p "p1"'],
+        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
+        'description' : ' '},
 
     # DURABILITY
-    'Test_Durability_0' : [['-P -t Square -D v', '-S -t Square -D v'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_1' : [['-P -t Square -D v', '-S -t Square -D l'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Durability_2' : [['-P -t Square -D v', '-S -t Square -D t'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Durability_3' : [['-P -t Square -D v', '-S -t Square -D p'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Durability_0' : {
+        'apps' : ['-P -t Square -D v', '-S -t Square -D v'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
-    'Test_Durability_4' : [['-P -t Square -D l', '-S -t Square -D v'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_5' : [['-P -t Square -D l', '-S -t Square -D l'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_6' : [['-P -t Square -D l', '-S -t Square -D t'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Durability_7' : [['-P -t Square -D l', '-S -t Square -D p'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Durability_1' : {
+        'apps' : ['-P -t Square -D v', '-S -t Square -D l'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
 
-    'Test_Durability_8' : [['-P -t Square -D t', '-S -t Square -D v'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_9' : [['-P -t Square -D t', '-S -t Square -D l'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_10': [['-P -t Square -D t', '-S -t Square -D t'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_11': [['-P -t Square -D t', '-S -t Square -D p'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Durability_2' : {
+        'apps' : ['-P -t Square -D v', '-S -t Square -D t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
 
-    'Test_Durability_12' : [['-P -t Square -D p', '-S -t Square -D v'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_13' : [['-P -t Square -D p', '-S -t Square -D l'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_14' : [['-P -t Square -D p', '-S -t Square -D t'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Durability_15' : [['-P -t Square -D p', '-S -t Square -D p'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_Durability_3' : {
+        'apps' : ['-P -t Square -D v', '-S -t Square -D p'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Durability_4' : {
+        'apps' : ['-P -t Square -D l', '-S -t Square -D v'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_5' : {
+        'apps' : ['-P -t Square -D l', '-S -t Square -D l'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_6' : {
+        'apps' : ['-P -t Square -D l', '-S -t Square -D t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Durability_7' : {
+        'apps' : ['-P -t Square -D l', '-S -t Square -D p'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Durability_8' : {
+        'apps' : ['-P -t Square -D t', '-S -t Square -D v'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_9' : {
+        'apps' : ['-P -t Square -D t', '-S -t Square -D l'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_10' : {
+        'apps' : ['-P -t Square -D t', '-S -t Square -D t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_11' : {
+        'apps' : ['-P -t Square -D t', '-S -t Square -D p'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Durability_12' : {
+        'apps' : ['-P -t Square -D p', '-S -t Square -D v'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_13' : {
+        'apps' : ['-P -t Square -D p', '-S -t Square -D l'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_14' : {
+        'apps' : ['-P -t Square -D p', '-S -t Square -D t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Durability_15' : {
+        'apps' : ['-P -t Square -D p', '-S -t Square -D p'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # Test durability behavior
     # This test sends all samples with reliable reliability and check that the
     # first sample that the subscriber app reads are not the first one
     # (the interoperability_test waits 1 second before creating the second
     # entity, the subscriber, if durability is set)
-    'Test_Durability_16' : [['-P -t Square -z 0 -r -k 0 -D v -w', '-S -t Square -r -k 0 -D v'], [ReturnCode.OK, ReturnCode.OK], test_durability_volatile],
+    'Test_Durability_16' : {
+        'apps' : ['-P -t Square -z 0 -r -k 0 -D v -w', '-S -t Square -r -k 0 -D v'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : test_durability_volatile,
+        'description' : ' '},
+
     # This test checks that the subscriber application reads the first sample that
     # have been sent by the publisher before creating the subscriber
-    'Test_Durability_17' : [['-P -t Square -z 0 -r -k 0 -D t -w', '-S -t Square -r -k 0 -D t'], [ReturnCode.OK, ReturnCode.OK], test_durability_transient_local],
+    'Test_Durability_17' : {
+        'apps' : ['-P -t Square -z 0 -r -k 0 -D t -w', '-S -t Square -r -k 0 -D t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : test_durability_transient_local,
+        'description' : ' '},
 
     # HISTORY
-    'Test_History_0' : [['-P -t Square -k 3', '-S -t Square -k 3'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_History_1' : [['-P -t Square -k 3', '-S -t Square -k 0'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_History_2' : [['-P -t Square -k 0', '-S -t Square -k 3'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_History_3' : [['-P -t Square -k 0', '-S -t Square -k 0'], [ReturnCode.OK, ReturnCode.OK]],
+    'Test_History_0' : {
+        'apps' : ['-P -t Square -k 3', '-S -t Square -k 3'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_History_1' : {
+        'apps' : ['-P -t Square -k 3', '-S -t Square -k 0'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_History_2' : {
+        'apps' : ['-P -t Square -k 0', '-S -t Square -k 3'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_History_3' : {
+        'apps' : ['-P -t Square -k 0', '-S -t Square -k 0'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
 
     # OWNERSHIP
-    'Test_Ownership_0': [['-P -t Square -s -1', '-S -t Square -s -1'], [ReturnCode.OK, ReturnCode.OK]],
-    'Test_Ownership_1': [['-P -t Square -s -1', '-S -t Square -s 1'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
-    'Test_Ownership_2': [['-P -t Square -s 3', '-S -t Square -s -1'], [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS]],
+    'Test_Ownership_0' : {
+        'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'description' : ' '},
+
+    'Test_Ownership_1' : {
+        'apps' : ['-P -t Square -s -1', '-S -t Square -s 1'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
+
+    'Test_Ownership_2' : {
+        'apps' : ['-P -t Square -s 3', '-S -t Square -s -1'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'description' : ' '},
 
     # For Test_Ownership_[3|4|5|6]: each publisher application publishes samples
     # with a different shapesize to allow the subscriber app to recognize from
@@ -435,43 +662,59 @@ rtps_test_suite_1 = {
 
     # The DataReader should receive from both publisher apps because they
     # publish different instances and the ownership is applied per instance.
-    'Test_Ownership_3': [['-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-                          '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
-                          '-S -t Square -s 1 -r -k 0'],
-                         [ReturnCode.OK,
-                          ReturnCode.OK,
-                          ReturnCode.RECEIVING_FROM_BOTH],
-                        test_ownership_receivers],
+    'Test_Ownership_3': {
+        'apps' :[
+            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
+            '-S -t Square -s 1 -r -k 0'],
+        'expected_codes' : [
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'description' : ' '},
 
     # The DataReader should only receive samples from the DataWriter with higher
     # ownership. There may be the situation that the DataReader starts receiving
     # samples from one DataWriter until another DataWriter with higher ownership
     # strength is created. This should be handled by test_ownership_receivers().
-    'Test_Ownership_4': [['-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-                          '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
-                          '-S -t Square -s 1 -r -k 0'],
-                         [ReturnCode.OK,
-                          ReturnCode.OK,
-                          ReturnCode.RECEIVING_FROM_ONE],
-                         test_ownership_receivers],
+    'Test_Ownership_4': {
+        'apps' : [
+            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
+            '-S -t Square -s 1 -r -k 0'],
+        'expected_codes' :[
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_ONE],
+        'check_function' : test_ownership_receivers,
+        'description' : ' '},
 
     # The DataReader should receive from both publisher apps because they have
     # shared ownership.
-    'Test_Ownership_5': [['-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-                          '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
-                          '-S -t Square -s -1 -r -k 0'],
-                         [ReturnCode.OK,
-                          ReturnCode.OK,
-                          ReturnCode.RECEIVING_FROM_BOTH],
-                        test_ownership_receivers],
+    'Test_Ownership_5': {
+        'apps' : [
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
+            '-S -t Square -s -1 -r -k 0'],
+        'expected_codes' : [
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'description' : ' '},
 
     # The DataReader should receive from both publisher apps because they have
     # shared ownership.
-    'Test_Ownership_6': [['-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-                          '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
-                          '-S -t Square -s -1 -r -k 0'],
-                         [ReturnCode.OK,
-                          ReturnCode.OK,
-                          ReturnCode.RECEIVING_FROM_BOTH],
-                        test_ownership_receivers],
+    'Test_Ownership_6': {
+        'apps' : [
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
+            '-S -t Square -s -1 -r -k 0'],
+        'expected_codes' :[
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'description' : ' '},
 }

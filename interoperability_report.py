@@ -641,6 +641,14 @@ class Arguments:
                 'a new file. '
                 '(Default: <publisher_name>-<subscriber_name>-date.xml)')
 
+        out_opts.add_argument('-p', '--test-description-file',
+            required=False,
+            metavar='filename',
+            type=str,
+            help='Name of the output file that contains the description of the '
+                'test performed.'
+                '(Default: ./test_description_file')
+
         return parser
 
 # this function checks if the test case exist in the test suite
@@ -665,8 +673,7 @@ def main():
         'test_suite': args.suite,
         'test_cases': args.test,
         'test_cases_disabled': args.disable_test,
-        'data_representation': args.data_representation
-
+        'data_representation': args.data_representation,
     }
 
     # The executables's names are supposed to follow the pattern: name_shape_main
@@ -678,6 +685,9 @@ def main():
     # That will be the name that will appear in the report.
     name_publisher = options['publisher'].split('_shape')[0].split('-shape')[0].split('/')[-1]
     name_subscriber = options['subscriber'].split('_shape')[0].split('-shape')[0].split('/')[-1]
+
+    if args.test_description_file is None:
+        options['test_description_file'] = 'test_descriptions.rst'
 
     if args.output_name is None:
         now = datetime.now()
@@ -722,6 +732,8 @@ def main():
                     options['test_cases_disabled']):
                 raise RuntimeError('Disabled test cases not found.')
 
+            test_description_content = ''
+
             for test_case_name, test_case_parameters in t_suite_dict.items():
                 # TestCase is a class from junitparser whose attributes
                 # are: name and result (OK, Failure, Error or Skipped).
@@ -740,20 +752,19 @@ def main():
                     continue
                 else:
                     # if the test case is processed
-                    parameters = test_case_parameters[0]
-                    expected_codes = test_case_parameters[1]
-                    if len(test_case_parameters) == 3:
-                        if callable(test_case_parameters[2]):
-                            check_function = test_case_parameters[2]
+                    parameters = test_case_parameters['apps']
+                    expected_codes = test_case_parameters['expected_codes']
+                    if ('check_function' in test_case_parameters):
+                        if callable(test_case_parameters['check_function']):
+                            check_function = test_case_parameters['check_function']
                         else:
                             raise RuntimeError('Cannot process function of '
                                 f'test case: {test_case_name}')
-                    elif len(test_case_parameters) == 2:
-                        check_function = no_check
                     else:
-                        print('Error in the definition of the Test Suite. '
-                                'Number of arguments incorrect.')
-                        break
+                        check_function = no_check
+
+                    # Add test description in RST format
+                    test_description_content += f'* **{test_case_name}**: {test_case_parameters["description"]}\n'
 
                     assert(len(parameters) == len(expected_codes))
 
@@ -774,6 +785,10 @@ def main():
                             check_function=check_function)
                     case.time = (datetime.now() - now_test_case).total_seconds()
                     suite.add_testcase(case)
+
+            # Create test description rst file
+            with open(options['test_description_file'], 'w') as file:
+                file.write(test_description_content)
 
     suite.time = (datetime.now() - now).total_seconds()
     xml.add_testsuite(suite)

@@ -31,7 +31,7 @@ jobs:
           for i in ./* ; do \
             for j in ./* ; do \
               echo "Testing Publisher $i --- Subscriber $j"; \
-              python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml; \
+              python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml -p=./../test_description.rst; \
               if [ -d "./OpenDDS-durable-data-dir" ]; then \
                 echo Deleting OpenDDS-durable-data-dir; \
                 rm -rf ./OpenDDS-durable-data-dir; \
@@ -57,3 +57,11 @@ jobs:
             ./junit_interoperability_report.xml
             ./interoperability_report.xlsx
             ./timestamp
+
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test_description
+          path: |
+            ./test_description.rst
