@@ -2,20 +2,9 @@
 
 .. _section-test-results:
 
-Test Result Report
-==================
-
-This page contains a summary of the interoperability test results.
-
-Test Descriptions
------------------
-
-In this section, we provide detailed descriptions of each test performed:
-
-|TEST_DESCRIPTION|
 
 Test Results
-------------
+============
 
 The test results are organized in the following spreadsheet in different tabs.
 The first tab presents a comprehensive summary of the tests per product. The
@@ -32,6 +21,8 @@ is named after the respective product and contains two tables:
 * Righ-side table: Current product as subscriber and all products as publishers.
 
 Access the report at: |LINK_XLSX_URL|
+
+**NOTE**: for a detailed test description visit :ref:`section-test-descriptions`
 
 .. raw:: html
 
