@@ -59,11 +59,3 @@ jobs:
             ./junit_interoperability_report.xml
             ./interoperability_report.xlsx
             ./timestamp
-
-      - name: Attach the report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test_description
-          path: |
-            ./test_description.rst
