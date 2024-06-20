@@ -734,8 +734,6 @@ def main():
                     options['test_cases_disabled']):
                 raise RuntimeError('Disabled test cases not found.')
 
-            test_description_content = ''
-
             for test_case_name, test_case_parameters in t_suite_dict.items():
                 # TestCase is a class from junitparser whose attributes
                 # are: name and result (OK, Failure, Error or Skipped).
@@ -765,9 +763,6 @@ def main():
                     else:
                         check_function = no_check
 
-                    # Add test description in RST format
-                    test_description_content += f'* **{test_case_name}**: {test_case_parameters["description"]}\n'
-
                     assert(len(parameters) == len(expected_codes))
 
                     for element in parameters:
@@ -787,10 +782,6 @@ def main():
                             check_function=check_function)
                     case.time = (datetime.now() - now_test_case).total_seconds()
                     suite.add_testcase(case)
-
-            # Create test description rst file
-            with open(options['test_description_file'], 'w') as file:
-                file.write(test_description_content)
 
     suite.time = (datetime.now() - now).total_seconds()
     xml.add_testsuite(suite)

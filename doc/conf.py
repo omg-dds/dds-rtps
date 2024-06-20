@@ -18,12 +18,15 @@
 import os
 import sys
 import glob
+import re
 # sys.path.insert(0, os.path.abspath('.'))
 import sphinx_rtd_theme
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from gdrive_url import xlsx_url, zip_url
+import test_suite
+
 
 def find_index_html():
     # Get the directory of the script
@@ -41,6 +44,27 @@ def find_index_html():
         return os.path.relpath(matching_files[0], script_directory)
     return None
 
+def generate_test_description_rst():
+    last_test_group = ''
+    test_description_rst = ''
+
+    for test_name, test_value in test_suite.rtps_test_suite_1.items():
+        current_test_group = re.search(r'Test_(.*?)_\d+', test_name).group(1)
+
+        # write new group heading
+        if last_test_group != current_test_group:
+            test_description_rst += f'{current_test_group}\n'
+            test_description_rst += '-' * len(current_test_group) + '\n'
+
+        # write test name heading
+        test_description_rst += f'{test_name}\n'
+        test_description_rst += '~' * len(test_name) + '\n'
+
+        # write test name and description
+        test_description_rst += f'{test_value['title']}\n'
+        test_description_rst += f'{test_value['description']}\n'
+
+    return test_description_rst
 
 # replacement is defined as
 # replacements = {
@@ -174,10 +198,7 @@ html_sidebars = {
 
 
 # Add test description
-with open('../test_description.rst', "r") as file:
-    test_description_content = file.read()
-
-TEST_DESCRIPTION = test_description_content
+TEST_DESCRIPTION = generate_test_description_rst()
 
 # -- links
 LINK_XLSX_URL = xlsx_url
