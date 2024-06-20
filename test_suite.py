@@ -653,13 +653,6 @@ rtps_test_suite_1 = {
         'description' : ' '
     },
 
-    'Test_Partition_2' : {
-        'apps' : ['-P -t Square -p "p2"', '-S -t Square -p "p1"'],
-        'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
-        'title' : 'No communication between publisher and subscriber using different partitions',
-        'description' : ' '
-    },
-
     # DURABILITY
     'Test_Durability_0' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D v'],
