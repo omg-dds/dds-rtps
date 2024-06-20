@@ -656,7 +656,7 @@ rtps_test_suite_1 = {
     'Test_Partition_2' : {
         'apps' : ['-P -t Square -p "p1" -c BLUE', '-P -t Square -p "x1" -c RED', '-S -t Square -p "p*"'],
         'check_function' : test_color_receivers,
-        'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.READER_NOT_MATCHED, ReturnCode.RECEIVING_FROM_ONE],
         'title' : 'Communication between publisher and subscriber using a partition expression',
         'description' : ' '
     },
