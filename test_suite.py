@@ -595,7 +595,7 @@ rtps_test_suite_1 = {
     # COLOR
     'Test_Color_0' : {
         'apps' : ['-P -t Square -c BLUE', '-P -t Square -c RED', '-S -t Square -c RED'],
-        'expected_codes' : [ReturnCode.OK, ReturnCode.DATA_NOT_RECEIVED],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : test_cft_receivers,
         'title' : 'Use of Content filter to avoid receiving undesired data',
         'description' : 'Verifies a subscription using a Content Filtered Topic does not receive date that does not pass the filter'
