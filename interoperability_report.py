@@ -641,14 +641,6 @@ class Arguments:
                 'a new file. '
                 '(Default: <publisher_name>-<subscriber_name>-date.xml)')
 
-        out_opts.add_argument('-p', '--test-description-file',
-            required=False,
-            metavar='filename',
-            type=str,
-            help='Name of the output file that contains the description of the '
-                'test performed.'
-                '(Default: ./test_description_file')
-
         return parser
 
 # this function checks if the test case exist in the test suite
@@ -685,11 +677,6 @@ def main():
     # That will be the name that will appear in the report.
     name_publisher = options['publisher'].split('_shape')[0].split('-shape')[0].split('/')[-1]
     name_subscriber = options['subscriber'].split('_shape')[0].split('-shape')[0].split('/')[-1]
-
-    if args.test_description_file is None:
-        options['test_description_file'] = 'test_descriptions.rst'
-    else:
-        options['test_description_file'] = args.test_description_file
 
     if args.output_name is None:
         now = datetime.now()
