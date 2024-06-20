@@ -165,6 +165,7 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
         if second_received == True and first_received == True:
             return ReturnCode.RECEIVING_FROM_BOTH
 
+    print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
 def test_cft_receivers(child_sub, samples_sent, timeout):
@@ -179,17 +180,14 @@ def test_cft_receivers(child_sub, samples_sent, timeout):
     samples_sent: not used
     timeout: time pexpect waits until it matches a pattern.
     """
-    index = 0
-    last_color = ''
+    sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+        child_sub.before + child_sub.after)
+    last_color = current_color = sub_string.group(1)
 
-    while index == 0:
-        sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
-            child_sub.before + child_sub.after)
-        current_color = sub_string.group(1)
+    max_samples_received = 500
+    samples_read = 0
 
-        if last_color == '':
-            last_color = current_color
-
+    while sub_string is not None and samples_read < max_samples_received:
         # Check that all received samples have the same color
         if last_color != current_color:
             return ReturnCode.RECEIVING_FROM_BOTH
@@ -202,6 +200,15 @@ def test_cft_receivers(child_sub, samples_sent, timeout):
             timeout
         )
 
+        if index == 1:
+            break
+
+        samples_read += 1
+
+        sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+            child_sub.before + child_sub.after)
+
+    print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
 def test_reliability_order(child_sub, samples_sent, timeout):
@@ -221,7 +228,10 @@ def test_reliability_order(child_sub, samples_sent, timeout):
         child_sub.before + child_sub.after)
     last_size = 0
 
-    while sub_string is not None:
+    max_samples_received = 500
+    samples_read = 0
+
+    while sub_string is not None and samples_read < max_samples_received:
         current_size = int(sub_string.group(1))
         if (current_size > last_size):
             last_size = current_size
@@ -240,10 +250,14 @@ def test_reliability_order(child_sub, samples_sent, timeout):
         if index == 1:
             # no more data to process
             break
+
+        samples_read += 1
+
         # search the next received sample by the subscriber app
         sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
+    print(f'Samples read: {samples_read}')
     return produced_code
 
 
@@ -286,7 +300,11 @@ def test_reliability_no_losses(child_sub, samples_sent, timeout):
     # checked before that the samples are the same, we need to skip that part
     # and get the next received sample
     first_execution = True
-    while sub_string is not None:
+
+    max_samples_received = 500
+    samples_read = 0
+
+    while sub_string is not None and samples_read < max_samples_received:
         # check that all the samples received by the DataReader are in order
         # and matches the samples sent by the DataWriter
         try:
@@ -319,10 +337,12 @@ def test_reliability_no_losses(child_sub, samples_sent, timeout):
         if index == 1:
             # no more data to process
             break
+        samples_read += 1
         # search the next received sample by the subscriber app
         sub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
             child_sub.before + child_sub.after)
 
+    print(f'Samples read: {samples_read}')
     return produced_code
 
 
