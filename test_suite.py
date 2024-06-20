@@ -172,7 +172,7 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
-def test_cft_receivers(child_sub, samples_sent, timeout):
+def test_color_receivers(child_sub, samples_sent, timeout):
 
     """
     This function is used by test cases that have two publishers and one
@@ -508,6 +508,7 @@ rtps_test_suite_1 = {
     'Test_Reliability_0' : {
         'apps' : ['-P -t Square -b', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : test_reliability_order,
         'title' : 'Communication between Best Effort writers and Readers',
         'description' : 'Verifies a best-effort publisher communicates with a best-effort subscriber with no out-of-order '
                             'or duplicate samples'
@@ -525,7 +526,6 @@ rtps_test_suite_1 = {
     'Test_Reliability_1' : {
         'apps' : ['-P -t Square -b', '-S -t Square -r'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'check_function' : test_reliability_order,
         'title' : 'BEST_EFFORT Publishers do not match RELIABLE Subscribers',
         'description' : 'Verifies a best-effort publisher does not match with a reliable subscriber and report an '
                             'IncompatibleQos notification.'
@@ -620,7 +620,7 @@ rtps_test_suite_1 = {
     'Test_Color_0' : {
         'apps' : ['-P -t Square -c BLUE', '-P -t Square -c RED', '-S -t Square -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
-        'check_function' : test_cft_receivers,
+        'check_function' : test_color_receivers,
         'title' : 'Use of Content filter to avoid receiving undesired data',
         'description' : 'Verifies a subscription using a Content Filtered Topic does not receive date that does not pass the filter'
                         ' * Joins the default DDS domain (domain_id=0)'
@@ -650,6 +650,14 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p2"'],
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
         'title' : 'No communication between publisher and subscriber using different partitions',
+        'description' : ' '
+    },
+
+    'Test_Partition_2' : {
+        'apps' : ['-P -t Square -p "p1" -c BLUE', '-P -t Square -p "x1" -c RED', '-S -t Square -p "p*"'],
+        'check_function' : test_color_receivers,
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
+        'title' : 'Communication between publisher and subscriber using a partition expression',
         'description' : ' '
     },
 
