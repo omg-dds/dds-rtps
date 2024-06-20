@@ -18,6 +18,7 @@ import os
 import re
 import datetime
 from rtps_test_utilities import log_message
+import test_suite
 
 class XlxsReportArgumentParser:
     """Class that parse the arguments of the application."""
@@ -310,6 +311,7 @@ class XlsxReport:
     __data: JunitData
     __formats: dict = {} # contains the format name and formats objects
     REPO_LINK = 'https://github.com/omg-dds/dds-rtps'
+    REPO_DOC = 'https://omg-dds.github.io/dds-rtps/'
 
     def __init__(self, output: pathlib.Path, data: JunitData):
         """
@@ -322,6 +324,7 @@ class XlsxReport:
         self.__data = data
         self.add_formats()
         self.create_summary_worksheet()
+        self.create_description_worksheet()
         self.add_data_test_worksheet()
         self.workbook.close()
 
@@ -349,6 +352,22 @@ class XlsxReport:
         summary_worksheet.autofit()
         self.add_static_data_summary_worksheet(summary_worksheet)
 
+    def create_description_worksheet(self, name: str = 'Test Descriptions'):
+        """
+        Creates a test description worksheet from test_suite.py.
+        """
+        description_worksheet = self.workbook.add_worksheet(name=name)
+        self.set_worksheet_defaults(description_worksheet)
+
+        # Set the test names and static data before doing the autofit.
+        self.add_static_data_description_worksheet(description_worksheet)
+        self.add_test_name_description_worksheet(description_worksheet)
+
+        description_worksheet.autofit()
+
+        # Add the title of the test after doing the autofit
+        self.add_title_description_worksheet(description_worksheet)
+
     def add_formats(self):
         """Add the specific format"""
         self.__formats['title'] = self.workbook.add_format({
@@ -372,6 +391,8 @@ class XlsxReport:
             'align': 'center',
             'valign': 'vcenter'
         })
+
+        self.__formats['bold'] = self.workbook.add_format(properties={'bold': True})
 
         self.__formats['bold_w_border'] = self.workbook.add_format(
             properties={'bold': True, 'border': 1})
@@ -718,16 +739,67 @@ class XlsxReport:
             filename=dds_logo_path,
             options={'x_scale': 0.4, 'y_scale': 0.4, 'decorative': True, 'object_position': 2})
 
-        # Add repo link
-        current_row += 1
-        worksheet.write(current_row, starting_column + 1,'Repo')
-        worksheet.write(current_row, starting_column + 2, self.REPO_LINK)
-
         # Add date
         current_row += 1
         worksheet.write(current_row, starting_column + 1, 'Date')
         date_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         worksheet.write(current_row, starting_column + 2, date_time)
+
+        # Add repo link
+        current_row += 1
+        worksheet.write(current_row, starting_column + 1,'Repo')
+        worksheet.write(current_row, starting_column + 2, self.REPO_LINK)
+
+        # Add repo doc link
+        current_row += 1
+        worksheet.write(current_row, starting_column + 1,'Documentation')
+        worksheet.write(current_row, starting_column + 2, self.REPO_DOC)
+
+    def add_static_data_description_worksheet(self,
+            worksheet: xlsxwriter.Workbook.worksheet_class,
+            name: str = 'Test Descriptions',
+            starting_row: int = 0, # row 1
+            starting_column: int = 1): # B column
+        """
+        Add header to the test descriptions worksheet, it includes the headers
+        of the columns.
+        """
+
+        current_row = starting_row
+
+        # Add column headers
+        worksheet.write(
+            current_row, starting_column,
+            'Test Name', self.__formats['product_subtitle'])
+        worksheet.write(
+            current_row, starting_column + 1,
+            'Short Description', self.__formats['product_subtitle'])
+
+    def add_test_name_description_worksheet(self,
+            worksheet: xlsxwriter.Workbook.worksheet_class,
+            starting_row: int = 1, # row 2
+            col: int = 1): # B column
+        """Add test names to the test descriptions worksheet."""
+
+        current_row = starting_row
+
+        # Add test name
+        for test_name in test_suite.rtps_test_suite_1.keys():
+            worksheet.write(current_row, col, test_name, self.__formats['bold'])
+            current_row += 1
+
+    def add_title_description_worksheet(self,
+            worksheet: xlsxwriter.Workbook.worksheet_class,
+            starting_row: int = 1, # row 2
+            col: int = 2): # C column
+        """Add short test description (aka title) to the test descriptions worksheet."""
+
+        current_row = starting_row
+
+        # Add test title
+        for value in test_suite.rtps_test_suite_1.values():
+            worksheet.write(current_row, col, value['title'])
+            current_row += 1
 
 def get_file_extension(input) -> str:
     """Get file extension from the input as Path or str"""
