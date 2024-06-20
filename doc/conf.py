@@ -62,8 +62,8 @@ def generate_test_description_rst():
         test_description_rst += '~' * len(test_name) + '\n'
 
         # write test name and description
-        test_description_rst += f'{test_value['title']}\n'
-        test_description_rst += f'{test_value['description']}\n'
+        test_description_rst += f"{test_value['title']}\n"
+        test_description_rst += f"{test_value['description']}\n"
 
     return test_description_rst
 
