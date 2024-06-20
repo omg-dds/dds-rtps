@@ -524,7 +524,7 @@ rtps_test_suite_1 = {
     },
 
     'Test_Reliability_1' : {
-        'apps' : ['-P -t Square -b', '-S -t Square -r'],
+        'apps' : ['-P -t Square -b -z 0', '-S -t Square -r -z 0'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'BEST_EFFORT Publishers do not match RELIABLE Subscribers',
         'description' : 'Verifies a best-effort publisher does not match with a reliable subscriber and report an '
