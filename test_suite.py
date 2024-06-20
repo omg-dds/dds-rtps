@@ -506,7 +506,7 @@ rtps_test_suite_1 = {
 
     # RELIABILITY
     'Test_Reliability_0' : {
-        'apps' : ['-P -t Square -b', '-S -t Square -b'],
+        'apps' : ['-P -t Square -b -z 0', '-S -t Square -b -z 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_reliability_order,
         'title' : 'Communication between Best Effort writers and Readers',
@@ -524,7 +524,7 @@ rtps_test_suite_1 = {
     },
 
     'Test_Reliability_1' : {
-        'apps' : ['-P -t Square -b -z 0', '-S -t Square -r -z 0'],
+        'apps' : ['-P -t Square -b', '-S -t Square -r'],
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'BEST_EFFORT Publishers do not match RELIABLE Subscribers',
         'description' : 'Verifies a best-effort publisher does not match with a reliable subscriber and report an '
