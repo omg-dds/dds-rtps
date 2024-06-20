@@ -55,6 +55,7 @@ def generate_test_description_rst():
         if last_test_group != current_test_group:
             test_description_rst += f'{current_test_group}\n'
             test_description_rst += '-' * len(current_test_group) + '\n'
+            last_test_group = current_test_group
 
         # write test name heading
         test_description_rst += f'{test_name}\n'
