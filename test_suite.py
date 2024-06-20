@@ -43,6 +43,10 @@ import time
 # applications the interoperability_report will run. It should be the same as
 # the number of elements in expected_codes.
 
+# This constant is used to limit the maximum number of samples that tests that
+# check the behavior needs to read. For example, checking that the data
+# is received in order, or that OWNERSHIP works properly, etc...
+MAX_SAMPLES_READ = 500
 
 def test_ownership_receivers(child_sub, samples_sent, timeout):
 
@@ -70,7 +74,7 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     second_received = False
     list_data_received_second = []
     list_data_received_first = []
-    max_samples_received = 500
+    max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
 
     while(samples_read < max_samples_received):
@@ -184,7 +188,7 @@ def test_cft_receivers(child_sub, samples_sent, timeout):
         child_sub.before + child_sub.after)
     last_color = current_color = sub_string.group(1)
 
-    max_samples_received = 500
+    max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
 
     while sub_string is not None and samples_read < max_samples_received:
@@ -228,7 +232,7 @@ def test_reliability_order(child_sub, samples_sent, timeout):
         child_sub.before + child_sub.after)
     last_size = 0
 
-    max_samples_received = 500
+    max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
 
     while sub_string is not None and samples_read < max_samples_received:
@@ -301,7 +305,7 @@ def test_reliability_no_losses(child_sub, samples_sent, timeout):
     # and get the next received sample
     first_execution = True
 
-    max_samples_received = 500
+    max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
 
     while sub_string is not None and samples_read < max_samples_received:
