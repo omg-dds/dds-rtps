@@ -773,7 +773,11 @@ class XlsxReport:
             'Test Name', self.__formats['product_subtitle'])
         worksheet.write(
             current_row, starting_column + 1,
-            'Short Description', self.__formats['product_subtitle'])
+            'Test Title', self.__formats['product_subtitle'])
+        worksheet.write_url(
+            current_row, starting_column + 2,
+            'https://omg-dds.github.io/dds-rtps/test_description.html',
+            string="Click here for full test descriptions")
 
     def add_test_name_description_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
