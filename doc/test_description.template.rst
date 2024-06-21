@@ -23,9 +23,28 @@ parameters the ShapeDemo Application configures:
 * **DEADLINE QoS**: disabled
 * **TIME_BASED_FILTER QoS**: disabled
 * **Instance (color value)**: BLUE
-* **Topic name**: most of the test specify topic Square
+* **Topic name**: if not mentioned, the topic used is "Square"
 * **Writing period**: 33ms
 * **Reading period**: 100ms
+* **Delay when creating entities**: at least 1s
+
+The type used in these tests is the following:
+
+.. code-block:: C
+
+    @appendable
+    struct ShapeType {
+        @key
+        string<128> color;
+        int32 x;
+        int32 y;
+        int32 shapesize;
+    };
+
+Additionally, the test description may mention 'Publisher' and 'Subscriber',
+this refers to the publisher/subscriber applications. Qos policies are set
+to the corresponding entity: DomainParticipant, Publisher, Subscriber, Topic,
+DataWriter or DataReader.
 
 
 |TEST_DESCRIPTION|
