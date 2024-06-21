@@ -669,7 +669,7 @@ rtps_test_suite_1 = {
 
     # COLOR
     'Test_Color_0' : {
-        'apps' : ['-P -t Square -r -c BLUE', '-P -t -r Square -c RED', '-S -t -r Square -c RED'],
+        'apps' : ['-P -t Square -r -c BLUE', '-P -t Square -r -c RED', '-S -t Square -r -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : test_color_receivers,
         'title' : 'Use of Content filter to avoid receiving undesired data',
