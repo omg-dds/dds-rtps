@@ -593,6 +593,168 @@ rtps_test_suite_1 = {
                             'the same order as sent\n'
         },
 
+    # OWNERSHIP
+    'Test_Ownership_0' : {
+        'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Communication between SHARED OWNERSHIP publisher and subscriber',
+        'description' : 'Verifies a shared ownership publisher communicates with a shared '
+                            'ownership subscriber\n'
+                        ' * Configures the publisher / subscriber with SHARED ownership\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+
+    'Test_Ownership_1' : {
+        'apps' : ['-P -t Square -s -1', '-S -t Square -s 1'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'Incompatibility between SHARED OWNERSHIP publisher and EXCLUSIVE OWNERSHIP subscriber',
+        'description' :  'Verifies a shared ownership publisher does not match with an exclusive '
+                            'ownership subscriber and report an IncompatibleQos notification\n'
+                        ' * Configures the publisher with SHARED ownership\n'
+                        ' * Configures the subscriber with EXCLUSIVE ownership\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+
+    'Test_Ownership_2' : {
+        'apps' : ['-P -t Square -s 3', '-S -t Square -s -1'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'Incompatibility between EXCLUSIVE OWNERSHIP publisher and SHARED OWNERSHIP subscriber',
+        'description' : 'Verifies a exclusive ownership publisher does not match with an shared '
+                            'ownership subscriber and report an IncompatibleQos notification\n'
+                        ' * Configures the publisher with EXCLUSIVE ownership\n'
+                        ' * Configures the subscriber with SHARED ownership\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+
+    # For Test_Ownership_[3|4|5|6]: each publisher application publishes samples
+    # with a different shapesize to allow the subscriber app to recognize from
+    # which publisher is receiving the samples.
+
+    # The DataReader should only receive samples from the DataWriter with higher
+    # ownership. There may be the situation that the DataReader starts receiving
+    # samples from one DataWriter until another DataWriter with higher ownership
+    # strength is created. This should be handled by test_ownership_receivers().
+    'Test_Ownership_3': {
+        'apps' : [
+            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
+            '-S -t Square -s 1 -r -k 0'],
+        'expected_codes' :[
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_ONE],
+        'check_function' : test_ownership_receivers,
+        'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers of the same instance',
+        'description' : 'Verifies an exclusive ownership subscriber receives samples only from '
+                            'the highest ownership strength publisher of the same instance\n'
+                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
+                        ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
+                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
+                            'and "size" equal to 20\n'
+                        ' * Configures a second publisher with EXCLUSIVE ownership and strength of 4\n'
+                        ' * Configures the second publisher to publish samples with "color" equal to "BLUE" '
+                            ' and "size" equal to 30\n'
+                        ' * Configures a subscriber with EXCLUSIVE ownership\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        ' * Note that the subscriber may start receiving samples from the lower ownership strength '
+                            'publisher if it is created before the highest strength ownership publisher. This behavior '
+                            'is expected and those samples are ignored\n'
+                        'The test passes if the subscriber receives samples from the highest strength publisher only '
+                            '(after receiving the first sample of that publisher. The subscriber reads '
+                            f'{MAX_SAMPLES_READ} samples in total\n'
+    },
+
+    # The DataReader should receive from both publisher apps because they
+    # publish different instances and the ownership is applied per instance.
+    'Test_Ownership_4': {
+        'apps' :[
+            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
+            '-S -t Square -s 1 -r -k 0'],
+        'expected_codes' : [
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers with different instances',
+        'description' : 'Verifies an exclusive ownership subscriber receives samples from different '
+                            'publishers that publish different instances (ShapeType with different color)\n'
+                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
+                        ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
+                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
+                            ' and "size" equal to 20\n'
+                        ' * Configures a second publisher with EXCLUSIVE ownership and strength of 4\n'
+                        ' * Configures the second publisher to publish samples with "color" equal to "RED" '
+                            'and "size" equal to 30\n'
+                        ' * Configures a subscriber with EXCLUSIVE ownership\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        'The test passes if the subscriber receives samples from both publishers in the first '
+                            f'{MAX_SAMPLES_READ} samples\n'
+    },
+
+    # The DataReader should receive from both publisher apps because they have
+    # shared ownership.
+    'Test_Ownership_5': {
+        'apps' : [
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
+            '-S -t Square -s -1 -r -k 0'],
+        'expected_codes' :[
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'title' : 'Behavior of SHARED OWNERSHIP QoS with publishers with the same instance',
+        'description' : 'Verifies a shared ownership subscriber receives samples from all '
+                            'shared ownership publishers of the different instances\n'
+                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
+                        ' * Configures a first publisher with SHARED ownership\n'
+                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
+                            'and "size" equal to 20\n'
+                        ' * Configures a second publisher with SHARED ownership\n'
+                        ' * Configures the second publisher to publish samples with "color" equal to "BLUE" '
+                            'and "size" equal to 30\n'
+                        ' * Configures a subscriber with SHARED ownership\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        'The test passes if the subscriber receives samples from both publishers in the first '
+                            f'{MAX_SAMPLES_READ} samples\n'
+    },
+
+    # The DataReader should receive from both publisher apps because they have
+    # shared ownership.
+    'Test_Ownership_6': {
+        'apps' : [
+            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
+            '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
+            '-S -t Square -s -1 -r -k 0'],
+        'expected_codes' : [
+            ReturnCode.OK,
+            ReturnCode.OK,
+            ReturnCode.RECEIVING_FROM_BOTH],
+        'check_function' : test_ownership_receivers,
+        'title' : 'Behavior of SHARED OWNERSHIP QoS with different instances',
+        'description' : 'Verifies a shared ownership subscriber receives samples from all '
+                            'shared ownership publishers of different instances\n'
+                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
+                        ' * Configures a first publisher with SHARED ownership with strength of 3\n'
+                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
+                            'and "size" equal to 20\n'
+                        ' * Configures a second publisher with SHARED ownership and strength of 4\n'
+                        ' * Configures the second publisher to publish samples with "color" equal to "RED" '
+                            'and "size" equal to 30\n'
+                        ' * Configures a subscriber with SHARED ownership\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        'The test passes if the subscriber receives samples from both publishers in the first '
+                            f'{MAX_SAMPLES_READ} samples\n'
+    },
+
     # DEADLINE
     'Test_Deadline_0' : {
         'apps' : ['-P -t Square -f 3', '-S -t Square -f 5'],
@@ -946,165 +1108,4 @@ rtps_test_suite_1 = {
                             'that the publisher sent (by checking the "size" value is equal to 1).\n'
     },
 
-    # OWNERSHIP
-    'Test_Ownership_0' : {
-        'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
-        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'title' : 'Communication between SHARED OWNERSHIP publisher and subscriber',
-        'description' : 'Verifies a shared ownership publisher communicates with a shared '
-                            'ownership subscriber\n'
-                        ' * Configures the publisher / subscriber with SHARED ownership\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
-                        'The test passes if the subscriber receives samples from the publisher\n'
-    },
-
-    'Test_Ownership_1' : {
-        'apps' : ['-P -t Square -s -1', '-S -t Square -s 1'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'Incompatibility between SHARED OWNERSHIP publisher and EXCLUSIVE OWNERSHIP subscriber',
-        'description' :  'Verifies a shared ownership publisher does not match with an exclusive '
-                            'ownership subscriber and report an IncompatibleQos notification\n'
-                        ' * Configures the publisher with SHARED ownership\n'
-                        ' * Configures the subscriber with EXCLUSIVE ownership\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-
-    'Test_Ownership_2' : {
-        'apps' : ['-P -t Square -s 3', '-S -t Square -s -1'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'Incompatibility between EXCLUSIVE OWNERSHIP publisher and SHARED OWNERSHIP subscriber',
-        'description' : 'Verifies a exclusive ownership publisher does not match with an shared '
-                            'ownership subscriber and report an IncompatibleQos notification\n'
-                        ' * Configures the publisher with EXCLUSIVE ownership\n'
-                        ' * Configures the subscriber with SHARED ownership\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-
-    # For Test_Ownership_[3|4|5|6]: each publisher application publishes samples
-    # with a different shapesize to allow the subscriber app to recognize from
-    # which publisher is receiving the samples.
-
-    # The DataReader should receive from both publisher apps because they
-    # publish different instances and the ownership is applied per instance.
-    'Test_Ownership_3': {
-        'apps' :[
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
-            '-S -t Square -s 1 -r -k 0'],
-        'expected_codes' : [
-            ReturnCode.OK,
-            ReturnCode.OK,
-            ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : test_ownership_receivers,
-        'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers with different instances',
-        'description' : 'Verifies an exclusive ownership subscriber receives samples from different '
-                            'publishers that publish different instances (ShapeType with different color)\n'
-                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
-                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
-                        ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
-                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
-                            ' and "size" equal to 20\n'
-                        ' * Configures a second publisher with EXCLUSIVE ownership and strength of 4\n'
-                        ' * Configures the second publisher to publish samples with "color" equal to "RED" '
-                            'and "size" equal to 30\n'
-                        ' * Configures a subscriber with EXCLUSIVE ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
-                        'The test passes if the subscriber receives samples from both publishers in the first '
-                            f'{MAX_SAMPLES_READ} samples\n'
-    },
-
-    # The DataReader should only receive samples from the DataWriter with higher
-    # ownership. There may be the situation that the DataReader starts receiving
-    # samples from one DataWriter until another DataWriter with higher ownership
-    # strength is created. This should be handled by test_ownership_receivers().
-    'Test_Ownership_4': {
-        'apps' : [
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
-            '-S -t Square -s 1 -r -k 0'],
-        'expected_codes' :[
-            ReturnCode.OK,
-            ReturnCode.OK,
-            ReturnCode.RECEIVING_FROM_ONE],
-        'check_function' : test_ownership_receivers,
-        'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers of the same instance',
-        'description' : 'Verifies an exclusive ownership subscriber receives samples only from '
-                            'the highest ownership strength publisher of the same instance\n'
-                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
-                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
-                        ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
-                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
-                            'and "size" equal to 20\n'
-                        ' * Configures a second publisher with EXCLUSIVE ownership and strength of 4\n'
-                        ' * Configures the second publisher to publish samples with "color" equal to "BLUE" '
-                            ' and "size" equal to 30\n'
-                        ' * Configures a subscriber with EXCLUSIVE ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
-                        ' * Note that the subscriber may start receiving samples from the lower ownership strength '
-                            'publisher if it is created before the highest strength ownership publisher. This behavior '
-                            'is expected and those samples are ignored\n'
-                        'The test passes if the subscriber receives samples from the highest strength publisher only '
-                            '(after receiving the first sample of that publisher. The subscriber reads '
-                            f'{MAX_SAMPLES_READ} samples in total\n'
-    },
-
-    # The DataReader should receive from both publisher apps because they have
-    # shared ownership.
-    'Test_Ownership_5': {
-        'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
-            '-S -t Square -s -1 -r -k 0'],
-        'expected_codes' : [
-            ReturnCode.OK,
-            ReturnCode.OK,
-            ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : test_ownership_receivers,
-        'title' : 'Behavior of SHARED OWNERSHIP QoS with different instances',
-        'description' : 'Verifies a shared ownership subscriber receives samples from all '
-                            'shared ownership publishers of different instances\n'
-                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
-                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
-                        ' * Configures a first publisher with SHARED ownership with strength of 3\n'
-                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
-                            'and "size" equal to 20\n'
-                        ' * Configures a second publisher with SHARED ownership and strength of 4\n'
-                        ' * Configures the second publisher to publish samples with "color" equal to "RED" '
-                            'and "size" equal to 30\n'
-                        ' * Configures a subscriber with SHARED ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
-                        'The test passes if the subscriber receives samples from both publishers in the first '
-                            f'{MAX_SAMPLES_READ} samples\n'
-    },
-
-    # The DataReader should receive from both publisher apps because they have
-    # shared ownership.
-    'Test_Ownership_6': {
-        'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
-            '-S -t Square -s -1 -r -k 0'],
-        'expected_codes' :[
-            ReturnCode.OK,
-            ReturnCode.OK,
-            ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : test_ownership_receivers,
-        'title' : 'Behavior of SHARED OWNERSHIP QoS with publishers with the same instance',
-        'description' : 'Verifies a shared ownership subscriber receives samples from all '
-                            'shared ownership publishers of the different instances\n'
-                        ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
-                        ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
-                        ' * Configures a first publisher with SHARED ownership\n'
-                        ' * Configures the first publisher to publish samples with "color" equal to "BLUE" '
-                            'and "size" equal to 20\n'
-                        ' * Configures a second publisher with SHARED ownership\n'
-                        ' * Configures the second publisher to publish samples with "color" equal to "BLUE" '
-                            'and "size" equal to 30\n'
-                        ' * Configures a subscriber with SHARED ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
-                        'The test passes if the subscriber receives samples from both publishers in the first '
-                            f'{MAX_SAMPLES_READ} samples\n'
-    },
 }
