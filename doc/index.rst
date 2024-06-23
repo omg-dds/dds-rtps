@@ -12,5 +12,6 @@ Welcome to |INTEROPERABILITY_TESTS|
 
    introduction
    test_results
+   test_description
    detailed_report
    copyright

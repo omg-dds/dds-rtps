@@ -665,8 +665,7 @@ def main():
         'test_suite': args.suite,
         'test_cases': args.test,
         'test_cases_disabled': args.disable_test,
-        'data_representation': args.data_representation
-
+        'data_representation': args.data_representation,
     }
 
     # The executables's names are supposed to follow the pattern: name_shape_main
@@ -740,20 +739,16 @@ def main():
                     continue
                 else:
                     # if the test case is processed
-                    parameters = test_case_parameters[0]
-                    expected_codes = test_case_parameters[1]
-                    if len(test_case_parameters) == 3:
-                        if callable(test_case_parameters[2]):
-                            check_function = test_case_parameters[2]
+                    parameters = test_case_parameters['apps']
+                    expected_codes = test_case_parameters['expected_codes']
+                    if ('check_function' in test_case_parameters):
+                        if callable(test_case_parameters['check_function']):
+                            check_function = test_case_parameters['check_function']
                         else:
                             raise RuntimeError('Cannot process function of '
                                 f'test case: {test_case_name}')
-                    elif len(test_case_parameters) == 2:
-                        check_function = no_check
                     else:
-                        print('Error in the definition of the Test Suite. '
-                                'Number of arguments incorrect.')
-                        break
+                        check_function = no_check
 
                     assert(len(parameters) == len(expected_codes))
 

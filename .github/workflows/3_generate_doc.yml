@@ -33,6 +33,7 @@ jobs:
       - name: Setting up environment
         run: |
           pip install -r requirements_doc.txt
+          pip install -r requirements.txt
 
       - name: Get latest XLSX and ZIP urls
         env:
