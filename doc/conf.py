@@ -54,12 +54,12 @@ def generate_test_description_rst():
         # write new group heading
         if last_test_group != current_test_group:
             test_description_rst += f'{current_test_group}\n'
-            test_description_rst += '-' * len(current_test_group) + '\n'
+            test_description_rst += '-' * len(current_test_group) + '\n\n'
             last_test_group = current_test_group
 
         # write test name heading
         test_description_rst += f'{test_name}\n'
-        test_description_rst += '~' * len(test_name) + '\n'
+        test_description_rst += '~' * len(test_name) + '\n\n'
 
         # write test name and description
         test_description_rst += f"{test_value['title']}\n\n"

@@ -4,8 +4,8 @@
 
 .. |SHAPE_APP| replace:: ``Shape Application``
 .. |SHAPE_APPS| replace:: ``Shape Applications``
-.. |INTEROPERABILITY_TESTS_CP| replace:: OMG® DDS® Interoperability Tests
-.. |INTEROPERABILITY_TESTS| replace:: OMG DDS Interoperability Tests
+.. |INTEROPERABILITY_TESTS_CP| replace:: OMG® DDS® Interoperability Testsuite
+.. |INTEROPERABILITY_TESTS| replace:: OMG DDS Interoperability Testsuite
 .. |COPYRIGHT_YEAR| replace:: 2024
 .. |COPYRIGHT_HEADER_RTI| replace:: © |COPYRIGHT_YEAR| Real-Time Innovations, Inc.
 .. |COPYRIGHT_HEADER_ATOSTEK| replace:: © |COPYRIGHT_YEAR| Atostek Oy.
