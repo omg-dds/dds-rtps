@@ -30,7 +30,7 @@ parameters the ShapeDemo Application configures:
 
 The type used in these tests is the following:
 
-.. code-block:: C
+.. code-block::
 
     @appendable
     struct ShapeType {

@@ -452,9 +452,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -d 0', '-S -t Square -d 0 -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication using Domain ID 0',
-        'description' : 'This test covers the most basic interoperability scenario:\n'
+        'description' : 'This test covers the most basic interoperability scenario:\n\n'
                         ' * Configures the publisher / subscriber with Domain ID 0\n'
-                        ' * Configures the subscriber with BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with BEST_EFFORT reliability\n\n'
                         'The tests passes if the publisher and subscriber discover and match each other and the subscriber '
                             'receives the data from the publisher\n'
     },
@@ -464,9 +464,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
         'title' : 'No communication between publisher and subscriber in a different Domain IDs',
         'description' : 'Verifies that there is no communication between a publisher configured with Domain ID 0 '
-                            'and a subscriber configured with Domain ID 1:\n'
+                            'and a subscriber configured with Domain ID 1:\n\n'
                         ' * Configures the publisher with Domain ID 0\n'
-                        ' * Configures the subscriber with Domain ID 1\n'
+                        ' * Configures the subscriber with Domain ID 1\n\n'
                         'The tests passes if the publisher and subscriber do not discover each other\n'
     },
 
@@ -474,10 +474,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -d 1', '-S -t Square -d 1 -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication using Domain ID 1',
-        'description' : 'This test covers interoperability in a non-default Domain ID:\n'
+        'description' : 'This test covers interoperability in a non-default Domain ID:\n\n'
                         ' * Configures the publisher / subscriber with Domain ID 1\n'
                         ' * Configures the subscriber with BEST_EFFORT reliability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The tests passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -486,9 +486,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -x 1', '-S -t Square -x 1'],
         'expected_codes' : [ ReturnCode.OK, ReturnCode.OK],
         'title' : 'Default communication using XCDR1',
-        'description' : 'This test covers the interoperability scenario with XCDR1:\n'
+        'description' : 'This test covers the interoperability scenario with XCDR1:\n\n'
                         ' * Configures the publisher / subscriber with DATA_REPRESENTATION XCDR version 1\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The tests passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -497,9 +497,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'Incompatibility publishing XCDR1 and subscribing XCDR2',
         'description' : 'Verifies an XDCR1 publisher does not match with an XCDR2 subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with XCDR1 data representation\n'
-                        ' * Configures the subscriber with XCDR2 data representation\n'
+                        ' * Configures the subscriber with XCDR2 data representation\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -509,9 +509,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'Incompatibility publishing XCDR2 and subscribing XCDR1',
         'description' : 'Verifies an XDCR2 publisher does not match with an XCDR1 subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with XCDR2 data representation\n'
-                        ' * Configures the subscriber with XCDR1 data representation\n'
+                        ' * Configures the subscriber with XCDR1 data representation\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -520,9 +520,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -x 2', '-S -t Square -x 2 -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Default communication using XCDR2',
-        'description' : 'This test covers the interoperability scenario with XCDR2:\n'
+        'description' : 'This test covers the interoperability scenario with XCDR2:\n\n'
                         ' * Configures publisher / subscriber with DATA_REPRESENTATION XCDR version 2\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The tests passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -533,11 +533,11 @@ rtps_test_suite_1 = {
         'check_function' : test_reliability_order,
         'title' : 'Communication between BEST_EFFORT publisher and subscriber',
         'description' : 'Verifies a best effort publisher communicates with a best effort subscriber with no out-of-order '
-                            'or duplicate samples\n'
+                            'or duplicate samples\n\n'
                         ' * Configures the publisher and subscriber with a BEST_EFFORT reliability\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n'
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
-                        ' * Verifies the subscriber application receives samples and the value of the "size" member is always increasing\n'
+                        ' * Verifies the subscriber application receives samples and the value of the "size" member is always increasing\n\n'
                         'The test passes if the value of the "size" is always increasing in '
                             f'{MAX_SAMPLES_READ} samples, even if there are missed samples (since reliability '
                             'is BEST_EFFORT) as long as there are no out-of-order or duplicated samples\n'
@@ -548,9 +548,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'BEST_EFFORT publisher do not match RELIABLE subscribers',
         'description' : 'Verifies a best effort publisher does not match with a reliable subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with BEST_EFFORT reliability\n'
-                        ' * Configures the publisher with RELIABLE reliability\n'
+                        ' * Configures the publisher with RELIABLE reliability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -559,10 +559,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between RELIABLE publisher and BEST_EFFORT subscriber',
-        'description' : 'Verifies a reliable publisher communicates with a best effort subscriber\n'
+        'description' : 'Verifies a reliable publisher communicates with a best effort subscriber\n\n'
                         ' * Configures the publisher with a RELIABLE reliability\n'
                         ' * Configures the subscriber with a BEST_EFFORT reliability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -571,9 +571,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r', '-S -t Square -r'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication using reliability RELIABLE',
-        'description' : 'Verifies a reliable publisher communicates with a reliable subscriber\n'
+        'description' : 'Verifies a reliable publisher communicates with a reliable subscriber\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -584,10 +584,10 @@ rtps_test_suite_1 = {
         'check_function' : test_reliability_no_losses,
         'title' : 'Behavior of RELIABLE reliability',
         'description' : 'Verifies a RELIABLE publisher communicates with a RELIABLE subscriber and samples are received '
-                            'in order without any losses or duplicates\n'
+                            'in order without any losses or duplicates\n\n'
                         ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher and subscriber with history KEEP_ALL\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber, after receiving a (first) sample from the publisher, it '
                             f'receives the next {MAX_SAMPLES_READ} subsequent samples, without losses or duplicates, in '
                             'the same order as sent\n'
@@ -599,9 +599,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between SHARED OWNERSHIP publisher and subscriber',
         'description' : 'Verifies a shared ownership publisher communicates with a shared '
-                            'ownership subscriber\n'
+                            'ownership subscriber\n\n'
                         ' * Configures the publisher / subscriber with SHARED ownership\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -610,9 +610,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'Incompatibility between SHARED OWNERSHIP publisher and EXCLUSIVE OWNERSHIP subscriber',
         'description' :  'Verifies a shared ownership publisher does not match with an exclusive '
-                            'ownership subscriber and report an IncompatibleQos notification\n'
+                            'ownership subscriber and report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with SHARED ownership\n'
-                        ' * Configures the subscriber with EXCLUSIVE ownership\n'
+                        ' * Configures the subscriber with EXCLUSIVE ownership\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -622,9 +622,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'Incompatibility between EXCLUSIVE OWNERSHIP publisher and SHARED OWNERSHIP subscriber',
         'description' : 'Verifies a exclusive ownership publisher does not match with an shared '
-                            'ownership subscriber and report an IncompatibleQos notification\n'
+                            'ownership subscriber and report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with EXCLUSIVE ownership\n'
-                        ' * Configures the subscriber with SHARED ownership\n'
+                        ' * Configures the subscriber with SHARED ownership\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -649,7 +649,7 @@ rtps_test_suite_1 = {
         'check_function' : test_ownership_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers of the same instance',
         'description' : 'Verifies an exclusive ownership subscriber receives samples only from '
-                            'the highest ownership strength publisher of the same instance\n'
+                            'the highest ownership strength publisher of the same instance\n\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
                         ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
                         ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
@@ -662,7 +662,7 @@ rtps_test_suite_1 = {
                         ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
                         ' * Note that the subscriber may start receiving samples from the lower ownership strength '
                             'publisher if it is created before the highest strength ownership publisher. This behavior '
-                            'is expected and those samples are ignored\n'
+                            'is expected and those samples are ignored\n\n'
                         'The test passes if the subscriber receives samples from the highest strength publisher only '
                             '(after receiving the first sample of that publisher. The subscriber reads '
                             f'{MAX_SAMPLES_READ} samples in total\n'
@@ -682,7 +682,7 @@ rtps_test_suite_1 = {
         'check_function' : test_ownership_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers with different instances',
         'description' : 'Verifies an exclusive ownership subscriber receives samples from different '
-                            'publishers that publish different instances (ShapeType with different color)\n'
+                            'publishers that publish different instances (ShapeType with different color)\n\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
                         ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
                         ' * Configures a first publisher with EXCLUSIVE ownership with strength of 3\n'
@@ -692,7 +692,7 @@ rtps_test_suite_1 = {
                         ' * Configures the second publisher to publish samples with "color" equal to "RED" '
                             'and "size" equal to 30\n'
                         ' * Configures a subscriber with EXCLUSIVE ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n\n'
                         'The test passes if the subscriber receives samples from both publishers in the first '
                             f'{MAX_SAMPLES_READ} samples\n'
     },
@@ -711,7 +711,7 @@ rtps_test_suite_1 = {
         'check_function' : test_ownership_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with publishers with the same instance',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
-                            'shared ownership publishers of the different instances\n'
+                            'shared ownership publishers of the different instances\n\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
                         ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
                         ' * Configures a first publisher with SHARED ownership\n'
@@ -721,7 +721,7 @@ rtps_test_suite_1 = {
                         ' * Configures the second publisher to publish samples with "color" equal to "BLUE" '
                             'and "size" equal to 30\n'
                         ' * Configures a subscriber with SHARED ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n\n'
                         'The test passes if the subscriber receives samples from both publishers in the first '
                             f'{MAX_SAMPLES_READ} samples\n'
     },
@@ -740,7 +740,7 @@ rtps_test_suite_1 = {
         'check_function' : test_ownership_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with different instances',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
-                            'shared ownership publishers of different instances\n'
+                            'shared ownership publishers of different instances\n\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
                         ' * Use KEEP_ALL HISTORY Qos in all publishers and subscriber\n'
                         ' * Configures a first publisher with SHARED ownership with strength of 3\n'
@@ -750,7 +750,7 @@ rtps_test_suite_1 = {
                         ' * Configures the second publisher to publish samples with "color" equal to "RED" '
                             'and "size" equal to 30\n'
                         ' * Configures a subscriber with SHARED ownership\n'
-                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
+                        ' * Verifies that both publishers discover and match the subscriber and vice-versa\n\n'
                         'The test passes if the subscriber receives samples from both publishers in the first '
                             f'{MAX_SAMPLES_READ} samples\n'
     },
@@ -760,10 +760,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -f 3', '-S -t Square -f 5'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication with publisher deadline smaller than subscriber deadline',
-        'description' : 'Verifies there is communication between a publisher with a deadline smaller than the subscriber\n'
+        'description' : 'Verifies there is communication between a publisher with a deadline smaller than the subscriber\n\n'
                         ' * Configures the publisher with DEADLINE of 3 seconds\n'
                         ' * Configures the subscriber with DEADLINE of 5 seconds\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -771,10 +771,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -f 5', '-S -t Square -f 5'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication with the same publisher and subscriber deadlines',
-        'description' : 'Verifies there is communication between a publisher with the same deadline as the subscriber\n'
+        'description' : 'Verifies there is communication between a publisher with the same deadline as the subscriber\n\n'
                         ' * Configures the publisher with DEADLINE of 5 seconds\n'
                         ' * Configures the subscriber with DEADLINE of 5 seconds\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -783,9 +783,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility with publisher deadline higher than subscriber deadline',
         'description' : 'Verifies there is no communication between a publisher with a higher deadline than the '
-                            'subscriber and both report an IncompatibleQos notification\n'
+                            'subscriber and both report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with DEADLINE of 7 seconds\n'
-                        ' * Configures the publisher with DEADLINE of 5 seconds\n'
+                        ' * Configures the publisher with DEADLINE of 5 seconds\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -798,11 +798,11 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.DEADLINE_MISSED, ReturnCode.DEADLINE_MISSED],
         'check_function' : test_deadline_missed,
         'title' : 'Deadline is missed in both, publisher and subscriber',
-        'description' : 'Verifies that publisher and subscriber miss the deadline\n'
+        'description' : 'Verifies that publisher and subscriber miss the deadline\n\n'
                         ' * Configures the publisher with DEADLINE of 2 seconds\n'
                         ' * Configures the subscriber with DEADLINE of 2 seconds\n'
                         ' * Configures the write period to 3 seconds\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the listeners trigger the DeadlineMissed notification in the publisher '
                             'and the subscriber\n'
     },
@@ -812,9 +812,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Circle', '-S -t Circle'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication using the same topic: Circle',
-        'description' : 'Verifies communication between a publisher and a subscriber using a specific topic ("Circle")\n'
+        'description' : 'Verifies communication between a publisher and a subscriber using a specific topic ("Circle")\n\n'
                         ' * Configures the publisher and subscriber to use the topic name "Circle"\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -823,9 +823,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
         'title' : 'No communication when publisher and subscriber are using different topics',
         'description' : 'Verifies that there is no communication between a publisher using topic "Square" '
-                            'and a subscriber using topic "Circle"\n'
+                            'and a subscriber using topic "Circle"\n\n'
                         ' * Configures the publisher to use the topic name "Square"\n'
-                        ' * Configures the subscriber to use the topic name "Circle"\n'
+                        ' * Configures the subscriber to use the topic name "Circle"\n\n'
                         'The test passes if the publisher and subscriber do not discover each other\n'
     },
 
@@ -835,7 +835,7 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : test_color_receivers,
         'title' : 'Use of Content filter to avoid receiving undesired data',
-        'description' : 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not pass the filter\n'
+        'description' : 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not pass the filter\n\n'
                         ' * Configures a subscriber with a ContentFilteredTopic that selects only the shapes that '
                             'have "color" equal to "RED"\n'
                         ' * Configures a first publisher to publish samples with "color" equal to "BLUE"\n'
@@ -844,7 +844,7 @@ rtps_test_suite_1 = {
                             'received are due to filtering\n'
                         ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
                         ' * Note that this test does not check whether the filtering happens in the publisher side or '
-                            'the subscriber side. It only checks the middleware filters the samples somewhere.\n'
+                            'the subscriber side. It only checks the middleware filters the samples somewhere.\n\n'
                         f'The test passes if the subscriber receives {MAX_SAMPLES_READ} samples of one color\n'
         },
 
@@ -853,9 +853,9 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p1"'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between publisher and subscriber using the same partition',
-        'description' : 'Verifies communication between a publisher and a subscriber using the same partition\n'
+        'description' : 'Verifies communication between a publisher and a subscriber using the same partition\n\n'
                         ' * Configures the publisher and subscriber to use the PARTITION "p1"\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -864,9 +864,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.READER_NOT_MATCHED, ReturnCode.DATA_NOT_RECEIVED],
         'title' : 'No communication between publisher and subscriber using different partitions',
         'description' : 'Verifies that there is no communication between a publisher using partition "p1" '
-                            'and a subscriber using partition "p2"\n'
+                            'and a subscriber using partition "p2"\n\n'
                         ' * Configures the publisher to use the PARTITION "p1"\n'
-                        ' * Configures the subscriber to use the PARTITION "p2"\n'
+                        ' * Configures the subscriber to use the PARTITION "p2"\n\n'
                         'The test passes if the publisher and subscriber do not discover each other\n'
     },
 
@@ -876,13 +876,13 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.OK, ReturnCode.READER_NOT_MATCHED, ReturnCode.RECEIVING_FROM_ONE],
         'title' : 'Usage of a partition expression to receive data only from the corresponding publishers',
         'description' : 'Verifies a subscription using a partition expression only receives data from the corresponding '
-                            'publishers\n'
+                            'publishers\n\n'
                         ' * Configures a subscriber with a PARTITION expression "p*" that allows only matching '
                             'publishers whose partition starts with "p"\n'
                         ' * Configures a first publisher to use PARTITION "p1" and "color" equal to "BLUE"\n'
                         ' * Configures a second publisher to use PARTITION "x1" and "color" equal to "RED"\n'
                         ' * Verifies that only the first publisher (PARTITION "p1") discovers and matches subscriber\n'
-                        ' * Verifies that the second publisher (PARTITION "x1") does not match the subscriber\n'
+                        ' * Verifies that the second publisher (PARTITION "x1") does not match the subscriber\n\n'
                         f'The test passes if the subscriber receives {MAX_SAMPLES_READ} samples of one color (first publisher)\n'
     },
 
@@ -891,10 +891,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D v', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between VOLATILE publisher and VOLATILE subscriber',
-        'description' : 'Verifies a volatile publisher communicates with a volatile subscriber\n'
+        'description' : 'Verifies a volatile publisher communicates with a volatile subscriber\n\n'
                         ' * Configures the publisher with a VOLATILE durability\n'
                         ' * Configures the subscriber with a VOLATILE durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -903,9 +903,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between VOLATILE publisher and TRANSIENT_LOCAL subscriber',
         'description' : 'Verifies a volatile publisher does not match with a transient local subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with VOLATILE durability\n'
-                        ' * Configures the subscriber with TRANSIENT_LOCAL durability\n'
+                        ' * Configures the subscriber with TRANSIENT_LOCAL durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -915,9 +915,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between VOLATILE publisher and TRANSIENT subscriber',
         'description' : 'Verifies a volatile publisher does not match with a transient subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with VOLATILE durability\n'
-                        ' * Configures the subscriber with TRANSIENT durability\n'
+                        ' * Configures the subscriber with TRANSIENT durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -927,9 +927,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between VOLATILE publisher and PERSISTENT subscriber',
         'description' : 'Verifies a volatile publisher does not match with a persistent subscriber and report an '
-                            'IncompatibleQos notification\n'
+                            'IncompatibleQos notification\n\n'
                         ' * Configures the publisher with VOLATILE durability\n'
-                        ' * Configures the subscriber with PERSISTENT durability\n'
+                        ' * Configures the subscriber with PERSISTENT durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -938,10 +938,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D l', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between TRANSIENT_LOCAL publisher and VOLATILE subscriber',
-        'description' : 'Verifies a transient local publisher communicates with a volatile subscriber\n'
+        'description' : 'Verifies a transient local publisher communicates with a volatile subscriber\n\n'
                         ' * Configures the publisher with a TRANSIENT_LOCAL durability\n'
                         ' * Configures the subscriber with a VOLATILE durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -949,10 +949,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D l', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between TRANSIENT_LOCAL publisher and TRANSIENT_LOCAL subscriber',
-        'description' : 'Verifies a transient local publisher communicates with a transient local subscriber\n'
+        'description' : 'Verifies a transient local publisher communicates with a transient local subscriber\n\n'
                         ' * Configures the publisher with a TRANSIENT_LOCAL durability\n'
                         ' * Configures the subscriber with a TRANSIENT_LOCAL durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -961,9 +961,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between TRANSIENT_LOCAL publisher and TRANSIENT subscriber',
         'description' : 'Verifies a transient local publisher does not match with a transient '
-                            'subscriber and report an IncompatibleQos notification\n'
+                            'subscriber and report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the subscriber with TRANSIENT durability\n'
+                        ' * Configures the subscriber with TRANSIENT durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -973,9 +973,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between TRANSIENT_LOCAL publisher and PERSISTENT subscriber',
         'description' : 'Verifies a transient local publisher does not match with a persistent '
-                            'subscriber and report an IncompatibleQos notification\n'
+                            'subscriber and report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the subscriber with PERSISTENT durability\n'
+                        ' * Configures the subscriber with PERSISTENT durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -984,10 +984,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D t', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between TRANSIENT publisher and VOLATILE subscriber',
-        'description' : 'Verifies a transient publisher communicates with a volatile subscriber\n'
+        'description' : 'Verifies a transient publisher communicates with a volatile subscriber\n\n'
                         ' * Configures the publisher with a TRANSIENT durability\n'
                         ' * Configures the subscriber with a VOLATILE durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -995,10 +995,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D t', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between TRANSIENT publisher and TRANSIENT_LOCAL subscriber',
-        'description' : 'Verifies a transient publisher communicates with a transient local subscriber\n'
+        'description' : 'Verifies a transient publisher communicates with a transient local subscriber\n\n'
                         ' * Configures the publisher with a TRANSIENT durability\n'
                         ' * Configures the subscriber with a TRANSIENT_LOCAL durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1006,10 +1006,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D t', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between TRANSIENT publisher and TRANSIENT subscriber',
-        'description' : 'Verifies a transient publisher communicates with a transient subscriber\n'
+        'description' : 'Verifies a transient publisher communicates with a transient subscriber\n\n'
                         ' * Configures the publisher with a TRANSIENT durability\n'
                         ' * Configures the subscriber with a TRANSIENT durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1018,9 +1018,9 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
         'title' : 'No compatibility between TRANSIENT publisher and PERSISTENT subscriber',
         'description' : 'Verifies a transient publisher does not match with a persistent '
-                            'subscriber and report an IncompatibleQos notification\n'
+                            'subscriber and report an IncompatibleQos notification\n\n'
                         ' * Configures the publisher with TRANSIENT durability\n'
-                        ' * Configures the subscriber with PERSISTENT durability\n'
+                        ' * Configures the subscriber with PERSISTENT durability\n\n'
                         'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
                             'and the subscriber\n'
     },
@@ -1029,10 +1029,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D p', '-S -t Square -D v'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between PERSISTENT publisher and VOLATILE subscriber',
-        'description' : 'Verifies a persistent publisher communicates with a volatile subscriber\n'
+        'description' : 'Verifies a persistent publisher communicates with a volatile subscriber\n\n'
                         ' * Configures the publisher with a PERSISTENT durability\n'
                         ' * Configures the subscriber with a VOLATILE durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1040,10 +1040,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D p', '-S -t Square -D l'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between PERSISTENT publisher and TRANSIENT_LOCAL subscriber',
-        'description' : 'Verifies a persistent publisher communicates with a transient local subscriber\n'
+        'description' : 'Verifies a persistent publisher communicates with a transient local subscriber\n\n'
                         ' * Configures the publisher with a PERSISTENT durability\n'
                         ' * Configures the subscriber with a TRANSIENT_LOCAL durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1051,10 +1051,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D p', '-S -t Square -D t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between PERSISTENT publisher and TRANSIENT subscriber',
-        'description' : 'Verifies a persistent publisher communicates with a transient subscriber\n'
+        'description' : 'Verifies a persistent publisher communicates with a transient subscriber\n\n'
                         ' * Configures the publisher with a PERSISTENT durability\n'
                         ' * Configures the subscriber with a TRANSIENT durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1062,10 +1062,10 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -D p', '-S -t Square -D p'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Communication between PERSISTENT publisher and PERSISTENT subscriber',
-        'description' : 'Verifies a persistent publisher communicates with a persistent subscriber\n'
+        'description' : 'Verifies a persistent publisher communicates with a persistent subscriber\n\n'
                         ' * Configures the publisher with a PERSISTENT durability\n'
                         ' * Configures the subscriber with a PERSISTENT durability\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
@@ -1079,13 +1079,13 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_durability_volatile,
         'title' : 'Test the behavior of the VOLATILE durability',
-        'description' : 'Verifies a volatile publisher and subscriber communicates and work as expected\n'
+        'description' : 'Verifies a volatile publisher and subscriber communicates and work as expected\n\n'
                         ' * Configures the publisher / subscriber with a VOLATILE durability\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n'
-                        ' * Note that there is at least 1 second delay between the creation of each entity\n'
+                        ' * Note that there is at least 1 second delay between the creation of each entity\n\n'
                         'The test passes if the first sample the subscriber receives is not '
                             'the first sample that the publisher sent (by checking the "size" value).\n'
     },
@@ -1097,13 +1097,13 @@ rtps_test_suite_1 = {
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : test_durability_transient_local,
         'title' : 'Test the behavior of the TRANSIENT_LOCAL durability',
-        'description' : 'Verifies a transient local publisher and subscriber communicates and work as expected\n'
+        'description' : 'Verifies a transient local publisher and subscriber communicates and work as expected\n\n'
                         ' * Configures the publisher / subscriber with a TRANSIENT_LOCAL durability\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n'
-                        ' * Note that there is at least 1 second delay between the creation of each entity\n'
+                        ' * Note that there is at least 1 second delay between the creation of each entity\n\n'
                         'The test passes if the first sample the subscriber receives is the first sample '
                             'that the publisher sent (by checking the "size" value is equal to 1).\n'
     },
