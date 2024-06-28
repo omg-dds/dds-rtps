@@ -48,11 +48,13 @@ GeneratedCode
 
 # Generated files
 srcCxx/shape.*
+!srcCxx/shape.idl
 srcCxx/shapePlugin.*
 srcCxx/shapeSupport.*
 
-srcCxx/shape_micro.cxx
-srcCxx/shape_micro.h
+# Generated files Connext Micro
+srcCxx/shape_micro.*
+!srcCxx/shape_micro.idl
 srcCxx/shape_microPlugin.*
 srcCxx/shape_microSupport.*
 
