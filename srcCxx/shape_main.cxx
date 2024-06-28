@@ -426,181 +426,6 @@ public:
                             Verbosity::ERROR);
                         parse_ok = false;
                 }
-                break;
-            }
-            case 'D':
-            if (optarg[0] != '\0') {
-                switch (optarg[0]) {
-                case 'v':
-                    durability_kind = VOLATILE_DURABILITY_QOS;
-                    break;
-                case 'l':
-                    durability_kind = TRANSIENT_LOCAL_DURABILITY_QOS;
-                    break;
-                case 't':
-                    durability_kind = TRANSIENT_DURABILITY_QOS;
-                    break;
-                case 'p':
-                    durability_kind = PERSISTENT_DURABILITY_QOS;
-                    break;
-                default:
-                    logger.log_message("unrecognized value for durability "
-                                + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                        parse_ok = false;
-                }
-                break;
-            }
-            case 'i': {
-                int converted_param = sscanf(optarg, "%d", &timebasedfilter_interval);
-                if (converted_param == 0) {
-                    logger.log_message("unrecognized value for timebasedfilter_interval "
-                                + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                } else if (timebasedfilter_interval < 0) {
-                    logger.log_message("incorrect value for timebasedfilter_interval "
-                                + std::to_string(timebasedfilter_interval),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 'f': {
-                int converted_param = sscanf(optarg, "%d", &deadline_interval);
-                if (converted_param == 0) {
-                    logger.log_message("unrecognized value for deadline_interval "
-                                    + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                } else if (deadline_interval < 0) {
-                    logger.log_message("incorrect value for deadline_interval "
-                                    + std::to_string(deadline_interval),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 'k': {
-                int converted_param = sscanf(optarg, "%d", &history_depth);
-                if (converted_param == 0){
-                    logger.log_message("unrecognized value for history_depth "
-                                    + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                } else if (history_depth < 0) {
-                    logger.log_message("incorrect value for history_depth "
-                                    + std::to_string(history_depth),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 'p':
-                partition = strdup(optarg);
-                break;
-            case 'r':
-                reliability_kind = RELIABLE_RELIABILITY_QOS;
-                break;
-            case 's': {
-                int converted_param = sscanf(optarg, "%d", &ownership_strength);
-                if (converted_param == 0){
-                    logger.log_message("unrecognized value for ownership_strength "
-                                    + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                } else if (ownership_strength < -1) {
-                    logger.log_message("incorrect value for ownership_strength "
-                                    + std::to_string(ownership_strength),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 't':
-                topic_name = strdup(optarg);
-                break;
-            case 'P':
-                publish = true;
-                break;
-            case 'S':
-                subscribe = true;
-                break;
-            case 'h':
-                print_usage(argv[0]);
-                exit(0);
-                break;
-            case 'x':
-                if (optarg[0] != '\0') {
-                    switch (optarg[0]) {
-                    case '1':
-                        data_representation = XCDR_DATA_REPRESENTATION;
-                        break;
-                    case '2':
-                        data_representation = XCDR2_DATA_REPRESENTATION;
-                        break;
-                    default:
-                        logger.log_message("unrecognized value for data representation "
-                                    + std::string(1, optarg[0]),
-                                Verbosity::ERROR);
-                        parse_ok = false;
-                    }
-                }
-                break;
-            case 'z': {
-                int converted_param = sscanf(optarg, "%d", &shapesize);
-                if (converted_param == 0) {
-                    logger.log_message("unrecognized value for shapesize "
-                                + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                } else if (shapesize < 0) {
-                    logger.log_message("incorrect value for shapesize "
-                                    + std::to_string(shapesize),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 'W': {
-                int converted_param = 0;
-                sscanf(optarg, "%d", &converted_param);
-                if (sscanf(optarg, "%d", &converted_param) == 0) {
-                    logger.log_message("unrecognized value for write-period "
-                                + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                write_period_us = (useconds_t) converted_param * 1000;
-                if (write_period_us < 0) {
-                    logger.log_message("incorrect value for write-period "
-                                + std::to_string(write_period_us),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case 'A': {
-                int converted_param = 0;
-                sscanf(optarg, "%d", &converted_param);
-                if (sscanf(optarg, "%d", &converted_param) == 0) {
-                    logger.log_message("unrecognized value for read-period "
-                                + std::string(1, optarg[0]),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                read_period_us = (useconds_t) converted_param * 1000;
-                if (read_period_us < 0) {
-                    logger.log_message("incorrect value for read-period "
-                                + std::to_string(read_period_us),
-                            Verbosity::ERROR);
-                    parse_ok = false;
-                }
-                break;
-            }
-            case '?':
-                parse_ok = false;
-                break;
             }
             break;
             case 'i': {
@@ -1013,7 +838,7 @@ public:
         dw_qos.representation.value = data_representation_seq;
 
 #elif  defined(TWINOAKS_COREDX)
-        dw_qos.rtps_writer.apply_filters = 0; 
+        dw_qos.rtps_writer.apply_filters = 0;
         dw_qos.representation.value.clear( );
         dw_qos.representation.value.push_back( options->data_representation );
 
@@ -1183,7 +1008,7 @@ public:
             /*  filter on specified color */
             ContentFilteredTopic *cft = NULL;
             StringSeq              cf_params;
-            
+
             const std::string filtered_topic_name_str = std::string(options->topic_name) + "_filtered";
             const char* filtered_topic_name = filtered_topic_name_str.c_str();
 
