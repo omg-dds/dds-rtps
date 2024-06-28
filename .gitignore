@@ -58,9 +58,26 @@ srcCxx/shape_micro.*
 srcCxx/shape_microPlugin.*
 srcCxx/shape_microSupport.*
 
+# VSCode default folders
 .vscode/
+build/
+.cache/
 
 # Generated reports
+*.xlsx
+*.xml
+*.zip
 *.html
 
+# Do not ignore templates
+!doc/_templates/*.html
+
 .DS_Store
+
+# Generated documentation files
+gdrive_url.py
+html/
+doc/detailed_report.rst
+doc/test_results.rst
+test_description.rst
+doc/test_description.rst

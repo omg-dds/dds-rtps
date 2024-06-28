@@ -17,6 +17,7 @@
 #include <stdarg.h>
 #include <iostream>
 #include <getopt.h>
+#include <sys/types.h>
 
 #if defined(RTI_CONNEXT_DDS)
 #include "shape_configurator_rti_connext_dds.h"
@@ -28,6 +29,8 @@
 #include "shape_configurator_eprosima_fast_dds.h"
 #elif defined(RTI_CONNEXT_MICRO)
 #include "shape_configurator_rti_connext_micro.h"
+#elif defined(INTERCOM_DDS)
+#include "shape_configurator_intercom_dds.h"
 #else
 #error "Must define the DDS vendor"
 #endif
@@ -66,6 +69,10 @@ using namespace DDS;
 #define ERROR_PARSING_ARGUMENTS 1
 #define ERROR_INITIALIZING 2
 #define ERROR_RUNNING 3
+
+#ifndef STRING_FREE
+#define STRING_FREE free
+#endif
 
 /*************************************************************/
 int  all_done  = 0;
@@ -275,9 +282,9 @@ public:
     //-------------------------------------------------------------
     ~ShapeOptions()
     {
-        free(topic_name);
-        free(color);
-        free(partition);
+        STRING_FREE(topic_name);
+        STRING_FREE(color);
+        STRING_FREE(partition);
     }
 
     //-------------------------------------------------------------
@@ -302,7 +309,6 @@ public:
         printf("   -x [1|2]        : set data representation [1: XCDR, 2: XCDR2]\n");
         printf("   -w              : print Publisher's samples\n");
         printf("   -z <int>        : set shapesize (0: increase the size for every sample)\n");
-        printf("   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]\n");
         printf("   -R              : use 'read()' instead of 'take()'\n");
         printf("   --write-period <ms>: waiting period between 'write()' operations in ms.\n");
         printf("                        Default: 33ms\n");
@@ -396,6 +402,29 @@ public:
                                 + std::to_string(domain_id),
                             Verbosity::ERROR);
                     parse_ok = false;
+                }
+                break;
+            }
+            case 'D':
+            if (optarg[0] != '\0') {
+                switch (optarg[0]) {
+                case 'v':
+                    durability_kind = VOLATILE_DURABILITY_QOS;
+                    break;
+                case 'l':
+                    durability_kind = TRANSIENT_LOCAL_DURABILITY_QOS;
+                    break;
+                case 't':
+                    durability_kind = TRANSIENT_DURABILITY_QOS;
+                    break;
+                case 'p':
+                    durability_kind = PERSISTENT_DURABILITY_QOS;
+                    break;
+                default:
+                    logger.log_message("unrecognized value for durability "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                        parse_ok = false;
                 }
                 break;
             }
@@ -573,6 +602,156 @@ public:
                 parse_ok = false;
                 break;
             }
+            break;
+            case 'i': {
+                int converted_param = sscanf(optarg, "%d", &timebasedfilter_interval);
+                if (converted_param == 0) {
+                    logger.log_message("unrecognized value for timebasedfilter_interval "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (timebasedfilter_interval < 0) {
+                    logger.log_message("incorrect value for timebasedfilter_interval "
+                                + std::to_string(timebasedfilter_interval),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                break;
+            }
+            case 'f': {
+                int converted_param = sscanf(optarg, "%d", &deadline_interval);
+                if (converted_param == 0) {
+                    logger.log_message("unrecognized value for deadline_interval "
+                                    + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (deadline_interval < 0) {
+                    logger.log_message("incorrect value for deadline_interval "
+                                    + std::to_string(deadline_interval),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                break;
+            }
+            case 'k': {
+                int converted_param = sscanf(optarg, "%d", &history_depth);
+                if (converted_param == 0){
+                    logger.log_message("unrecognized value for history_depth "
+                                    + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (history_depth < 0) {
+                    logger.log_message("incorrect value for history_depth "
+                                    + std::to_string(history_depth),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                break;
+            }
+            case 'p':
+                partition = strdup(optarg);
+                break;
+            case 'r':
+                reliability_kind = RELIABLE_RELIABILITY_QOS;
+                break;
+            case 's': {
+                int converted_param = sscanf(optarg, "%d", &ownership_strength);
+                if (converted_param == 0){
+                    logger.log_message("unrecognized value for ownership_strength "
+                                    + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (ownership_strength < -1) {
+                    logger.log_message("incorrect value for ownership_strength "
+                                    + std::to_string(ownership_strength),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                break;
+            }
+            case 't':
+                topic_name = strdup(optarg);
+                break;
+            case 'P':
+                publish = true;
+                break;
+            case 'S':
+                subscribe = true;
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                exit(0);
+                break;
+            case 'x':
+                if (optarg[0] != '\0') {
+                    switch (optarg[0]) {
+                    case '1':
+                        data_representation = XCDR_DATA_REPRESENTATION;
+                        break;
+                    case '2':
+                        data_representation = XCDR2_DATA_REPRESENTATION;
+                        break;
+                    default:
+                        logger.log_message("unrecognized value for data representation "
+                                    + std::string(1, optarg[0]),
+                                Verbosity::ERROR);
+                        parse_ok = false;
+                    }
+                }
+                break;
+            case 'z': {
+                int converted_param = sscanf(optarg, "%d", &shapesize);
+                if (converted_param == 0) {
+                    logger.log_message("unrecognized value for shapesize "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (shapesize < 0) {
+                    logger.log_message("incorrect value for shapesize "
+                                    + std::to_string(shapesize),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                break;
+            }
+            case 'W': {
+                int converted_param = 0;
+                sscanf(optarg, "%d", &converted_param);
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
+                    logger.log_message("unrecognized value for write-period "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (converted_param < 0) {
+                    logger.log_message("incorrect value for write-period "
+                                + std::to_string(converted_param),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                write_period_us = (useconds_t) converted_param * 1000;
+                break;
+            }
+            case 'A': {
+                int converted_param = 0;
+                sscanf(optarg, "%d", &converted_param);
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
+                    logger.log_message("unrecognized value for read-period "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (converted_param < 0) {
+                    logger.log_message("incorrect value for read-period "
+                                + std::to_string(converted_param),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                read_period_us = (useconds_t) converted_param * 1000;
+                break;
+            }
+            case '?':
+                parse_ok = false;
+                break;
+            }
         }
 
         if ( parse_ok ) {
@@ -741,7 +920,7 @@ public:
         if (dp)  dp->delete_contained_entities( );
         if (dpf) dpf->delete_participant( dp );
 
-        free(color);
+        STRING_FREE(color);
     }
 
     //-------------------------------------------------------------
@@ -808,7 +987,6 @@ public:
         logger.log_message("Running init_publisher() function", Verbosity::DEBUG);
         PublisherQos  pub_qos;
         DataWriterQos dw_qos;
-        ShapeType     shape;
 
         dp->get_default_publisher_qos( pub_qos );
         if ( options->partition != NULL ) {
@@ -835,16 +1013,30 @@ public:
         dw_qos.representation.value = data_representation_seq;
 
 #elif  defined(TWINOAKS_COREDX)
+        dw_qos.rtps_writer.apply_filters = 0; 
+        dw_qos.representation.value.clear( );
+        dw_qos.representation.value.push_back( options->data_representation );
+
+#elif  defined(INTERCOM_DDS)
         dw_qos.representation.value.clear( );
         dw_qos.representation.value.push_back( options->data_representation );
 
 #elif   defined(OPENDDS)
         dw_qos.representation.value.length(1);
         dw_qos.representation.value[0] = options->data_representation;
+
+#elif  defined(EPROSIMA_FAST_DDS)
+        dw_qos.representation().m_value.clear( );
+        dw_qos.representation().m_value.push_back( options->data_representation );
 #endif
-#if !defined(EPROSIMA_FAST_DDS) && !defined(RTI_CONNEXT_MICRO)
+#if !defined(RTI_CONNEXT_MICRO)
+  #if  defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.m_value[0]), Verbosity::DEBUG);
+  #else
         logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
+  #endif
 #endif
+
         if ( options->ownership_strength != -1 ) {
             dw_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
             dw_qos.ownership_strength FIELD_ACCESSOR.value = options->ownership_strength;
@@ -931,15 +1123,29 @@ public:
         data_representation_seq[0] = options->data_representation;
         dr_qos.representation.value = data_representation_seq;
 #elif  defined(TWINOAKS_COREDX)
+        dr_qos.rtps_reader.send_initial_nack = 1;
+        dr_qos.rtps_reader.precache_max_samples = 0;
+        dr_qos.representation.value.clear( );
+        dr_qos.representation.value.push_back( options->data_representation );
+
+#elif  defined(INTERCOM_DDS)
         dr_qos.representation.value.clear( );
         dr_qos.representation.value.push_back( options->data_representation );
 
 #elif   defined(OPENDDS)
         dr_qos.representation.value.length(1);
         dr_qos.representation.value[0] = options->data_representation;
+
+#elif   defined(EPROSIMA_FAST_DDS)
+        dr_qos.type_consistency().representation.m_value.clear();
+        dr_qos.type_consistency().representation.m_value.push_back( options->data_representation );
 #endif
-#if !defined(EPROSIMA_FAST_DDS) && !defined(RTI_CONNEXT_MICRO)
+#if !defined(RTI_CONNEXT_MICRO)
+  #if defined(EPROSIMA_FAST_DDS)
+        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.type_consistency().representation.m_value[0]), Verbosity::DEBUG);
+  #else
         logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
+  #endif
 #endif
         if ( options->ownership_strength != -1 ) {
             dr_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
@@ -985,14 +1191,23 @@ public:
             char parameter[64];
             sprintf(parameter, "'%s'",  options->color);
             StringSeq_push(cf_params, parameter);
-            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color MATCH %0", cf_params);
-            logger.log_message("    ContentFilterTopic = \"color MATCH "
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = \"color = "
                 + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
             StringSeq_push(cf_params, options->color);
             cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
             logger.log_message("    ContentFilterTopic = \"color = "
                 + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
+
+#elif defined(INTERCOM_DDS)
+            char parameter[64];
+            sprintf(parameter, "'%s'",  options->color);
+            StringSeq_push(cf_params, parameter);
+            cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+            logger.log_message("    ContentFilterTopic = \"color = "
+                + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
+
 #elif defined(EPROSIMA_FAST_DDS)
             cf_params.push_back(std::string("'") + options->color + std::string("'"));
             cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
@@ -1031,7 +1246,7 @@ public:
             ReturnCode_t     retval;
             SampleInfoSeq    sample_infos;
 
-#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS)
+#if defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS) || defined(INTERCOM_DDS)
             ShapeTypeSeq          samples;
 #elif defined(TWINOAKS_COREDX)
             ShapeTypePtrSeq       samples;
@@ -1044,8 +1259,8 @@ public:
 
             do {
                 if (!options->use_read) {
-                    logger.log_message("Calling take() function", Verbosity::DEBUG);
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+                    logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     retval = dr->take_next_instance ( samples,
                             sample_infos,
                             LENGTH_UNLIMITED,
@@ -1061,7 +1276,7 @@ public:
                             ANY_SAMPLE_STATE,
                             ANY_VIEW_STATE,
                             ANY_INSTANCE_STATE );
-#elif defined(RTI_CONNEXT_MICRO) 
+#elif defined(RTI_CONNEXT_MICRO)
                     retval = dr->take ( samples,
                             sample_infos,
                             LENGTH_UNLIMITED,
@@ -1070,7 +1285,7 @@ public:
                             ANY_INSTANCE_STATE );
 #endif
                 } else { /* Use read_next_instance*/
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
                     retval = dr->read_next_instance ( samples,
                             sample_infos,
@@ -1111,7 +1326,7 @@ public:
 #elif defined(TWINOAKS_COREDX)
                         ShapeType          *sample      = samples[i];
                         SampleInfo         *sample_info = sample_infos[i];
-#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS)
+#elif defined(EPROSIMA_FAST_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS)
                         const ShapeType    *sample      = &samples[i];
                         SampleInfo         *sample_info = &sample_infos[i];
 #endif
@@ -1125,7 +1340,7 @@ public:
                         }
                     }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                     previous_handle = sample_infos[0].instance_handle;
                     dr->return_loan( samples, sample_infos );
 #elif defined(TWINOAKS_COREDX)
@@ -1196,8 +1411,9 @@ public:
             if (options->shapesize == 0) {
                 shape.shapesize FIELD_ACCESSOR += 1;
             }
+
             moveShape(&shape);
-#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO) || defined(OPENDDS) || defined(INTERCOM_DDS)
             dw->write( shape, HANDLE_NIL );
 #elif defined(TWINOAKS_COREDX) || defined(EPROSIMA_FAST_DDS)
             dw->write( &shape, HANDLE_NIL );

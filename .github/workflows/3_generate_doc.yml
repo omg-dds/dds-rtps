@@ -1,0 +1,56 @@
+name: 3 - Generate Test Report
+run-name: ${{ github.actor }} is generating doc in GitHub Actions 🚀
+on: workflow_dispatch
+jobs:
+  generate_doc:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get Artifact
+        uses: dawidd6/action-download-artifact@v6
+        with:
+          name: detailed_report
+          workflow: 2_upload_artifact.yml
+
+      - name: Move the detailed report to output folder
+        run: |
+          mkdir -p doc/_static/html/
+          mv *.html doc/_static/html/
+          ls doc/_static/html
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+
+      - name: Create virtual environment
+        run: |
+          python -m venv .venv
+          source .venv/bin/activate
+
+      - name: Setting up environment
+        run: |
+          pip install -r requirements_doc.txt
+          pip install -r requirements.txt
+
+      - name: Get latest XLSX and ZIP urls
+        env:
+          GCP_CREDENTIAL_STR: ${{ secrets.GCP_CREDENTIAL_STR }}
+          DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
+        run: python get_latest_file_urls.py gdrive_url.py
+
+      - name: Build documentation
+        run: sphinx-build -b html doc html
+
+      - name: Zip the documentation
+        run: |
+          cd html
+          zip -r ../documentation.zip .
+
+      - name: Attach html documentation
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation
+          path: documentation.zip

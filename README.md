@@ -13,6 +13,10 @@ QoS settings. The goal is to validate that the implementations perform
 these functions in compliance with OMG DDS-RTPS standard
 and can interoperate with each other.
 
+**Find the latest test report here**: https://omg-dds.github.io/dds-rtps/
+
+**Find the latest test result summary here**: https://omg-dds.github.io/dds-rtps/test_results.html
+
 ## Table of contents
 
 * 1\. [Introduction](#introduction)
@@ -164,6 +168,9 @@ different executables (built with different DDS implementations).
 The Shape application allows the following parameters:
 
 ~~~
+   --help, -h      : print this menu
+   -P              : publish samples
+   -S              : subscribe samples
    -d <int>        : domain id (default: 0)
    -b              : BEST_EFFORT reliability
    -r              : RELIABLE reliability
@@ -176,12 +183,16 @@ The Shape application allows the following parameters:
    -p <partition>  : set a 'partition' string
    -D [v|l|t|p]    : set durability [v: VOLATILE,  l: TRANSIENT_LOCAL]
                                      t: TRANSIENT, p: PERSISTENT]
-   -P              : publish samples
-   -S              : subscribe samples
    -x [1|2]        : set data representation [1: XCDR, 2: XCDR2]
    -w              : print Publisher's samples
-   -z <int>        : set shapesize (between 10-99)
+   -z <int>        : set shapesize (0: increase the size for every sample)
+   -R              : use 'read()' instead of 'take()'
+   --write-period <ms>: waiting period between 'write()' operations in ms.
+                        Default: 33ms
+   --read-period <ms> : waiting period between 'read()' or 'take()' operations
+                        in ms. Default: 100ms
    -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
+
 ~~~
 
 ## Return Code
@@ -220,8 +231,9 @@ These printed strings and the corresponding Return Codes follows this workflow
     * `'on_publication_matched()'`:
       * case '-w' not in parameters -> `OK`
       * case '-w' in parameters:
-        * `'[10-99]'`-> `OK`
-        * `'[10-99]'` not found -> `DATA_NOT_SENT`
+        * `'[[0-9]+]'`-> `OK`
+        * `'on_offered_deadline_missed'` -> `DEADLINE_MISSED`
+        * No string matched -> `DATA_NOT_SENT`
 
 **Subscriber**:
 
@@ -231,17 +243,14 @@ These printed strings and the corresponding Return Codes follows this workflow
   * No string matched -> `READER_NOT_CREATED`
   * `'Create reader for topic'`:
     * `'on_requested_incompatible_qos()'`-> `INCOMPATIBLE_QOS`
-    * None string matched ->  `WRITER_NOT_MATCHED`
-    * `'on_subscription_matched()'`:
-      * `'on_liveliness_changed()'` not found -> `WRITER_NOT_ALIVE`
-      * `'on_liveliness_changed()'`:
-        * `'[10-99]'` not found -> `DATA_NOT_RECEIVED`
-        * `'[10-99]'`:
-          * `checking_function` not defined in Test Case -> `OK`
-          * `checking_function` defined in Test Case -> `OK`, `DATA_NOT_CORRECT`,
-          `RECEIVING_FROM_ONE` or `RECEIVING_FROM_BOTH`, depending on the function.
+    * `'on_requested_deadline_missed'` -> `DEADLINE_MISSED`
+    * `'[[0-9]+]'`:
+        * `checking_function` not defined in Test Case -> `OK`
+        * `checking_function` defined in Test Case -> `OK`, `DATA_NOT_CORRECT`,
+        `RECEIVING_FROM_ONE` or `RECEIVING_FROM_BOTH`, depending on the function.
+    * No string matched -> `DATA_NOT_RECEIVED`
 
-> **Note**: `'[10-99]'` is the shapesize of the samples. The
+> **Note**: `'[[0-9]+]'` is the shapesize of the samples. The
 > `interoperability_report` script is only taking into account the shapesize in
 > order to match a printed shape sample. This does not prevent the script to
 > recover the other information: x, y and color.
@@ -355,10 +364,10 @@ Test Case and Test Suite:
                         (Default: test_suite).
   -t test_cases [test_cases ...], --test test_cases [test_cases ...]
                         Test Case that the script will run. This option is not
-                        supported with --disable_test. This allows to set
+                        supported with --disable-test. This allows to set
                         multiple values separated by a space. (Default: run
                         all Test Cases from the Test Suite.)
-  -d test_cases_disabled [test_cases_disabled ...], --disable_test test_cases_disabled [test_cases_disabled ...]
+  -d test_cases_disabled [test_cases_disabled ...], --disable-test test_cases_disabled [test_cases_disabled ...]
                         Test Case that the script will skip. This allows to
                         set multiple values separated by a space. This option
                         is not supported with --test. (Default: None)
@@ -444,34 +453,34 @@ The GitHub Actions process must be launched in the following cases:
 To generate the report you should follow the next steps:
 1. Go to *Actions*.
 
-![Actions](./doc/img/img1.png)
+![Actions](./resource/_md/img/img1.png)
 
 2. Go to *Testing Interoperability*.
 
-![Testing-Interoperability](./doc/img/img2.png)
+![Testing-Interoperability](./resource/_md/img/img2.png)
 
 3. Press *Run workflow*, select master branch (for the official tests).
 
-![Run-workflow](./doc/img/img3.png)
+![Run-workflow](./resource/_md/img/img3.png)
 
 4. Wait a few minutes until the new task is finished and then press it.\
 Example of a successful and a failed test:
 
-![Succeeded test](./doc/img/img4.png)
-![Failed test](./doc/img/img5.png)
+![Succeeded test](./resource/_md/img/img4.png)
+![Failed test](./resource/_md/img/img5.png)
 
 
 5. At the bottom of the page you can find the attached artifacts
 in the **Artifacts** section that contains the generated report.
-![Artifacts-1](./doc/img/img6.png)
-![Artifacts-2](./doc/img/img7.png)
+![Artifacts-1](./resource/_md/img/img6.png)
+![Artifacts-2](./resource/_md/img/img7.png)
 
 6. Download and unzip it. There is file called `index.html`, inside
 `report.zip` that is the generated report. It will look something like this
 (set pretty option):
 
-![report-1](./doc/img/img8.png)
-![report-2](./doc/img/img9.png)
+![report-1](./resource/_md/img/img8.png)
+![report-2](./resource/_md/img/img9.png)
 
 > **Note**: The status of the GitHub Action will be **Failure** :x:,
 if any of the Test Cases that we are testing has an error,
@@ -509,7 +518,7 @@ file.
 
 Example:
 
-![zip](./doc/img/img10.png)
+![zip](./resource/_md/img/img10.png)
 
 Then, the executable should be uploaded to the corresponding release:
 
@@ -517,17 +526,17 @@ Then, the executable should be uploaded to the corresponding release:
 
 1. In the main page, go to *Releases*.
 
-![Releases](./doc/img/img11.png)
+![Releases](./resource/_md/img/img11.png)
 
 2. Inside the latest release, go to *Edit*.
 
-![Edit](./doc/img/img12.png)
+![Edit](./resource/_md/img/img12.png)
 
 3. Upload the executables in *Attach binaries by dropping them here or
 selecting them* (leave all the other fields as they were).
 Keep marked *Set as the latest release*, and press *Update release*.
 
-![Attach](./doc/img/img13.png)
+![Attach](./resource/_md/img/img13.png)
 
 > **Note**: once the executable is uploaded, the user should run
 > GitHub Actions to generate a new report.
@@ -598,11 +607,11 @@ The name of the release and the tag should be as explained in
 
 1. In the main page, go to *Releases*.
 
-![Releases](./doc/img/img11.png)
+![Releases](./resource/_md/img/img11.png)
 
 2. Go to *Draft a new release*.
 
-![Draft a new release](./doc/img/img14.png)
+![Draft a new release](./resource/_md/img/img14.png)
 
 3. Do:
     * In *Choose a tag* write the name of the tag and select
@@ -616,7 +625,7 @@ The name of the release and the tag should be as explained in
     * Make sure *Set as pre-release* is **not selected**.
     * Press *Publish release*.
 
-![Create release](./doc/img/img15.png)
+![Create release](./resource/_md/img/img15.png)
 
 ## Report Bugs
 
@@ -628,16 +637,16 @@ in the following way.
 
 * Go to *Issues*.
 
-![Issues](./doc/img/img16.png)
+![Issues](./resource/_md/img/img16.png)
 
 * **Check the issue is not already submitted**.
 * Select *New Issue*.
 
-![New issue](./doc/img/img17.png)
+![New issue](./resource/_md/img/img17.png)
 
 * Select Interoperability issue template, *Get Started*.
 
-![Issue-Get started](./doc/img/img18.png)
+![Issue-Get started](./resource/_md/img/img18.png)
 
 * Fill out the corresponding information:
     * Title: `Problem with <QoS or parameter>`
@@ -646,16 +655,16 @@ in the following way.
     * Copy the link to the GitHub Action workflow run.
         * Example, from this page:
 
-        ![Artifacts-1](./doc/img/img6.png)
+        ![Artifacts-1](./resource/_md/img/img6.png)
 
     * Add any suggestion about how to fix it, or why
       this is happening [Optional].
     * Add another comment [Optional].
     * In the section *Labels*, assign them to the vendors involved.
 
-   ![Label-1](./doc/img/img19.png)
-   ![Label-2](./doc/img/img20.png)
+   ![Label-1](./resource/_md/img/img19.png)
+   ![Label-2](./resource/_md/img/img20.png)
 
     * Press *Submit new issue*.
 
-    ![Template](./doc/img/img21.png)
+    ![Template](./resource/_md/img/img21.png)
