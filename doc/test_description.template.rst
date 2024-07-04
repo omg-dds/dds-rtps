@@ -46,5 +46,31 @@ this refers to the publisher/subscriber applications. Qos policies are set
 to the corresponding entity: DomainParticipant, Publisher, Subscriber, Topic,
 DataWriter or DataReader.
 
+Considerations per Product
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+This section outlines important considerations for different products, including
+default values, features enabled or disabled, and unsupported features.
+
+* **Connext**:
+  * Content Filtered Topic expression created with single quotes around strings
+    values
+* **FastDDS**:
+  * Content Filtered Topic expression created with single quotes around strings
+    values
+* **InteroCOM DDS**:
+  * Content Filtered Topic expression created with single quotes around strings
+    values
+* **OpenDDS**:
+  * Content Filtered Topic expression created without single quotes around
+    strings values
+  * Disabled XTypes Support
+* **CoreDX DDS**:
+  * Content Filtered Topic expression created without single quotes around
+    strings values
+  * Disabled writer-side content filter
+  * DataReader send_initial_nack enabled
+  * DataReader precache_max_samples set to 0
+  * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536`
+
 
 |TEST_DESCRIPTION|
