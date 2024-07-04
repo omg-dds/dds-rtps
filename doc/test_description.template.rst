@@ -52,7 +52,7 @@ Considerations per Product
 This section outlines important considerations for different products, including
 default values, features enabled or disabled, and unsupported features.
 
-Note that there is no version number because these changes applies to all
+Note that there is no version number because these changes apply to all
 versions.
 
 
