@@ -81,10 +81,13 @@ versions.
 
   * Content Filtered Topic expression created without single quotes around
     strings values
-  * Disabled writer-side content filter
-  * DataReader send_initial_nack enabled
-  * DataReader precache_max_samples set to 0
-  * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536`
+  * Disabled writer-side content filtering
+  * DataReader `send_initial_nack` enabled that sends an initial NACK to every
+    discovered DataWriter (only when using reliable RELIABILITY)
+  * DataReader `precache_max_samples` set to 0 that sets to 0 the number of
+    samples pre-cached
+  * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536` that
+    increases the buffer sizes to that value
 
 
 |TEST_DESCRIPTION|
