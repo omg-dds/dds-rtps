@@ -48,8 +48,13 @@ DataWriter or DataReader.
 
 Considerations per Product
 ~~~~~~~~~~~~~~~~~~~~~~~~~~
+
 This section outlines important considerations for different products, including
 default values, features enabled or disabled, and unsupported features.
+
+Note that there is no version number because these changes applies to all
+versions.
+
 
 * **Connext**:
 
@@ -61,7 +66,7 @@ default values, features enabled or disabled, and unsupported features.
   * Content Filtered Topic expression created with single quotes around strings
     values
 
-* **InteroCOM DDS**:
+* **InterCOM DDS**:
 
   * Content Filtered Topic expression created with single quotes around strings
     values
