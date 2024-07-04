@@ -53,7 +53,7 @@ This section outlines important considerations for different products, including
 default values, features enabled or disabled, and unsupported features.
 
 Note that there is no version number because these changes apply to all
-versions.
+product versions.
 
 
 * **Connext**:
@@ -85,7 +85,7 @@ versions.
   * DataReader `send_initial_nack` enabled that sends an initial NACK to every
     discovered DataWriter (only when using reliable RELIABILITY)
   * DataReader `precache_max_samples` set to 0 that sets to 0 the number of
-    samples pre-cached
+    samples pre-cached (only when using reliable RELIABILITY)
   * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536` that
     increases the buffer sizes to that value
 
