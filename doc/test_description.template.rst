@@ -52,19 +52,28 @@ This section outlines important considerations for different products, including
 default values, features enabled or disabled, and unsupported features.
 
 * **Connext**:
+
   * Content Filtered Topic expression created with single quotes around strings
     values
+
 * **FastDDS**:
+
   * Content Filtered Topic expression created with single quotes around strings
     values
+
 * **InteroCOM DDS**:
+
   * Content Filtered Topic expression created with single quotes around strings
     values
+
 * **OpenDDS**:
+
   * Content Filtered Topic expression created without single quotes around
     strings values
   * Disabled XTypes Support
+
 * **CoreDX DDS**:
+
   * Content Filtered Topic expression created without single quotes around
     strings values
   * Disabled writer-side content filter
