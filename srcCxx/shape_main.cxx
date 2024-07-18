@@ -21,14 +21,14 @@
 
 #if defined(RTI_CONNEXT_DDS)
 #include "shape_configurator_rti_connext_dds.h"
+#elif defined(RTI_CONNEXT_MICRO)
+#include "shape_configurator_rti_connext_micro.h"
 #elif defined(TWINOAKS_COREDX)
 #include "shape_configurator_toc_coredx_dds.h"
 #elif defined(OPENDDS)
 #include "shape_configurator_opendds.h"
 #elif defined(EPROSIMA_FAST_DDS)
 #include "shape_configurator_eprosima_fast_dds.h"
-#elif defined(RTI_CONNEXT_MICRO)
-#include "shape_configurator_rti_connext_micro.h"
 #elif defined(INTERCOM_DDS)
 #include "shape_configurator_intercom_dds.h"
 #else
@@ -766,7 +766,37 @@ public:
         CONFIGURE_PARTICIPANT_FACTORY
 #endif
 
+#ifdef RTI_CONNEXT_MICRO
+        DDS::DomainParticipantQos dp_qos;
+
+        if (!dp_qos.discovery.discovery.name.set_name("dpde"))
+        {
+            printf("ERROR: unable to set discovery plugin name\n");
+            return false;
+        }
+
+        dp_qos.discovery.initial_peers.maximum(1);
+        dp_qos.discovery.initial_peers.length(1);
+        dp_qos.discovery.initial_peers[0] = DDS_String_dup("127.0.0.1");
+
+        /* if there are more remote or local endpoints, you need to increase these limits */
+        dp_qos.resource_limits.max_destination_ports = 32;
+        dp_qos.resource_limits.max_receive_ports = 32;
+        dp_qos.resource_limits.local_topic_allocation = 1;
+        dp_qos.resource_limits.local_type_allocation = 1;
+        dp_qos.resource_limits.local_reader_allocation = 1;
+        dp_qos.resource_limits.local_writer_allocation = 1;
+        dp_qos.resource_limits.remote_participant_allocation = 8;
+        dp_qos.resource_limits.remote_reader_allocation = 8;
+        dp_qos.resource_limits.remote_writer_allocation = 8;
+
+        DDS_StatusMask dp_listener_mask = DDS_STATUS_MASK_ALL & ~DDS_DATA_ON_READERS_STATUS;
+
+        dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, dp_listener_mask );
+
+#else
         dp = dpf->create_participant( options->domain_id, PARTICIPANT_QOS_DEFAULT, &dp_listener, LISTENER_STATUS_MASK_ALL );
+#endif
         if (dp == NULL) {
             logger.log_message("failed to create participant (missing license?).", Verbosity::ERROR);
             return false;
@@ -831,7 +861,7 @@ public:
         dw_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
         logger.log_message("    Durability = " + QosUtils::to_string(dw_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined (RTI_CONNEXT_MICRO)
         DataRepresentationIdSeq data_representation_seq;
         data_representation_seq.ensure_length(1,1);
         data_representation_seq[0] = options->data_representation;
@@ -854,12 +884,11 @@ public:
         dw_qos.representation().m_value.clear( );
         dw_qos.representation().m_value.push_back( options->data_representation );
 #endif
-#if !defined(RTI_CONNEXT_MICRO)
-  #if  defined(EPROSIMA_FAST_DDS)
+
+#if  defined(EPROSIMA_FAST_DDS)
         logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.m_value[0]), Verbosity::DEBUG);
-  #else
+#else
         logger.log_message("    Data_Representation = " + QosUtils::to_string(dw_qos.representation  FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
-  #endif
 #endif
 
         if ( options->ownership_strength != -1 ) {
@@ -942,7 +971,7 @@ public:
         dr_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
         logger.log_message("    Durability = " + QosUtils::to_string(dr_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined (RTI_CONNEXT_MICRO)
         DataRepresentationIdSeq data_representation_seq;
         data_representation_seq.ensure_length(1,1);
         data_representation_seq[0] = options->data_representation;
@@ -965,12 +994,11 @@ public:
         dr_qos.type_consistency().representation.m_value.clear();
         dr_qos.type_consistency().representation.m_value.push_back( options->data_representation );
 #endif
-#if !defined(RTI_CONNEXT_MICRO)
-  #if defined(EPROSIMA_FAST_DDS)
-        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.type_consistency().representation.m_value[0]), Verbosity::DEBUG);
-  #else
-        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
-  #endif
+
+#if defined(EPROSIMA_FAST_DDS)
+    logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.type_consistency().representation.m_value[0]), Verbosity::DEBUG);
+#else
+    logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
 #endif
         if ( options->ownership_strength != -1 ) {
             dr_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
@@ -1084,8 +1112,8 @@ public:
 
             do {
                 if (!options->use_read) {
-                    logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
+                    logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
                     retval = dr->take_next_instance ( samples,
                             sample_infos,
                             LENGTH_UNLIMITED,
@@ -1094,6 +1122,7 @@ public:
                             ANY_VIEW_STATE,
                             ANY_INSTANCE_STATE );
 #elif defined(TWINOAKS_COREDX)
+                    logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
                     retval = dr->take_next_instance ( &samples,
                             &sample_infos,
                             LENGTH_UNLIMITED,
@@ -1102,6 +1131,7 @@ public:
                             ANY_VIEW_STATE,
                             ANY_INSTANCE_STATE );
 #elif defined(RTI_CONNEXT_MICRO)
+                    logger.log_message("Calling take() function", Verbosity::DEBUG);
                     retval = dr->take ( samples,
                             sample_infos,
                             LENGTH_UNLIMITED,
@@ -1120,6 +1150,7 @@ public:
                             ANY_VIEW_STATE,
                             ANY_INSTANCE_STATE );
 #elif defined(TWINOAKS_COREDX)
+                    logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
                     retval = dr->read_next_instance ( &samples,
                             &sample_infos,
                             LENGTH_UNLIMITED,
