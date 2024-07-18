@@ -56,7 +56,7 @@ Note that there is no version number because these changes apply to all
 product versions.
 
 
-* **Connext**:
+* **Connext DDS**:
 
   * Content Filtered Topic expression created with single quotes around strings
     values

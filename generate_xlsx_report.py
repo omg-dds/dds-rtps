@@ -69,7 +69,7 @@ class ProductUtils:
         """Returns a beautified product name and version"""
         # set the beautified name and version
         if 'connext' in product.lower():
-            return 'Connext ' + re.search(r'([\d.]+)', product).group(1)
+            return 'Connext DDS' + re.search(r'([\d.]+)', product).group(1)
         elif 'opendds' in product.lower():
             return 'OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'coredx' in product.lower():
@@ -661,8 +661,8 @@ class XlsxReport:
             'Publisher/Subscriber', self.__formats['bold_w_border'])
 
         # create a dictionary to store the row/column of the product name
-        # for example, row_dict['Connext 6.1.2'] = 30 means that the
-        # row (publisher) of Connext 6.1.2 is in the xlsx row 29.
+        # for example, row_dict['Connext DDS 6.1.2'] = 30 means that the
+        # row (publisher) of Connext DDS 6.1.2 is in the xlsx row 29.
         # Column for the publisher is always fixed: 1 --> B
         # Row for the subscriber is always fixed: current_row
         subscriber_row = current_row
