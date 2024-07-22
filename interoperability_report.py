@@ -114,12 +114,14 @@ def run_subscriber_shape_main(
             [
                 'Create reader for topic:', # index = 0
                 pexpect.TIMEOUT, # index = 1
-                'failed to create content filtered topic' # index = 2
+                'failed to create content filtered topic', # index = 2
+                pexpect.EOF # index = 3
+
             ],
             timeout
         )
 
-        if index == 1:
+        if index == 1 or index == 3:
             produced_code[produced_code_index] = ReturnCode.READER_NOT_CREATED
         elif index == 2:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
@@ -127,17 +129,14 @@ def run_subscriber_shape_main(
             # Step 4: Check if the reader matches the writer
             log_message(f'Subscriber {subscriber_index}: Waiting for matching '
                     'DataWriter', verbosity)
-            # the normal flow of the application is to find on_subscription_matched()
-            # and then on_liveliness_changed(). However, in some cases the
-            # situation is the opposite. This will handle those cases.
-            # pexpect searches the results in order, so a matching on
-            # on_subscription_matched() takes precedence over on_liveliness_changed()
             index = child_sub.expect(
                 [
                     '\[[0-9]+\]', # index = 0
                     'on_requested_incompatible_qos()', # index = 1
                     'on_requested_deadline_missed()', # index = 2
                     pexpect.TIMEOUT, # index = 3
+                    pexpect.EOF # index = 4
+
                 ],
                 timeout
             )
@@ -146,7 +145,7 @@ def run_subscriber_shape_main(
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
             elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
-            elif index == 3:
+            elif index == 3 or index == 4:
                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
             elif index == 0:
                 # Step 5: Receiving samples
@@ -251,11 +250,12 @@ def run_publisher_shape_main(
         index = child_pub.expect(
             [
                 'Create writer for topic', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index == 2
             ],
             timeout
         )
-        if index == 1:
+        if index == 1 or index == 2:
             produced_code[produced_code_index] = ReturnCode.WRITER_NOT_CREATED
         elif index == 0:
             # Step 4: Check if the writer matches the reader
@@ -265,11 +265,12 @@ def run_publisher_shape_main(
                 [
                     'on_publication_matched()', # index = 0
                     pexpect.TIMEOUT, # index = 1
-                    'on_offered_incompatible_qos' # index = 2
+                    'on_offered_incompatible_qos', # index = 2
+                    pexpect.EOF # index == 3
                 ],
                 timeout
             )
-            if index == 1:
+            if index == 1 or index == 3:
                 produced_code[produced_code_index] = ReturnCode.READER_NOT_MATCHED
             elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
@@ -285,12 +286,13 @@ def run_publisher_shape_main(
                     index = child_pub.expect([
                             '\[[0-9]+\]', # index = 0
                             'on_offered_deadline_missed()', # index = 1
-                            pexpect.TIMEOUT # index = 2
+                            pexpect.TIMEOUT, # index = 2
+                            pexpect.EOF # index == 3
                         ],
                         timeout)
                     if index == 1:
                         produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
-                    elif index == 2:
+                    elif index == 2 or index == 3:
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                     elif index == 0:
                         produced_code[produced_code_index] = ReturnCode.OK
