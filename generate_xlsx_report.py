@@ -69,7 +69,7 @@ class ProductUtils:
         """Returns a beautified product name and version"""
         # set the beautified name and version
         if 'connext' in product.lower():
-            return 'Connext ' + re.search(r'([\d.]+)', product).group(1)
+            return 'Connext DDS' + re.search(r'([\d.]+)', product).group(1)
         elif 'opendds' in product.lower():
             return 'OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'coredx' in product.lower():
@@ -445,38 +445,69 @@ class XlsxReport:
     def add_static_data_test(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
             product_name: str,
-            product_count: int) -> (int, int):
+            pub_product_count: int,
+            sub_product_count) -> (int, int):
         """Add static data to the specific product worksheet"""
-        # the last column of the publisher table is
-        # `2 (column C) + product_count - 1`
-        # the -1 is because the column C is already counted
-        last_column_publisher = 1 + product_count
-        worksheet.merge_range(
-            # row 1, from column C till last_column_publisher
-            0, 2, 0, last_column_publisher,
-            'Publisher: ' + product_name,
-            self.__formats['product_title'])
-        worksheet.merge_range(
-            # row 2, from column C till last_column_publisher
-            1, 2, 1, last_column_publisher,
-            'Subscriber (next row): ',
-            self.__formats['product_title'])
 
-        # the subscriber table starts at last_column_publisher + 1
-        # the +1 is the gap between the publisher and subscriber tables
-        last_column_subscriber = last_column_publisher + 1 + product_count
-        worksheet.merge_range(
-            # row 1, from column last_column_publisher + 2 till last_column_subscriber
-            # +2 = next_column + gap_between_tables
-            0, last_column_publisher + 2, 0, last_column_subscriber,
-            'Subscriber: ' + product_name,
-            self.__formats['product_title'])
-        worksheet.merge_range(
-            # row 2, from column last_column_publisher + 2 till last_column_subscriber
-            # +2 = next_column + gap_between_tables
-            1, last_column_publisher + 2, 1, last_column_subscriber,
-            'Publisher (next row): ',
-            self.__formats['product_title'])
+        if sub_product_count > 0:
+            # the last column of the publisher table is
+            # `2 (column C) + product_count - 1`
+            # the -1 is because the column C is already counted
+            last_column_publisher = 1 + sub_product_count
+            if last_column_publisher > 2:
+                worksheet.merge_range(
+                    # row 1, from column C till last_column_publisher
+                    0, 2, 0, last_column_publisher,
+                    'Publisher: ' + product_name,
+                    self.__formats['product_title'])
+                worksheet.merge_range(
+                    # row 2, from column C till last_column_publisher
+                    1, 2, 1, last_column_publisher,
+                    'Subscriber (next row): ',
+                    self.__formats['product_title'])
+            else:
+                worksheet.write(
+                    # row 1, column C
+                    0, 2,
+                    'Publisher: ' + product_name,
+                    self.__formats['product_title'])
+                worksheet.write(
+                    # row 2, column C
+                    1, 2,
+                    'Subscriber (next row): ',
+                    self.__formats['product_title'])
+
+        if pub_product_count > 0:
+            # the subscriber table starts at last_column_publisher + 1
+            # the +1 is the gap between the publisher and subscriber tables
+            last_column_subscriber = last_column_publisher + 1 + pub_product_count
+            if last_column_subscriber > last_column_publisher + 2:
+                worksheet.merge_range(
+                    # row 1, from column last_column_publisher + 2 till last_column_subscriber
+                    # +2 = next_column + gap_between_tables
+                    0, last_column_publisher + 2, 0, last_column_subscriber,
+                    'Subscriber: ' + product_name,
+                    self.__formats['product_title'])
+                worksheet.merge_range(
+                    # row 2, from column last_column_publisher + 2 till last_column_subscriber
+                    # +2 = next_column + gap_between_tables
+                    1, last_column_publisher + 2, 1, last_column_subscriber,
+                    'Publisher (next row): ',
+                    self.__formats['product_title'])
+            else:
+                worksheet.write(
+                    # row 1, column last_column_publisher + 2
+                    # +2 = next_column + gap_between_tables
+                    0, last_column_publisher + 2,
+                    'Subscriber: ' + product_name,
+                    self.__formats['product_title'])
+                worksheet.write(
+                    # row 2, column last_column_publisher + 2
+                    # +2 = next_column + gap_between_tables
+                    1, last_column_publisher + 2,
+                    'Publisher (next row): ',
+                    self.__formats['product_title'])
+
         return (1, last_column_subscriber)
 
     def add_data_test_worksheet(self):
@@ -487,15 +518,19 @@ class XlsxReport:
         """
         # create a list that contains the worksheet names per product. These
         # product names are the same for the publisher and the subscriber
-        product_names = []
+        pub_product_names = []
         for name in self.__data.publisher_product_dict.keys():
-            product_names.append(name)
+            pub_product_names.append(name)
+
+        sub_product_names = []
+        for name in self.__data.subscriber_product_dict.keys():
+            sub_product_names.append(name)
 
         # Create a worksheet per product that contains the following info for
         # all tests:
         #  * product as publisher with all other products as subscribers
         #  * product as subscriber with all other products as publishers
-        for name in product_names:
+        for name in pub_product_names:
             # truncate the name of the string to 31 chars
             worksheet = self.workbook.add_worksheet((name)[:31])
             self.set_worksheet_defaults(worksheet)
@@ -522,13 +557,14 @@ class XlsxReport:
 
             # as the test_name is not printed, the starting_column does not
             # write anything, so, the table starts at starting_column + 1
-            self.add_product_table(
-                worksheet=worksheet,
-                starting_column=current_cell[1] + 1, # next column
-                starting_row=starting_row,
-                value=self.__data.subscriber_product_dict[name],
-                print_test_name=False
-            )
+            if name in sub_product_names:
+                self.add_product_table(
+                    worksheet=worksheet,
+                    starting_column=current_cell[1] + 1, # next column
+                    starting_row=starting_row,
+                    value=self.__data.subscriber_product_dict[name],
+                    print_test_name=False
+                )
 
             # After having all data that may have an unknown length, we call
             # autofit to modify the column size to show all data, then we add
@@ -537,7 +573,8 @@ class XlsxReport:
             self.add_static_data_test(
                     worksheet=worksheet,
                     product_name=name,
-                    product_count=len(product_names))
+                    pub_product_count=len(pub_product_names),
+                    sub_product_count=len(sub_product_names))
 
 
     def add_product_table(self,
@@ -661,8 +698,8 @@ class XlsxReport:
             'Publisher/Subscriber', self.__formats['bold_w_border'])
 
         # create a dictionary to store the row/column of the product name
-        # for example, row_dict['Connext 6.1.2'] = 30 means that the
-        # row (publisher) of Connext 6.1.2 is in the xlsx row 29.
+        # for example, row_dict['Connext DDS 6.1.2'] = 30 means that the
+        # row (publisher) of Connext DDS 6.1.2 is in the xlsx row 29.
         # Column for the publisher is always fixed: 1 --> B
         # Row for the subscriber is always fixed: current_row
         subscriber_row = current_row
