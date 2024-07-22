@@ -69,7 +69,7 @@ class ProductUtils:
         """Returns a beautified product name and version"""
         # set the beautified name and version
         if 'connext' in product.lower():
-            return 'Connext DDS' + re.search(r'([\d.]+)', product).group(1)
+            return 'Connext DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'opendds' in product.lower():
             return 'OpenDDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'coredx' in product.lower():
