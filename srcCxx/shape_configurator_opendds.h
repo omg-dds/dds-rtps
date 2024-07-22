@@ -1,4 +1,4 @@
-#include "GeneratedCode/ShapeTypeTypeSupportImpl.h"
+#include "shapeTypeSupportImpl.h"
 
 #include "dds/DCPS/Marked_Default_Qos.h"
 #include "dds/DCPS/Service_Participant.h"
@@ -11,18 +11,12 @@
 
 #define OBTAIN_DOMAIN_PARTICIPANT_FACTORY TheParticipantFactory
 #define LISTENER_STATUS_MASK_ALL OpenDDS::DCPS::ALL_STATUS_MASK
-#define REGISTER_TYPE org::omg::dds::demo::ShapeTypeTypeSupport_var ts = \
-    new org::omg::dds::demo::ShapeTypeTypeSupportImpl; ts->register_type
+#define REGISTER_TYPE ShapeTypeTypeSupport_var ts = \
+    new ShapeTypeTypeSupportImpl; ts->register_type
 #define CONFIGURE_PARTICIPANT_FACTORY configure_rtps();
 #define STRING_IN .in()
 #define STRING_INOUT .inout()
 #define STRING_ALLOC(LHS, RHS) LHS = CORBA::string_alloc(RHS)
-
-using org::omg::dds::demo::ShapeType;
-using org::omg::dds::demo::ShapeTypeSeq;
-using org::omg::dds::demo::ShapeTypeDataReader;
-using org::omg::dds::demo::ShapeTypeDataWriter;
-using org::omg::dds::demo::ShapeTypeTypeSupport;
 
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {
