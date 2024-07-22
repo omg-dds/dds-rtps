@@ -778,19 +778,18 @@ public:
         dp_qos.discovery.initial_peers.maximum(1);
         dp_qos.discovery.initial_peers.length(1);
         dp_qos.discovery.initial_peers[0] = DDS_String_dup("127.0.0.1");
-
         /* if there are more remote or local endpoints, you need to increase these limits */
         dp_qos.resource_limits.max_destination_ports = 32;
         dp_qos.resource_limits.max_receive_ports = 32;
-        dp_qos.resource_limits.local_topic_allocation = 1;
-        dp_qos.resource_limits.local_type_allocation = 1;
-        dp_qos.resource_limits.local_reader_allocation = 1;
-        dp_qos.resource_limits.local_writer_allocation = 1;
+        dp_qos.resource_limits.local_topic_allocation = 2;
+        dp_qos.resource_limits.local_type_allocation = 2;
+        dp_qos.resource_limits.local_reader_allocation = 2;
+        dp_qos.resource_limits.local_writer_allocation = 2;
         dp_qos.resource_limits.remote_participant_allocation = 8;
         dp_qos.resource_limits.remote_reader_allocation = 8;
         dp_qos.resource_limits.remote_writer_allocation = 8;
 
-        DDS_StatusMask dp_listener_mask = DDS_STATUS_MASK_ALL & ~DDS_DATA_ON_READERS_STATUS;
+        DDS_StatusMask dp_listener_mask = (DDS_STATUS_MASK_ALL & ~DDS_DATA_ON_READERS_STATUS) & ~DDS_LIVELINESS_CHANGED_STATUS;
 
         dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, dp_listener_mask );
 
@@ -856,6 +855,13 @@ public:
         logger.log_message("Publisher created", Verbosity::DEBUG);
         logger.log_message("Data Writer QoS:", Verbosity::DEBUG);
         pub->get_default_datawriter_qos( dw_qos );
+
+#if defined (RTI_CONNEXT_MICRO)
+    dw_qos.resource_limits.max_instances = 500;
+    dw_qos.resource_limits.max_samples = 500;
+    dw_qos.resource_limits.max_samples_per_instance = 500;
+#endif
+
         dw_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
         logger.log_message("    Reliability = " + QosUtils::to_string(dw_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         dw_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
@@ -963,9 +969,19 @@ public:
             logger.log_message("failed to create subscriber", Verbosity::ERROR);
             return false;
         }
+
         logger.log_message("Subscriber created", Verbosity::DEBUG);
         logger.log_message("Data Reader QoS:", Verbosity::DEBUG);
         sub->get_default_datareader_qos( dr_qos );
+
+#if defined (RTI_CONNEXT_MICRO)
+    dr_qos.resource_limits.max_instances = 500;
+    dr_qos.resource_limits.max_samples = 500;
+    dr_qos.resource_limits.max_samples_per_instance = 500;
+    dr_qos.reader_resource_limits.max_remote_writers = 2;
+    dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
+#endif
+
         dr_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
         logger.log_message("    Reliability = " + QosUtils::to_string(dr_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         dr_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
