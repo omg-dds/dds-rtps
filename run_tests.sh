@@ -8,6 +8,12 @@ output=""
 
 # Function to display usage information
 usage() {
+    echo "Run the interoperability_report script for the specified applications."
+    echo "If a publisher/subscriber is provided only that publisher/subscriber"
+    echo "is used as a publisher or subscriber application. If a publisher or"
+    echo "subscriber is not provided, this script will find and use all "
+    echo "'*_shape_main_linux' applications in the input directory as publisher and"
+    echo "subscribers."
     echo "Usage: $0 [-p publisher] [-s subscriber] [-o output] [-i input] [-h]"
     echo "Options:"
     echo "  -p, --publisher   Specify the publisher application"
@@ -15,6 +21,9 @@ usage() {
     echo "  -o, --output      Specify the output XML file"
     echo "  -i, --input       Specify the directory where publisher/subscriber applications are located"
     echo "  -h, --help        Print this help message"
+    echo "Examples:"
+    echo "Run Connext as publisher and all executables under './executables' as subscribers"
+    echo "  ./run_tests.sh -p connext_dds-6.1.2_shape_main_linux -i ./executables"
     exit 1
 }
 
