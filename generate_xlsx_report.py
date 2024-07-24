@@ -68,6 +68,8 @@ class ProductUtils:
     def get_product_name(product:str) -> str:
         """Returns a beautified product name and version"""
         # set the beautified name and version
+        if 'connext' in product.lower() and 'micro' in product.lower():
+            return 'Connext DDS Micro ' + re.search(r'([\d.]+)', product).group(1)
         if 'connext' in product.lower():
             return 'Connext DDS' + re.search(r'([\d.]+)', product).group(1)
         elif 'opendds' in product.lower():
