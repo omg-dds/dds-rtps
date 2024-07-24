@@ -57,11 +57,7 @@
 #define GET_TOPIC_DESCRIPTION(dr) dr->get_topicdescription()
 #endif
 #ifndef ADD_PARTITION
-#if defined(RTI_CONNEXT_MICRO)
-#define ADD_PARTITION(field, value)
-#else
 #define ADD_PARTITION(field, value) StringSeq_push(field.name, value)
-#endif
 #endif
 
 using namespace DDS;
@@ -857,9 +853,9 @@ public:
         pub->get_default_datawriter_qos( dw_qos );
 
 #if defined (RTI_CONNEXT_MICRO)
-    dw_qos.resource_limits.max_instances = 500;
-    dw_qos.resource_limits.max_samples = 500;
-    dw_qos.resource_limits.max_samples_per_instance = 500;
+        dw_qos.resource_limits.max_instances = 500;
+        dw_qos.resource_limits.max_samples = 500;
+        dw_qos.resource_limits.max_samples_per_instance = 500;
 #endif
 
         dw_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
@@ -922,7 +918,12 @@ public:
             dw_qos.history FIELD_ACCESSOR.depth = options->history_depth;
         }
         else if ( options->history_depth == 0 ) {
+#if defined (RTI_CONNEXT_MICRO)
+            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_LAST_HISTORY_QOS;
+            dw_qos.history FIELD_ACCESSOR.depth = 500;
+#else
             dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
+#endif
         }
         logger.log_message("    History = " + QosUtils::to_string(dw_qos.history FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if (dw_qos.history FIELD_ACCESSOR.kind == KEEP_LAST_HISTORY_QOS){
@@ -975,11 +976,11 @@ public:
         sub->get_default_datareader_qos( dr_qos );
 
 #if defined (RTI_CONNEXT_MICRO)
-    dr_qos.resource_limits.max_instances = 500;
-    dr_qos.resource_limits.max_samples = 500;
-    dr_qos.resource_limits.max_samples_per_instance = 500;
-    dr_qos.reader_resource_limits.max_remote_writers = 2;
-    dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
+        dr_qos.resource_limits.max_instances = 500;
+        dr_qos.resource_limits.max_samples = 500;
+        dr_qos.resource_limits.max_samples_per_instance = 500;
+        dr_qos.reader_resource_limits.max_remote_writers = 2;
+        dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
 #endif
 
         dr_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
