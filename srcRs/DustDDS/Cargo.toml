@@ -10,7 +10,10 @@ edition = "2021"
 description = "OMG DDS_RTPS Interoperability"
 
 [dependencies]
-dust_dds = { version = "0.11" }
+dust_dds = { version = "0.11.0" }
 clap = { version = "4.4.11", features = ["derive", "string"] }
 rand = "0.8.5"
 ctrlc = "3.4"
+
+[build-dependencies]
+dust_dds_gen = { version = "0.11.0" }
