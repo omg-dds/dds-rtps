@@ -61,6 +61,8 @@ class ProductUtils:
             return 'Kongsberg'
         elif 'fastdds' in product.lower():
             return 'eProsima'
+        elif 'dust_dds' in product.lower():
+            return 'S2E Software Systems'
         else:
             raise RuntimeError('Impossible to get company name: ' + product)
 
@@ -78,6 +80,8 @@ class ProductUtils:
             return 'InterCOM DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'fastdds' in product.lower():
             return 'FastDDS ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'dust_dds' in product.lower():
+            return 'Dust DDS' + re.search(r'([\d.]+)', product).group(1)
         else:
             raise RuntimeError('Impossible to get product name: ' + product)
 
