@@ -538,9 +538,6 @@ fn init_subscriber(
         // filter on specified color
         Some(color) => {
             let filtered_topic_name = options.topic_name + "_filtered";
-            // return Err(InitializeError(
-            //     "contenfilter topic not implemented".to_string(),
-            // ));
             println!(
                 "Create reader for topic: {} color: {}",
                 filtered_topic_name, color
