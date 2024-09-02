@@ -25,3 +25,4 @@ Copyright holders
 © 2024 OpenDDS Foundation.
 
 © 2024 Twin Oaks Computing, Inc.
+© 2024 S2E Software Systems B.V.

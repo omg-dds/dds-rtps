@@ -14,6 +14,7 @@
 .. |COPYRIGHT_HEADER_OCI| replace:: © |COPYRIGHT_YEAR| Object Computing, Inc.
 .. |COPYRIGHT_HEADER_OPENDDS| replace:: © |COPYRIGHT_YEAR| OpenDDS Foundation.
 .. |COPYRIGHT_HEADER_TOC| replace:: © |COPYRIGHT_YEAR| Twin Oaks Computing, Inc.
+.. |COPYRIGHT_HEADER_S2E| replace:: © |COPYRIGHT_YEAR| S2E Software Systems B.V.
 .. |COPYRIGHT_HEADER| replace:: |COPYRIGHT_HEADER_RTI| |br|
                                 |COPYRIGHT_HEADER_ATOSTEK| |br|
                                 |COPYRIGHT_HEADER_EPROSIMA| |br|
@@ -21,4 +22,5 @@
                                 |COPYRIGHT_HEADER_OCI| |br|
                                 |COPYRIGHT_HEADER_OPENDDS| |br|
                                 |COPYRIGHT_HEADER_TOC| |br|
+                                |COPYRIGHT_HEADER_S2E| |br|
 

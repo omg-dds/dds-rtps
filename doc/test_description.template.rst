@@ -89,5 +89,8 @@ product versions.
   * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536` that
     increases the buffer sizes to that value
 
+* **Dust DDS**:
+
+  *  Content Filtered Topic disabled
 
 |TEST_DESCRIPTION|
