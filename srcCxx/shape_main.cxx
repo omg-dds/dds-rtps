@@ -948,12 +948,12 @@ public:
         dr_qos.representation.value[0] = options->data_representation;
 
 #elif   defined(EPROSIMA_FAST_DDS)
-        dr_qos.type_consistency().representation.m_value.clear();
-        dr_qos.type_consistency().representation.m_value.push_back( options->data_representation );
+        dr_qos.representation().m_value.clear();
+        dr_qos.representation().m_value.push_back( options->data_representation );
 #endif
 
 #if defined(EPROSIMA_FAST_DDS)
-        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.type_consistency().representation.m_value[0]), Verbosity::DEBUG);
+        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation().m_value[0]), Verbosity::DEBUG);
 #else
         logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
 #endif
