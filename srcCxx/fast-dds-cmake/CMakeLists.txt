@@ -51,7 +51,7 @@ add_custom_command(
 )
 
 message(STATUS "Configuring application...")
-set(EXECUTABLE_NAME "eprosima_fastdds-${fastrtps_VERSION}_shape_main_linux")
+set(EXECUTABLE_NAME "eprosima_fastdds-${fastdds_VERSION}_shape_main_linux")
 add_executable(${EXECUTABLE_NAME}
     ../shape_main.cxx
     ${GENERATED_TYPE_SUPPORT_SOURCES}
