@@ -19,33 +19,30 @@ project(eprosima-fastdds_shape_main_linux LANGUAGES CXX)
 # Find requirements
 set(FASTDDS_STATIC ON)
 find_package(fastcdr REQUIRED)
-find_package(fastrtps REQUIRED)
+find_package(fastdds REQUIRED)
 find_program(FASTDDSGEN fastddsgen)
 
 # Generate code from IDL
 file(MAKE_DIRECTORY ${CMAKE_SOURCE_DIR}/../GeneratedCode)
 set(
   GENERATED_TYPE_SUPPORT_SOURCES
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.cxx
   ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.cxx
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObjectSupport.cxx
 )
 set(
   GENERATED_TYPE_SUPPORT_FILES
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.cxx
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shape.hpp
   ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeCdrAux.hpp
   ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeCdrAux.ipp
   ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.cxx
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.h
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.cxx
-  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObject.h
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapePubSubTypes.hpp
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObjectSupport.cxx
+  ${CMAKE_SOURCE_DIR}/../GeneratedCode/shapeTypeObjectSupport.hpp
 )
 add_custom_command(
   OUTPUT ${GENERATED_TYPE_SUPPORT_FILES}
   COMMAND ${FASTDDSGEN}
   -replace
-  -typeobject
   -d ${CMAKE_SOURCE_DIR}/../GeneratedCode
   -flat-output-dir
   ${CMAKE_SOURCE_DIR}/../shape.idl
@@ -60,4 +57,4 @@ add_executable(${EXECUTABLE_NAME}
     ${GENERATED_TYPE_SUPPORT_SOURCES}
     )
 target_compile_definitions(${EXECUTABLE_NAME} PRIVATE EPROSIMA_FAST_DDS=1)
-target_link_libraries(${EXECUTABLE_NAME} fastrtps)
+target_link_libraries(${EXECUTABLE_NAME} fastdds)
