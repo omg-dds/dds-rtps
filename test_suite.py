@@ -127,7 +127,7 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
             ],
             timeout
         )
@@ -186,14 +186,16 @@ def test_color_receivers(child_sub, samples_sent, timeout):
     """
     sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
         child_sub.before + child_sub.after)
-    last_color = current_color = sub_string.group(1)
+    first_sample_color = sub_string.group(1)
 
     max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
 
     while sub_string is not None and samples_read < max_samples_received:
+        current_sample_color = sub_string.group(1)
+
         # Check that all received samples have the same color
-        if last_color != current_color:
+        if current_sample_color != first_sample_color:
             return ReturnCode.RECEIVING_FROM_BOTH
 
         index = child_sub.expect(
