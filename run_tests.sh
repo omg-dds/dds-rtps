@@ -19,7 +19,7 @@ usage() {
     echo "  -p, --publisher   Specify the publisher application"
     echo "  -s, --subscriber  Specify the subscriber application"
     echo "  -o, --output      Specify the output XML file"
-    echo "  -i, --input       Specify the directory where publisher/subscriber applications are located"
+    echo "  -i, --input       Specify the directory where publisher/subscriber applications are located (only if -p and -s are not provided)"
     echo "  -h, --help        Print this help message"
     echo "Examples:"
     echo "Run Connext as publisher and all executables under './executables' as subscribers"
