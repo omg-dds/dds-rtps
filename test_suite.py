@@ -116,6 +116,8 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
         except queue.Empty:
             pass
 
+        # Take the last sample published by each publisher from their queues
+        # ('last_sample_saved[i]') and save them local variables.
         try:
             last_first_sample = last_sample_saved[0].get(block=False)
         except queue.Empty:
@@ -138,10 +140,13 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
                 break
             if last_second_sample in list_samples_processed:
                 break
+            print(f'Last samples: {last_first_sample}, {last_second_sample}')
             # Otherwise, wait a bit and continue
             time.sleep(0.1)
             continue
 
+        # Keep all samples processed in a single list, so we can check whether
+        # the last sample published by any publisher has already been processed
         list_samples_processed.append(sub_string.group(0))
 
         # If the app hit this point, it is because the previous subscriber
