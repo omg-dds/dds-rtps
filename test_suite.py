@@ -79,6 +79,9 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
     list_data_received_first = []
     max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
+    list_samples_processed = []
+    last_first_sample = '';
+    last_second_sample = '';
 
     while(samples_read < max_samples_received):
         # take the topic, color, position and size of the ShapeType.
@@ -113,15 +116,33 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
         except queue.Empty:
             pass
 
+        try:
+            last_first_sample = last_sample_saved[0].get(block=False)
+        except queue.Empty:
+            pass
+
+        try:
+            last_second_sample = last_sample_saved[1].get(block=False)
+        except queue.Empty:
+            pass
+
         # Determine to which publisher the current sample belong to
         if sub_string.group(0) in list_data_received_second:
             current_sample_from_publisher = 2
         elif sub_string.group(0) in list_data_received_first:
             current_sample_from_publisher = 1
         else:
-            # If the sample is not in any queue, wait a bit and continue
+            # If the sample is not in any queue, break the loop if the
+            # the last sample for any publisher has already been processed.
+            if last_first_sample in list_samples_processed:
+                break
+            if last_second_sample in list_samples_processed:
+                break
+            # Otherwise, wait a bit and continue
             time.sleep(0.1)
             continue
+
+        list_samples_processed.append(sub_string.group(0))
 
         # If the app hit this point, it is because the previous subscriber
         # sample has been already read. Then, we can process the next sample
