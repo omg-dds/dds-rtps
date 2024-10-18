@@ -33,6 +33,7 @@ def run_subscriber_shape_main(
         produced_code_index: int,
         subscriber_index: int,
         samples_sent: "list[multiprocessing.Queue]",
+        last_sample_saved: "list[multiprocessing.Queue]",
         verbosity: bool,
         timeout: int,
         file: tempfile.TemporaryFile,
@@ -56,6 +57,9 @@ def run_subscriber_shape_main(
         samples_sent <<in>>: list of multiprocessing Queues with the samples
                 the Publishers send. Element 1 of the list is for
                 Publisher 1, etc.
+        last_sample_saved <<in>>: list of multiprocessing Queues with the last
+                sample saved on samples_sent for each Publisher. Element 1 of
+                the list is for Publisher 1, etc.
         verbosity <<in>>: print debug information.
         timeout <<in>>: time pexpect waits until it matches a pattern.
         file <<inout>>: temporal file to save shape_main application output.
@@ -470,6 +474,7 @@ def run_test(
                         'produced_code_index':i,
                         'subscriber_index':subscriber_number+1,
                         'samples_sent':samples_sent,
+                        'last_sample_saved':last_sample_saved,
                         'verbosity':verbosity,
                         'timeout':timeout,
                         'file':temporary_file[i],
