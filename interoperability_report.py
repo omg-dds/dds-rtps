@@ -161,7 +161,7 @@ def run_subscriber_shape_main(
                 # to the Subscriber. By default it does not check
                 # anything and returns ReturnCode.OK.
                 produced_code[produced_code_index] = check_function(
-                    child_sub, samples_sent, timeout)
+                    child_sub, samples_sent, last_sample_saved, timeout)
 
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '

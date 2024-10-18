@@ -50,5 +50,5 @@ def remove_ansi_colors(text):
     cleaned_str = ansi_escape.sub('', text)
     return cleaned_str
 
-def no_check(child_sub, samples_sent, timeout):
+def no_check(child_sub, samples_sent, last_sample_saved, timeout):
     return ReturnCode.OK
