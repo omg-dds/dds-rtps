@@ -48,7 +48,7 @@ import time
 # is received in order, or that OWNERSHIP works properly, etc...
 MAX_SAMPLES_READ = 500
 
-def test_ownership_receivers(child_sub, samples_sent, timeout):
+def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
     """
     This function is used by test cases that have two publishers and one subscriber.
@@ -63,6 +63,9 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     samples_sent: list of multiprocessing Queues with the samples
                 the publishers send. Element 1 of the list is for
                 publisher 1, etc.
+    last_sample_saved: list of multiprocessing Queues with the last
+            sample saved on samples_sent for each Publisher. Element 1 of
+            the list is for Publisher 1, etc.
     timeout: time pexpect waits until it matches a pattern.
 
     This functions assumes that the subscriber has already received samples
@@ -76,6 +79,9 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     list_data_received_first = []
     max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
+    list_samples_processed = []
+    last_first_sample = '';
+    last_second_sample = '';
 
     while(samples_read < max_samples_received):
         # take the topic, color, position and size of the ShapeType.
@@ -110,15 +116,38 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
         except queue.Empty:
             pass
 
+        # Take the last sample published by each publisher from their queues
+        # ('last_sample_saved[i]') and save them local variables.
+        try:
+            last_first_sample = last_sample_saved[0].get(block=False)
+        except queue.Empty:
+            pass
+
+        try:
+            last_second_sample = last_sample_saved[1].get(block=False)
+        except queue.Empty:
+            pass
+
         # Determine to which publisher the current sample belong to
         if sub_string.group(0) in list_data_received_second:
             current_sample_from_publisher = 2
         elif sub_string.group(0) in list_data_received_first:
             current_sample_from_publisher = 1
         else:
-            # If the sample is not in any queue, wait a bit and continue
+            # If the sample is not in any queue, break the loop if the
+            # the last sample for any publisher has already been processed.
+            if last_first_sample in list_samples_processed:
+                break
+            if last_second_sample in list_samples_processed:
+                break
+            print(f'Last samples: {last_first_sample}, {last_second_sample}')
+            # Otherwise, wait a bit and continue
             time.sleep(0.1)
             continue
+
+        # Keep all samples processed in a single list, so we can check whether
+        # the last sample published by any publisher has already been processed
+        list_samples_processed.append(sub_string.group(0))
 
         # If the app hit this point, it is because the previous subscriber
         # sample has been already read. Then, we can process the next sample
@@ -172,7 +201,7 @@ def test_ownership_receivers(child_sub, samples_sent, timeout):
     print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
-def test_color_receivers(child_sub, samples_sent, timeout):
+def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
     """
     This function is used by test cases that have two publishers and one
@@ -182,6 +211,7 @@ def test_color_receivers(child_sub, samples_sent, timeout):
 
     child_sub: child program generated with pexpect
     samples_sent: not used
+    last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
     """
     sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
@@ -217,13 +247,14 @@ def test_color_receivers(child_sub, samples_sent, timeout):
     print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
-def test_reliability_order(child_sub, samples_sent, timeout):
+def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests reliability, it checks whether the subscriber receives
     the samples in order.
 
     child_sub: child program generated with pexpect
     samples_sent: not used
+    last_sample_saved: not used
     timeout: not used
     """
 
@@ -267,7 +298,7 @@ def test_reliability_order(child_sub, samples_sent, timeout):
     return produced_code
 
 
-def test_reliability_no_losses(child_sub, samples_sent, timeout):
+def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests RELIABLE reliability, it checks whether the subscriber
     receives the samples in order and with no losses.
@@ -276,6 +307,7 @@ def test_reliability_no_losses(child_sub, samples_sent, timeout):
     samples_sent: list of multiprocessing Queues with the samples
                 the publishers send. Element 1 of the list is for
                 publisher 1, etc.
+    last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
     """
 
@@ -352,7 +384,7 @@ def test_reliability_no_losses(child_sub, samples_sent, timeout):
     return produced_code
 
 
-def test_durability_volatile(child_sub, samples_sent, timeout):
+def test_durability_volatile(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests the volatile durability, it checks that the sample the
     subscriber receives is not the first one. The publisher application sends
@@ -365,6 +397,7 @@ def test_durability_volatile(child_sub, samples_sent, timeout):
 
     child_sub: child program generated with pexpect
     samples_sent: not used
+    last_sample_saved: not used
     timeout: not used
     """
 
@@ -387,7 +420,7 @@ def test_durability_volatile(child_sub, samples_sent, timeout):
 
     return produced_code
 
-def test_durability_transient_local(child_sub, samples_sent, timeout):
+def test_durability_transient_local(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests the TRANSIENT_LOCAL durability, it checks that the
     sample the subscriber receives is the first one. The publisher application
@@ -396,6 +429,7 @@ def test_durability_transient_local(child_sub, samples_sent, timeout):
 
     child_sub: child program generated with pexpect
     samples_sent: not used
+    last_sample_saved: not used
     timeout: not used
     """
 
@@ -416,7 +450,7 @@ def test_durability_transient_local(child_sub, samples_sent, timeout):
     return produced_code
 
 
-def test_deadline_missed(child_sub, samples_sent, timeout):
+def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests whether the subscriber application misses the requested
     deadline or not. This is needed in case the subscriber application receives
@@ -424,6 +458,7 @@ def test_deadline_missed(child_sub, samples_sent, timeout):
 
     child_sub: child program generated with pexpect
     samples_sent: not used
+    last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
 

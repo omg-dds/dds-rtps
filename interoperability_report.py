@@ -33,6 +33,7 @@ def run_subscriber_shape_main(
         produced_code_index: int,
         subscriber_index: int,
         samples_sent: "list[multiprocessing.Queue]",
+        last_sample_saved: "list[multiprocessing.Queue]",
         verbosity: bool,
         timeout: int,
         file: tempfile.TemporaryFile,
@@ -56,6 +57,9 @@ def run_subscriber_shape_main(
         samples_sent <<in>>: list of multiprocessing Queues with the samples
                 the Publishers send. Element 1 of the list is for
                 Publisher 1, etc.
+        last_sample_saved <<in>>: list of multiprocessing Queues with the last
+                sample saved on samples_sent for each Publisher. Element 1 of
+                the list is for Publisher 1, etc.
         verbosity <<in>>: print debug information.
         timeout <<in>>: time pexpect waits until it matches a pattern.
         file <<inout>>: temporal file to save shape_main application output.
@@ -157,7 +161,7 @@ def run_subscriber_shape_main(
                 # to the Subscriber. By default it does not check
                 # anything and returns ReturnCode.OK.
                 produced_code[produced_code_index] = check_function(
-                    child_sub, samples_sent, timeout)
+                    child_sub, samples_sent, last_sample_saved, timeout)
 
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
@@ -176,6 +180,7 @@ def run_publisher_shape_main(
         produced_code_index: int,
         publisher_index: int,
         samples_sent: multiprocessing.Queue,
+        last_sample_saved: multiprocessing.Queue,
         verbosity: bool,
         timeout: int,
         file: tempfile.TemporaryFile,
@@ -197,6 +202,8 @@ def run_publisher_shape_main(
                 publisher it is 1, for the second 2, etc.
         samples_sent <<out>>: this variable contains the samples
                 the Publisher sends.
+        last_sample_saved <<out>>: this variable contains the last sample
+                saved on samples_sent.
         verbosity <<in>>: print debug information.
         timeout <<in>>: time pexpect waits until it matches a pattern.
         file <<inout>>: temporal file to save shape_main application output.
@@ -296,12 +303,14 @@ def run_publisher_shape_main(
                         produced_code[produced_code_index] = ReturnCode.OK
                         log_message(f'Publisher {publisher_index}: Sending '
                                 'samples', verbosity)
+                        last_sample = ''
                         for x in range(0, MAX_SAMPLES_SAVED, 1):
                             # At this point, at least one sample has been printed
                             # Therefore, that sample is added to samples_sent.
                             pub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
                                     child_pub.before + child_pub.after)
-                            samples_sent.put(pub_string.group(0))
+                            last_sample = pub_string.group(0)
+                            samples_sent.put(last_sample)
                             index = child_pub.expect([
                                     '\[[0-9]+\]', # index = 0
                                     'on_offered_deadline_missed()', # index = 1
@@ -314,6 +323,7 @@ def run_publisher_shape_main(
                             elif index == 2:
                                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                                 break
+                        last_sample_saved.put(last_sample)
                 else:
                     produced_code[produced_code_index] = ReturnCode.OK
 
@@ -395,6 +405,7 @@ def run_test(
     return_codes = manager.list(range(num_entities))
     samples_sent = [] # used for storing the samples the Publishers send.
                       # It is a list with one Queue for each Publisher.
+    last_sample_saved = [] # used for storing the last value sent by each Publisher.
 
     # list of multiprocessing Events used as semaphores to control the end of
     # the processes, one for each entity.
@@ -419,6 +430,7 @@ def run_test(
         if ('-P ' in element or element.endswith('-P')):
             publishers_finished.append(multiprocessing.Event())
             samples_sent.append(multiprocessing.Queue())
+            last_sample_saved.append(multiprocessing.Queue())
         elif ('-S ' in element or element.endswith('-S')):
             subscribers_finished.append(multiprocessing.Event())
         else:
@@ -438,6 +450,7 @@ def run_test(
                         'produced_code_index':i,
                         'publisher_index':publisher_number+1,
                         'samples_sent':samples_sent[publisher_number],
+                        'last_sample_saved':last_sample_saved[publisher_number],
                         'verbosity':verbosity,
                         'timeout':timeout,
                         'file':temporary_file[i],
@@ -461,6 +474,7 @@ def run_test(
                         'produced_code_index':i,
                         'subscriber_index':subscriber_number+1,
                         'samples_sent':samples_sent,
+                        'last_sample_saved':last_sample_saved,
                         'verbosity':verbosity,
                         'timeout':timeout,
                         'file':temporary_file[i],
