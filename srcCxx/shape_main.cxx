@@ -260,7 +260,7 @@ public:
     bool                dispose;
 
     bool                coherent_set_enabled;
-    int                 coherent_set_sample_count;
+    unsigned int        coherent_set_sample_count;
 
     unsigned int        additional_payload_size;
 
@@ -398,6 +398,9 @@ public:
         if (publish && (color == NULL) ) {
             color = strdup("BLUE");
             logger.log_message("warning: color was not specified, defaulting to \"BLUE\"", Verbosity::ERROR);
+        }
+        if (subscribe && shapesize != 20) {
+            logger.log_message("warning: shapesize ignored on subscriber applications", Verbosity::ERROR);
         }
         if (subscribe && lifespan_us > 0) {
             logger.log_message("warning: lifespan ignored on subscriber applications", Verbosity::ERROR);
@@ -652,10 +655,15 @@ public:
                 break;
             }
             case 'n': {
-                int converted_param = sscanf(optarg, "%u", &num_iterations);
-                if (converted_param == 0) {
+                if (sscanf(optarg, "%u", &num_iterations) == 0) {
                     logger.log_message("unrecognized value for num-iterations "
                                 + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (num_iterations < 1) {
+                    logger.log_message("incorrect value for num-iterations, "
+                            "it must be >=1 "
+                                + std::to_string(num_iterations),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
@@ -687,15 +695,14 @@ public:
                         dispose = true;
                         break;
                     default:
-                        logger.log_message("unrecognized value for delete-mode "
+                        logger.log_message("unrecognized value for final-instance-state "
                                     + std::string(1, optarg[0]),
                                 Verbosity::ERROR);
                             parse_ok = false;
                     }
                     if (unregister && dispose) {
                         logger.log_message("error, cannot configure unregister and "
-                                "dispose at the same time: "
-                                    + std::string(1, optarg[0]),
+                                "dispose at the same time",
                                 Verbosity::ERROR);
                             parse_ok = false;
                     }
@@ -726,28 +733,37 @@ public:
                 break;
             }
             case 'I': {
-                int converted_param = sscanf(optarg, "%u", &num_instances);
-                if (converted_param == 0) {
+                if (sscanf(optarg, "%u", &num_instances) == 0) {
                     logger.log_message("unrecognized value for num-instances "
                                 + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (num_instances < 1) {
+                    logger.log_message("incorrect value for num-instances, "
+                            "it must be >=1 "
+                                + std::to_string(num_instances),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
                 break;
             }
             case 'E': {
-                int converted_param = sscanf(optarg, "%u", &num_topics);
-                if (converted_param == 0) {
-                    logger.log_message("unrecognized value for number-topics "
+                if (sscanf(optarg, "%u", &num_topics) == 0) {
+                    logger.log_message("unrecognized value for num-topics "
                                 + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (num_topics < 1) {
+                    logger.log_message("incorrect value for num-topics, "
+                            "it must be >=1 "
+                                + std::to_string(num_topics),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
                 break;
             }
             case 'B': {
-                int converted_param = sscanf(optarg, "%u", &additional_payload_size);
-                if (converted_param == 0) {
+                if (sscanf(optarg, "%u", &additional_payload_size) == 0) {
                     logger.log_message("unrecognized value for additional-payload-size "
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
@@ -755,15 +771,14 @@ public:
                 } else if (additional_payload_size < 1) {
                     logger.log_message("incorrect value for additional-payload-size, "
                             "it must be >=1 "
-                                + std::to_string(converted_param),
+                                + std::to_string(additional_payload_size),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
                 break;
             }
             case 'H': {
-                int converted_param = sscanf(optarg, "%d", &coherent_set_sample_count);
-                if (converted_param == 0) {
+                if (sscanf(optarg, "%u", &coherent_set_sample_count) == 0) {
                     logger.log_message("unrecognized value for coherent-sample-count "
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
@@ -771,7 +786,7 @@ public:
                 } else if (coherent_set_sample_count < 2) {
                     logger.log_message("incorrect value for coherent-sample-count, "
                             "it must be >=2 "
-                                + std::to_string(converted_param),
+                                + std::to_string(coherent_set_sample_count),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
@@ -813,7 +828,7 @@ public:
                     "\n    Access Scope: " + QosUtils::to_string(coherent_set_access_scope) +
                     "\n    Coherent Sample Count: " + std::to_string(coherent_set_sample_count) +
                     "\n    Additional Payload Size: " + std::to_string(additional_payload_size) +
-                    "\n    Delete Mode: "
+                    "\n    Final Instance State: "
                             + (unregister ? "Unregister" : (dispose ? "Dispose" : "not specified")),
                     Verbosity::DEBUG);
             if (topic_name != NULL){
@@ -975,7 +990,7 @@ public:
             logger.log_message("Error allocating memory for topics", Verbosity::ERROR);
             return false;
         }
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             topics[i] = NULL;
         }
 
@@ -984,7 +999,7 @@ public:
             logger.log_message("Error allocating memory for DataReaders", Verbosity::ERROR);
             return false;
         }
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             drs[i] = NULL;
         }
 
@@ -993,7 +1008,7 @@ public:
             logger.log_message("Error allocating memory for DataWriters", Verbosity::ERROR);
             return false;
         }
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             dws[i] = NULL;
         }
 
@@ -1026,7 +1041,7 @@ public:
         // Create different topics (depending on the number of entities)
         // being the first topic name the provide one, and the rest appending
         // a number after, for example: Square, Square1, Square2...
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             std::string topic_name;
             topic_name = std::string(options->topic_name) + (i > 0 ? std::to_string(i) : "");
             printf("Create topic: %s\n", topic_name.c_str());
@@ -1036,10 +1051,10 @@ public:
                 return false;
             }
         }
-        logger.log_message("Topics created:\n", Verbosity::DEBUG);
-        for (int i = 0; i < options->num_topics; ++i) {
+        logger.log_message("Topics created:", Verbosity::DEBUG);
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("topic[%d]=%p\n",i,topics[i]);
+                printf("    topic[%d]=%p\n",i,(void*)topics[i]);
             }
         }
 
@@ -1077,18 +1092,20 @@ public:
             ADD_PARTITION(pub_qos.partition, options->partition);
         }
 
+        logger.log_message("Publisher QoS:", Verbosity::DEBUG);
+
 #if   defined(RTI_CONNEXT_DDS)
         if (options->coherent_set_enabled) {
             pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
         }
-        logger.log_message("    Publisher Presentation Coherent Access = " +
+        logger.log_message("    Presentation Coherent Access = " +
                 std::string(pub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
-        logger.log_message("    Publisher Presentation Access Scope = " +
+        logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
 #else
-        logger.log_message("    Publisher Presentation Coherent Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Publisher Presentation Access Scope =  Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Access Scope =  Not supported", Verbosity::ERROR);
 #endif
 
         pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
@@ -1198,19 +1215,19 @@ public:
 
         // Create different DataWriters (depending on the number of entities)
         // The DWs are attached to the same array index of the topics.
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             printf("Create writer for topic: %s color: %s\n", topics[i]->get_name(), options->color );
             dws[i] = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topics[i], dw_qos, NULL, LISTENER_STATUS_MASK_NONE));
             if (dws[i] == NULL) {
-                logger.log_message("failed to create datawriter[" + std::to_string(i) + "]", Verbosity::ERROR);
+                logger.log_message("failed to create datawriter[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
                 return false;
             }
         }
 
-        logger.log_message("DataWriters created:\n", Verbosity::DEBUG);
-        for (int i = 0; i < options->num_topics; ++i) {
+        logger.log_message("DataWriters created:", Verbosity::DEBUG);
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("dws[%d]=%p\n",i,dws[i]);
+                printf("    dws[%d]=%p\n",i,(void*)dws[i]);
             }
         }
 
@@ -1241,18 +1258,20 @@ public:
             ADD_PARTITION(sub_qos.partition, options->partition);
         }
 
+        logger.log_message("Subscriber QoS:", Verbosity::DEBUG);
+
 #if   defined(RTI_CONNEXT_DDS)
         if (options->coherent_set_enabled) {
             sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
         }
-        logger.log_message("    Subscriber Presentation Access Scope = " +
+        logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
-        logger.log_message("    Subscriber Presentation Coherent Access = " +
+        logger.log_message("    Presentation Coherent Access = " +
                 std::string(sub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
 #else
-        logger.log_message("    Subscriber Presentation Access Scope = Not supported", Verbosity::ERROR);
-        logger.log_message("    Subscriber Presentation Coherent Access = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
 #endif
 
         sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
@@ -1329,11 +1348,13 @@ public:
         if ( options->color != NULL ) {
             /*  filter on specified color */
             ContentFilteredTopic *cft = NULL;
-            StringSeq              cf_params;
+            StringSeq             cf_params;
 
-        for (int i = 0; i < options->num_topics; ++i) {
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             const std::string filtered_topic_name_str =
-                    std::string(options->topic_name) + std::to_string(i) + "_filtered";
+                    std::string(options->topic_name) +
+                    (i > 0 ? std::to_string(i) : "") +
+                    "_filtered";
             const char* filtered_topic_name = filtered_topic_name_str.c_str();
 #if   defined(RTI_CONNEXT_DDS)
                 char parameter[64];
@@ -1371,26 +1392,26 @@ public:
                 printf("Create reader for CFT: %s color: %s\n", cft->get_name(), options->color );
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
-                    logger.log_message("failed to create datareader[" + std::to_string(i) + "]", Verbosity::ERROR);
+                    logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
                     return false;
                 }
             }
         } else {
             // Create different DataReaders (depending on the number of entities)
             // The DRs are attached to the same array index of the topics.
-            for (int i = 0; i < options->num_topics; ++i) {
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
                 printf("Create reader for topic: %s\n", topics[i]->get_name());
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topics[i], dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
-                    logger.log_message("failed to create datareader[" + std::to_string(i) + "]", Verbosity::ERROR);
+                    logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
                     return false;
                 }
             }
         }
-        logger.log_message("DataReaders created:\n", Verbosity::DEBUG);
-        for (int i = 0; i < options->num_topics; ++i) {
+        logger.log_message("DataReaders created:", Verbosity::DEBUG);
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("drs[%d]=%p\n",i,drs[i]);
+                printf("    drs[%d]=%p\n",i,(void*)drs[i]);
             }
         }
 
@@ -1427,7 +1448,7 @@ public:
     bool run_subscriber(ShapeOptions *options)
     {
         // This is the number of iterations performed
-        int n = 0;
+        unsigned int n = 0;
         InstanceHandle_t *previous_handles = NULL;
 
         logger.log_message("Running run_subscriber() function", Verbosity::DEBUG);
@@ -1455,7 +1476,7 @@ public:
             if (options->coherent_set_enabled) {
                 printf("Reading coherent sets, iteration %d\n",n);
             }
-            for (int i = 0; i < options->num_topics; ++i) {
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
                 previous_handles[i] = HANDLE_NIL;
                 do {
                     if (!options->use_read) {
@@ -1553,11 +1574,11 @@ public:
                 } while (retval == RETCODE_OK);
             }
 
+            // increasing number of iterations
+            n++;
             logger.log_message("Subscriber iteration: <" + std::to_string(n) + ">", Verbosity::DEBUG);
             logger.log_message("Max number of iterations <" + std::to_string(options->num_iterations) + ">",
                     Verbosity::DEBUG);
-            // increasing number of iterations
-            n++;
             if (options->num_iterations != 0 && options->num_iterations <= n) {
                 all_done = 1;
             }
@@ -1600,7 +1621,7 @@ public:
         logger.log_message("Running run_publisher() function", Verbosity::DEBUG);
         ShapeType shape;
         // number of iterations performed
-        int n = 0;
+        unsigned int n = 0;
 
         shape_initialize_w_color(shape, color);
 
@@ -1636,8 +1657,8 @@ public:
                 pub->begin_coherent_changes();
             }
 
-            for (int i = 0; i < options->num_topics; ++i) {
-                for (int j = 0; j < options->num_instances; ++j) {
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                for (unsigned int j = 0; j < options->num_instances; ++j) {
                     // Publish different instances with the same content (except for the color)
                     if (options->num_instances > 1) {
                         std::string instance_color = options->color + (j > 0 ? std::to_string(j) : "");
@@ -1674,11 +1695,13 @@ public:
 
             usleep(options->write_period_us);
 
+            // increase number of iterations
+            n++;
+
             logger.log_message("Publisher iteration: <" + std::to_string(n) + ">", Verbosity::DEBUG);
             logger.log_message("Max number of iterations <" + std::to_string(options->num_iterations) + ">",
                     Verbosity::DEBUG);
-            // increase number of iterations
-            n++;
+
             if (options->num_iterations != 0 && options->num_iterations <= n) {
                 all_done = 1;
             }
@@ -1686,8 +1709,8 @@ public:
 
         // Unregister or dispose instances of all DataWriters
         if (options->dispose || options->unregister) {
-            for (int i = 0; i < options->num_topics; ++i) {
-                for (int j = 0; j < options->num_instances; ++j) {
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                for (unsigned int j = 0; j < options->num_instances; ++j) {
                     // Get instances
                     if (options->num_instances > 1) {
                         std::string instance_color = options->color + (j > 0 ? std::to_string(j) : "");
