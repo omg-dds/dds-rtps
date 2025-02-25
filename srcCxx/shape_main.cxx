@@ -1389,7 +1389,7 @@ public:
                     return false;
                 }
 
-                printf("Create reader for CFT: %s color: %s\n", cft->get_name(), options->color );
+                printf("Create reader for topic: %s color: %s\n", cft->get_name(), options->color );
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
