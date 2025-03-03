@@ -1186,7 +1186,7 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
         if (options->lifespan_us > 0) {
             dw_qos.lifespan.duration = dw_qos.lifespan.duration.from_micros(options->lifespan_us);
         }
@@ -1206,7 +1206,7 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
         if (options->unregister > 0) {
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
         }
