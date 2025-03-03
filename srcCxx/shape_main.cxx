@@ -399,6 +399,9 @@ public:
             color = strdup("BLUE");
             logger.log_message("warning: color was not specified, defaulting to \"BLUE\"", Verbosity::ERROR);
         }
+        if (publish && timebasedfilter_interval > 0) {
+            logger.log_message("warning: time base filter ignored on publisher applications", Verbosity::ERROR);
+        }
         if (subscribe && shapesize != 20) {
             logger.log_message("warning: shapesize ignored on subscriber applications", Verbosity::ERROR);
         }
@@ -1366,7 +1369,7 @@ public:
                     + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
                 StringSeq_push(cf_params, options->color);
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
 
@@ -1374,13 +1377,13 @@ public:
                 char parameter[64];
                 sprintf(parameter, "'%s'",  options->color);
                 StringSeq_push(cf_params, parameter);
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 
 #elif defined(EPROSIMA_FAST_DDS)
                 cf_params.push_back(std::string("'") + options->color + std::string("'"));
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topic, "color = %0", cf_params);
+                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + cf_params[0] + std::string("\""), Verbosity::DEBUG);
 #endif
