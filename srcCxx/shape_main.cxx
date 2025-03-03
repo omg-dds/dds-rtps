@@ -1557,11 +1557,11 @@ public:
                                 if (sample_info->instance_state == NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
                                     printf("%-10s %-10s NOT_ALIVE_NO_WRITERS_INSTANCE_STATE\n",
                                             drs[i]->get_topicdescription()->get_name() NAME_ACCESSOR,
-                                            shape_key.color);
+                                            shape_key.color FIELD_ACCESSOR STRING_IN);
                                 } else if (sample_info->instance_state == NOT_ALIVE_DISPOSED_INSTANCE_STATE) {
                                     printf("%-10s %-10s NOT_ALIVE_DISPOSED_INSTANCE_STATE\n",
                                             drs[i]->get_topicdescription()->get_name() NAME_ACCESSOR,
-                                            shape_key.color);
+                                            shape_key.color FIELD_ACCESSOR STRING_IN);
                                 }
                             }
                         }
