@@ -73,7 +73,7 @@ shape_main.cxx : shape_configurator_rti_connext_dds.h
 
 # Generate type-specific sources
 $(AUTOGENSOURCES) : $(CDRSOURCES)
-	$(NDDSHOME)/bin/rtiddsgen $(CDRSOURCES) -replace -language C++
+	$(NDDSHOME)/bin/rtiddsgen $(CDRSOURCES) -replace -language C++ -unboundedSupport
 
 $(AUTOGENOBJS): |  objs/$(TARGET_ARCH)
 

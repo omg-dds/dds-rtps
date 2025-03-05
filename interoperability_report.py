@@ -19,6 +19,10 @@ from datetime import datetime
 import tempfile
 from os.path import exists
 import inspect
+import platform
+
+if __name__ == "__main__" and platform.system() == "Darwin":
+    multiprocessing.set_start_method('fork')
 
 from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_colors
 
@@ -128,14 +132,8 @@ def run_subscriber_shape_main(
         elif index == 2:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
         elif index == 0:
-            # Step 4: Check if the reader matches the writer
-            log_message(f'Subscriber {subscriber_index}: Waiting for matching '
-                    'DataWriter', verbosity)
-            # the normal flow of the application is to find on_subscription_matched()
-            # and then on_liveliness_changed(). However, in some cases the
-            # situation is the opposite. This will handle those cases.
-            # pexpect searches the results in order, so a matching on
-            # on_subscription_matched() takes precedence over on_liveliness_changed()
+            # Step 4: Read data or incompatible qos or deadline missed
+            log_message(f'Subscriber {subscriber_index}: Waiting for data', verbosity)
             index = child_sub.expect(
                 [
                     '\[[0-9]+\]', # index = 0
@@ -169,7 +167,8 @@ def run_subscriber_shape_main(
     for element in publishers_finished:
         element.wait()   # wait for all publishers to finish
     # Send SIGINT to nicely close the application
-    child_sub.sendintr()
+    if child_sub.isalive():
+        child_sub.sendintr()
     return
 
 
@@ -287,7 +286,7 @@ def run_publisher_shape_main(
                 # such as reliability.
                 # In the case that the option -w is not selected, the Publisher
                 # will only save the ReturnCode OK.
-                if '-w' in parameters:
+                if '-w ' in parameters or parameters.endswith('-w'):
                     # Step 5: Check whether the writer sends the samples
                     index = child_pub.expect([
                             '\[[0-9]+\]', # index = 0
@@ -333,7 +332,8 @@ def run_publisher_shape_main(
         element.wait() # wait for all subscribers to finish
     publisher_finished.set()   # set publisher as finished
     # Send SIGINT to nicely close the application
-    child_pub.sendintr()
+    if child_pub.isalive():
+        child_pub.sendintr()
     return
 
 
