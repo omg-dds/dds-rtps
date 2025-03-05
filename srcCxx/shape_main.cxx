@@ -259,10 +259,14 @@ public:
     bool                unregister;
     bool                dispose;
 
+    bool                coherent_set_access_scope_set;
     bool                coherent_set_enabled;
+    bool                ordered_access_enabled;
     unsigned int        coherent_set_sample_count;
 
     unsigned int        additional_payload_size;
+
+    bool                take_read_next_instance;
 
 public:
     //-------------------------------------------------------------
@@ -308,10 +312,14 @@ public:
         dispose = false;
 
         coherent_set_enabled = false;
+        ordered_access_enabled = false;
+        coherent_set_access_scope_set = false;
         coherent_set_access_scope = INSTANCE_PRESENTATION_QOS;
         coherent_set_sample_count = 0;
 
         additional_payload_size = 0;
+
+        take_read_next_instance = true;
     }
 
     //-------------------------------------------------------------
@@ -365,20 +373,22 @@ public:
         printf("                       are created by appending a number: For example, if the\n");
         printf("                       original topic name is \"Square\", the topics created are\n");
         printf("                       \"Square\", \"Square1\", \"Square2\"...\n");
-        printf("   --final-instance-state <u|d>: indicates the action performed after the\n");
+        printf("   --final-instance-state [u|d]: indicates the action performed after the\n");
         printf("                                 DataWriter finishes its execution (before\n");
         printf("                                 deleting it):\n");
         printf("                                   - u: unregister\n");
         printf("                                   - d: dispose\n");
-        printf("   --coherent-sets <i|t|g>: enables coherent sets with access scope:\n");
-        printf("                              - i: INSTANCE_PRESENTATION\n");
-        printf("                              - t: TOPIC_PRESENTATION\n");
-        printf("                              - g: GROUP_PRESENTATION\n");
+        printf("   --access-scope [i|t|g]: sets Presentation.access_scope to INSTANCE, TOPIC\n");
+        printf("                           or GROUP\n");
+        printf("   --coherent            : sets Presentation.coherent_access = true\n");
+        printf("   --ordered             : sets Presentation.ordered_access = true\n");
         printf("   --coherent-sample-count <int>: amount of samples sent for each DataWriter and\n");
         printf("                                  instance that are grouped in a coherent set\n");
         printf("   --additional-payload-size <bytes>: indicates the amount of bytes added to the\n");
         printf("                                      samples written (for example to use large\n");
         printf("                                      data)\n");
+        printf("   --take-read           : uses take()/read() instead of take_next_instance()\n");
+        printf("                           read_next_instance()\n");
     }
 
     //-------------------------------------------------------------
@@ -400,26 +410,39 @@ public:
             logger.log_message("warning: color was not specified, defaulting to \"BLUE\"", Verbosity::ERROR);
         }
         if (publish && timebasedfilter_interval > 0) {
-            logger.log_message("warning: time base filter ignored on publisher applications", Verbosity::ERROR);
+            logger.log_message("warning: time base filter [-i] ignored on publisher applications", Verbosity::ERROR);
+        }
+        if (publish && use_read == false ) {
+            logger.log_message("warning: use read [-R] ignored on publisher applications", Verbosity::ERROR);
+        }
+        if (publish && take_read_next_instance == false ) {
+            logger.log_message("warning: --take-read ignored on publisher applications", Verbosity::ERROR);
         }
         if (subscribe && shapesize != 20) {
-            logger.log_message("warning: shapesize ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: shapesize [-z] ignored on subscriber applications", Verbosity::ERROR);
         }
         if (subscribe && lifespan_us > 0) {
-            logger.log_message("warning: lifespan ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: --lifespan ignored on subscriber applications", Verbosity::ERROR);
         }
         if (subscribe && num_instances > 1) {
-            logger.log_message("warning: num-instances ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: --num-instances ignored on subscriber applications", Verbosity::ERROR);
         }
         if (subscribe && (unregister || dispose)) {
-            logger.log_message("warning: final-instance-state ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: --final-instance-state ignored on subscriber applications", Verbosity::ERROR);
         }
         if (subscribe && coherent_set_sample_count > 0) {
-            logger.log_message("warning: coherent-sample-count ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: --coherent-sample-count ignored on subscriber applications", Verbosity::ERROR);
+        }
+        if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_sample_count) {
+            logger.log_message("warning: --coherent-sample-count ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
         }
         if (subscribe && additional_payload_size > 0) {
-            logger.log_message("warning: additional-payload-size ignored on subscriber applications", Verbosity::ERROR);
+            logger.log_message("warning: --additional-payload-size ignored on subscriber applications", Verbosity::ERROR);
         }
+        if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_access_scope_set) {
+            logger.log_message("warning: --access-scope ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
+        }
+
         return true;
     }
 
@@ -434,13 +457,16 @@ public:
             {"write-period", required_argument, NULL, 'W'},
             {"read-period", required_argument, NULL, 'A'},
             {"final-instance-state", required_argument, NULL, 'M'},
-            {"coherent-sets", required_argument, NULL, 'C'},
+            {"access-scope", required_argument, NULL, 'C'},
+            {"coherent", no_argument, NULL, 'T'},
+            {"ordered", no_argument, NULL, 'O'},
+            {"coherent-sample-count", required_argument, NULL, 'H'},
             {"additional-payload-size", required_argument, NULL, 'B'},
             {"num-topics", required_argument, NULL, 'E'},
             {"lifespan", required_argument, NULL, 'l'},
             {"num-instances", required_argument, NULL, 'I'},
             {"num-iterations", required_argument, NULL, 'n'},
-            {"coherent-sample-count", required_argument, NULL, 'H'},
+            {"take-read", no_argument, NULL, 'K'},
             {NULL, 0, NULL, 0 }
         };
 
@@ -713,8 +739,8 @@ public:
                 break;
             }
             case 'C': {
+                coherent_set_access_scope_set = true;
                 if (optarg[0] != '\0') {
-                    coherent_set_enabled = true;
                     switch (optarg[0]) {
                     case 'i':
                         coherent_set_access_scope = INSTANCE_PRESENTATION_QOS;
@@ -730,9 +756,17 @@ public:
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
                         parse_ok = false;
-                        coherent_set_enabled = false;
+                        coherent_set_access_scope_set = false;
                     }
                 }
+                break;
+            }
+            case 'T': {
+                coherent_set_enabled = true;
+                break;
+            }
+            case 'O': {
+                ordered_access_enabled = true;
                 break;
             }
             case 'I': {
@@ -795,6 +829,9 @@ public:
                 }
                 break;
             }
+            case 'K' :
+                take_read_next_instance = false;
+                break;
             case '?':
                 parse_ok = false;
                 break;
@@ -828,6 +865,7 @@ public:
                     "\n    Number of instances: " + std::to_string(num_instances) +
                     "\n    Number of entities: " + std::to_string(num_topics) +
                     "\n    Coherent sets: " + (coherent_set_enabled ? "true" : "false") +
+                    "\n    Ordered access: " + (ordered_access_enabled ? "true" : "false") +
                     "\n    Access Scope: " + QosUtils::to_string(coherent_set_access_scope) +
                     "\n    Coherent Sample Count: " + std::to_string(coherent_set_sample_count) +
                     "\n    Additional Payload Size: " + std::to_string(additional_payload_size) +
@@ -1100,15 +1138,24 @@ public:
 #if   defined(RTI_CONNEXT_DDS)
         if (options->coherent_set_enabled) {
             pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled) {
+            pub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
         }
+
         logger.log_message("    Presentation Coherent Access = " +
                 std::string(pub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
+        logger.log_message("    Presentation Ordered Access = " +
+                std::string(pub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
 #else
         logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Presentation Access Scope =  Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Ordered Access = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
 #endif
 
         pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
@@ -1207,7 +1254,7 @@ public:
 #endif
 
 #if   defined(RTI_CONNEXT_DDS)
-        if (options->unregister > 0) {
+        if (options->unregister) {
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
         }
         logger.log_message("    Autodispose_unregistered_instances = "
@@ -1266,15 +1313,25 @@ public:
 #if   defined(RTI_CONNEXT_DDS)
         if (options->coherent_set_enabled) {
             sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled) {
+            sub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
         }
-        logger.log_message("    Presentation Access Scope = " +
-                QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
+
         logger.log_message("    Presentation Coherent Access = " +
                 std::string(sub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
+        logger.log_message("    Presentation Ordered Access = " +
+                std::string(sub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
+        logger.log_message("    Presentation Access Scope = " +
+                QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
+
 #else
-        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
         logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Ordered Access = Not supported", Verbosity::ERROR);
+        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
 #endif
 
         sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
@@ -1479,46 +1536,94 @@ public:
             if (options->coherent_set_enabled) {
                 printf("Reading coherent sets, iteration %d\n",n);
             }
+            if (options->ordered_access_enabled) {
+                printf("Reading with ordered access, iteration %d\n",n);
+            }
+            if (options->coherent_set_enabled || options->ordered_access_enabled) {
+                sub->begin_access();
+            }
             for (unsigned int i = 0; i < options->num_topics; ++i) {
                 previous_handles[i] = HANDLE_NIL;
                 do {
                     if (!options->use_read) {
-                        logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
-                        retval = drs[i]->take_next_instance ( samples,
-                                sample_infos,
-                                LENGTH_UNLIMITED,
-                                previous_handles[i],
-                                ANY_SAMPLE_STATE,
-                                ANY_VIEW_STATE,
-                                ANY_INSTANCE_STATE );
+                        if (options->take_read_next_instance) {
+                            logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
+                            retval = drs[i]->take_next_instance ( samples,
+                                    sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    previous_handles[i],
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        } else {
+                            logger.log_message("Calling take() function", Verbosity::DEBUG);
+                            retval = drs[i]->take ( samples,
+                                    sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        }
 #elif defined(TWINOAKS_COREDX)
-                        retval = drs[i]->take_next_instance ( &samples,
-                                &sample_infos,
-                                LENGTH_UNLIMITED,
-                                previous_handles[i],
-                                ANY_SAMPLE_STATE,
-                                ANY_VIEW_STATE,
-                                ANY_INSTANCE_STATE );
+                        if (options->take_read_next_instance) {
+                            logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
+                            retval = drs[i]->take_next_instance ( &samples,
+                                    &sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    previous_handles[i],
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        } else {
+                            logger.log_message("Calling take() function", Verbosity::DEBUG);
+                            retval = drs[i]->take ( &samples,
+                                    &sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        }
 #endif
                     } else { /* Use read_next_instance*/
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
-                        logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
-                        retval = drs[i]->read_next_instance ( samples,
-                                sample_infos,
-                                LENGTH_UNLIMITED,
-                                previous_handles[i],
-                                ANY_SAMPLE_STATE,
-                                ANY_VIEW_STATE,
-                                ANY_INSTANCE_STATE );
+                        if (options->take_read_next_instance) {
+                            logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
+                            retval = drs[i]->read_next_instance ( samples,
+                                    sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    previous_handles[i],
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        } else {
+                            logger.log_message("Calling read() function", Verbosity::DEBUG);
+                            retval = drs[i]->read ( samples,
+                                    sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        }
 #elif defined(TWINOAKS_COREDX)
-                        retval = drs[i]->read_next_instance ( &samples,
-                                &sample_infos,
-                                LENGTH_UNLIMITED,
-                                previous_handles[i],
-                                ANY_SAMPLE_STATE,
-                                ANY_VIEW_STATE,
-                                ANY_INSTANCE_STATE );
+                        if (options->take_read_next_instance) {
+                            logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
+                            retval = drs[i]->read_next_instance ( &samples,
+                                    &sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    previous_handles[i],
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        } else {
+                            logger.log_message("Calling read() function", Verbosity::DEBUG);
+                            retval = drs[i]->read_next_instance ( &samples,
+                                    &sample_infos,
+                                    LENGTH_UNLIMITED,
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
+                        }
 #endif
                     }
 
@@ -1575,6 +1680,10 @@ public:
 #endif
                     }
                 } while (retval == RETCODE_OK);
+            }
+
+            if (options->coherent_set_enabled || options->ordered_access_enabled) {
+                sub->end_access();
             }
 
             // increasing number of iterations
@@ -1654,10 +1763,12 @@ public:
                 shape.shapesize FIELD_ACCESSOR += 1;
             }
 
-            // n also represents the number of samples written per publisher per instance
-            if (options->coherent_set_sample_count != 0 && n % options->coherent_set_sample_count == 0) {
-                printf("Started Coherent Set\n");
-                pub->begin_coherent_changes();
+            if (options->coherent_set_enabled || options->ordered_access_enabled) {
+                // n also represents the number of samples written per publisher per instance
+                if (options->coherent_set_sample_count != 0 && n % options->coherent_set_sample_count == 0) {
+                    printf("Started Coherent Set\n");
+                    pub->begin_coherent_changes();
+                }
             }
 
             for (unsigned int i = 0; i < options->num_topics; ++i) {
@@ -1689,13 +1800,14 @@ public:
                 }
             }
 
-             // n also represents the number of samples written per publisher per instance
-            if (options->coherent_set_sample_count != 0
-                    && n % options->coherent_set_sample_count == options->coherent_set_sample_count - 1) {
-                printf("Finished Coherent Set\n");
-                pub->end_coherent_changes();
+            if (options->coherent_set_enabled || options->ordered_access_enabled) {
+                // n also represents the number of samples written per publisher per instance
+                if (options->coherent_set_sample_count != 0
+                        && n % options->coherent_set_sample_count == options->coherent_set_sample_count - 1) {
+                    printf("Finished Coherent Set\n");
+                    pub->end_coherent_changes();
+                }
             }
-
             usleep(options->write_period_us);
 
             // increase number of iterations
