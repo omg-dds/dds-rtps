@@ -1239,6 +1239,13 @@ public:
         }
         logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
         logger.log_message("               " + std::to_string(dw_qos.lifespan.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
+#elif  defined(EPROSIMA_FAST_DDS)
+        if (options->lifespan_us > 0) {
+            dw_qos.lifespan FIELD_ACCESSOR.duration = Duration_t(options->lifespan_us * 1e-6);
+        }
+        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.seconds) + " secs", Verbosity::DEBUG);
+        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
+
 #else
         logger.log_message("    Lifespan = Not supported", Verbosity::ERROR);
 #endif
@@ -1259,6 +1266,12 @@ public:
         }
         logger.log_message("    Autodispose_unregistered_instances = "
                 + std::string(dw_qos.writer_data_lifecycle.autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
+#elif defined(EPROSIMA_FAST_DDS)
+        if (options->unregister) {
+            dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = false;
+        }
+        logger.log_message("    Autodispose_unregistered_instances = "
+            + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
 #else
         logger.log_message("    Autodispose_unregistered_instances = Not supported", Verbosity::ERROR);
 #endif
@@ -1266,7 +1279,7 @@ public:
         // Create different DataWriters (depending on the number of entities)
         // The DWs are attached to the same array index of the topics.
         for (unsigned int i = 0; i < options->num_topics; ++i) {
-            printf("Create writer for topic: %s color: %s\n", topics[i]->get_name(), options->color );
+            printf("Create writer for topic: %s color: %s\n", topics[i]->get_name() NAME_ACCESSOR, options->color );
             dws[i] = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topics[i], dw_qos, NULL, LISTENER_STATUS_MASK_NONE));
             if (dws[i] == NULL) {
                 logger.log_message("failed to create datawriter[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
@@ -1381,8 +1394,12 @@ public:
         }
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if ( options->timebasedfilter_interval > 0) {
+#if defined(EPROSIMA_FAST_DDS)
+            logger.log_message("    Time based filter not supported", Verbosity::ERROR);
+#else
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval;
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = 0;
+#endif
         }
         logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME), Verbosity::DEBUG);
 
@@ -1449,7 +1466,7 @@ public:
                     return false;
                 }
 
-                printf("Create reader for topic: %s color: %s\n", cft->get_name(), options->color );
+                printf("Create reader for topic: %s color: %s\n", cft->get_name() NAME_ACCESSOR, options->color );
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
@@ -1460,7 +1477,7 @@ public:
             // Create different DataReaders (depending on the number of entities)
             // The DRs are attached to the same array index of the topics.
             for (unsigned int i = 0; i < options->num_topics; ++i) {
-                printf("Create reader for topic: %s\n", topics[i]->get_name());
+                printf("Create reader for topic: %s\n", topics[i]->get_name() NAME_ACCESSOR);
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topics[i], dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
@@ -1519,6 +1536,10 @@ public:
             logger.log_message("Error allocating memory for previous_handles", Verbosity::ERROR);
             return false;
         }
+#if  defined(EPROSIMA_FAST_DDS)
+        // TODO: Remove when Fast DDS supports `get_key_value()`
+        std::map<InstanceHandle_t, std::string> instance_handle_color;
+#endif
 
         while ( ! all_done ) {
             ReturnCode_t     retval;
@@ -1652,13 +1673,20 @@ public:
                                         sample->shapesize FIELD_ACCESSOR );
                                 if (DDS_UInt8Seq_get_length(&sample->additional_payload_size FIELD_ACCESSOR) > 0) {
                                     int additional_payload_index = DDS_UInt8Seq_get_length(&sample->additional_payload_size FIELD_ACCESSOR) - 1;
-                                    printf(" {%u}", sample->additional_payload_size[additional_payload_index] FIELD_ACCESSOR);
+                                    printf(" {%u}", sample->additional_payload_size FIELD_ACCESSOR [additional_payload_index]);  
                                 }
                                 printf("\n");
+#if defined(EPROSIMA_FAST_DDS)
+                                instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
+#endif
                             } else {
                                 ShapeType shape_key;
                                 shape_initialize_w_color(shape_key, NULL);
+#if defined(EPROSIMA_FAST_DDS)
+                                shape_key.color FIELD_ACCESSOR = instance_handle_color[sample_info->instance_handle] NAME_ACCESSOR;
+#else
                                 drs[i]->get_key_value(shape_key, sample_info->instance_handle);
+#endif
                                 if (sample_info->instance_state == NOT_ALIVE_NO_WRITERS_INSTANCE_STATE) {
                                     printf("%-10s %-10s NOT_ALIVE_NO_WRITERS_INSTANCE_STATE\n",
                                             drs[i]->get_topicdescription()->get_name() NAME_ACCESSOR,
@@ -1793,7 +1821,7 @@ public:
                                                 shape.shapesize FIELD_ACCESSOR);
                         if (options->additional_payload_size > 0) {
                             int additional_payload_index = options->additional_payload_size - 1;
-                            printf(" {%u}", shape.additional_payload_size[additional_payload_index] FIELD_ACCESSOR);
+                            printf(" {%u}", shape.additional_payload_size FIELD_ACCESSOR [additional_payload_index]);
                         }
                         printf("\n");
                     }
@@ -1832,10 +1860,18 @@ public:
                         shape_set_color(shape, instance_color.c_str());
                     }
                     if (options->unregister) {
+#if   defined(EPROSIMA_FAST_DDS)
+                        dws[i]->unregister_instance(&shape, HANDLE_NIL);
+#else
                         dws[i]->unregister_instance(shape, HANDLE_NIL);
+#endif
                     }
                     if (options->dispose) {
+#if   defined(EPROSIMA_FAST_DDS)
+                        dws[i]->dispose(&shape, HANDLE_NIL);
+#else
                         dws[i]->dispose(shape, HANDLE_NIL);
+#endif
                     }
                 }
             }
