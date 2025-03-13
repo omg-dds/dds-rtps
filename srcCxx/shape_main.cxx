@@ -362,11 +362,11 @@ public:
         printf("   --num-iterations <int>: indicates the number of iterations of the main loop\n");
         printf("                           After that, the application will exit.\n");
         printf("                           Default: infinite\n");
-        printf("   --num-instances <int>: indicates the number of instances a DataWriter writes.\n");
+        printf("   --num-instances <int>: indicates the number of instances a DataWriter writes\n");
         printf("                          If the value is > 1, the additional instances are\n");
         printf("                          created by appending a number. For example, if the\n");
         printf("                          original color is \"BLUE\" the instances used are\n");
-        printf("                           \"BLUE\", \"BLUE1\", \"BLUE2\"...\n");
+        printf("                          \"BLUE\", \"BLUE1\", \"BLUE2\"...\n");
         printf("   --num-topics <int>: indicates the number of topics created (using the same\n");
         printf("                       type). This also creates a DataReader or DataWriter per\n");
         printf("                       topic. If the value is > 1, the additional topic names\n");
@@ -382,11 +382,12 @@ public:
         printf("                           or GROUP\n");
         printf("   --coherent            : sets Presentation.coherent_access = true\n");
         printf("   --ordered             : sets Presentation.ordered_access = true\n");
-        printf("   --coherent-sample-count <int>: amount of samples sent for each DataWriter and\n");
-        printf("                                  instance that are grouped in a coherent set\n");
-        printf("   --additional-payload-size <bytes>: indicates the amount of bytes added to the\n");
-        printf("                                      samples written (for example to use large\n");
-        printf("                                      data)\n");
+        printf("   --coherent-sample-count <int>: amount of samples sent for each DataWriter\n");
+        printf("                                  and instance that are grouped in a coherent\n");
+        printf("                                  set\n");
+        printf("   --additional-payload-size <bytes>: indicates the amount of bytes added to \n");
+        printf("                                      the samples written (for example to use\n");
+        printf("                                      large data)\n");
         printf("   --take-read           : uses take()/read() instead of take_next_instance()\n");
         printf("                           read_next_instance()\n");
     }
