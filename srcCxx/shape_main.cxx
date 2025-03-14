@@ -234,8 +234,8 @@ public:
     bool                publish;
     bool                subscribe;
 
-    int                 timebasedfilter_interval;
-    int                 deadline_interval;
+    useconds_t          timebasedfilter_interval_us;
+    useconds_t          deadline_interval_us;
     useconds_t          lifespan_us;
 
     int                 da_width;
@@ -286,8 +286,8 @@ public:
         publish            = false;
         subscribe          = false;
 
-        timebasedfilter_interval = 0; /* off */
-        deadline_interval        = 0; /* off */
+        timebasedfilter_interval_us = 0; /* off */
+        deadline_interval_us        = 0; /* off */
         lifespan_us              = 0; /* off */
 
         da_width  = 240;
@@ -301,8 +301,8 @@ public:
 
         use_read = false;
 
-        write_period_us = 33000;
-        read_period_us = 100000;
+        write_period_us = 33000; /* 33ms */
+        read_period_us = 100000; /* 100ms */
 
         num_iterations = 0;
         num_instances = 1;
@@ -342,8 +342,7 @@ public:
         printf("   -b              : BEST_EFFORT reliability\n");
         printf("   -r              : RELIABLE reliability\n");
         printf("   -k <depth>      : keep history depth [0: KEEP_ALL]\n");
-        printf("   -f <interval>   : set a 'deadline' with interval (seconds) [0: OFF]\n");
-        printf("   -i <interval>   : apply 'time based filter' with interval (seconds) [0: OFF]\n");
+        printf("   -f <interval>   : set a 'deadline' with interval (ms) [0: OFF]\n");
         printf("   -s <strength>   : set ownership strength [-1: SHARED]\n");
         printf("   -t <topic_name> : set the topic name\n");
         printf("   -c <color>      : set color to publish (filter if subscriber)\n");
@@ -358,7 +357,9 @@ public:
         printf("                        Default: 33ms\n");
         printf("   --read-period <ms> : waiting period between 'read()' or 'take()' operations\n");
         printf("                        in ms. Default: 100ms\n");
-        printf("   --lifespan <int>     : indicates the lifespan of a sample in ms\n");
+        printf("   --time-filter <interval> : apply 'time based filter' with interval \n");
+        printf("                              in ms [0: OFF]\n");
+        printf("   --lifespan <int>      : indicates the lifespan of a sample in ms\n");
         printf("   --num-iterations <int>: indicates the number of iterations of the main loop\n");
         printf("                           After that, the application will exit.\n");
         printf("                           Default: infinite\n");
@@ -410,8 +411,8 @@ public:
             color = strdup("BLUE");
             logger.log_message("warning: color was not specified, defaulting to \"BLUE\"", Verbosity::ERROR);
         }
-        if (publish && timebasedfilter_interval > 0) {
-            logger.log_message("warning: time base filter [-i] ignored on publisher applications", Verbosity::ERROR);
+        if (publish && timebasedfilter_interval_us > 0) {
+            logger.log_message("warning: time base filter [--time-filter] ignored on publisher applications", Verbosity::ERROR);
         }
         if (publish && use_read == false ) {
             logger.log_message("warning: use read [-R] ignored on publisher applications", Verbosity::ERROR);
@@ -468,10 +469,11 @@ public:
             {"num-instances", required_argument, NULL, 'I'},
             {"num-iterations", required_argument, NULL, 'n'},
             {"take-read", no_argument, NULL, 'K'},
+            {"time-filter", required_argument, NULL, 'i'},
             {NULL, 0, NULL, 0 }
         };
 
-        while ((opt = getopt_long(argc, argv, "hPSbrRwc:d:D:f:i:k:p:s:x:t:v:z:",
+        while ((opt = getopt_long(argc, argv, "hPSbrRwc:d:D:f:k:p:s:x:t:v:z:",
                 long_options, NULL)) != -1) {
             switch (opt) {
             case 'v':
@@ -542,33 +544,35 @@ public:
             }
             break;
             case 'i': {
-                int converted_param = sscanf(optarg, "%d", &timebasedfilter_interval);
-                if (converted_param == 0) {
+                int converted_param = 0;
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
                     logger.log_message("unrecognized value for timebasedfilter_interval "
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
                     parse_ok = false;
-                } else if (timebasedfilter_interval < 0) {
+                } else if (converted_param < 0) {
                     logger.log_message("incorrect value for timebasedfilter_interval "
-                                + std::to_string(timebasedfilter_interval),
+                                + std::to_string(converted_param),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
+                timebasedfilter_interval_us = (useconds_t) converted_param * 1000;
                 break;
             }
             case 'f': {
-                int converted_param = sscanf(optarg, "%d", &deadline_interval);
-                if (converted_param == 0) {
+                int converted_param = 0;
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
                     logger.log_message("unrecognized value for deadline_interval "
                                     + std::string(1, optarg[0]),
                             Verbosity::ERROR);
                     parse_ok = false;
-                } else if (deadline_interval < 0) {
+                } else if (converted_param < 0) {
                     logger.log_message("incorrect value for deadline_interval "
-                                    + std::to_string(deadline_interval),
+                                    + std::to_string(converted_param),
                             Verbosity::ERROR);
                     parse_ok = false;
                 }
+                deadline_interval_us = (useconds_t) converted_param * 1000;
                 break;
             }
             case 'k': {
@@ -855,8 +859,8 @@ public:
                     "\n    DataRepresentation = " + QosUtils::to_string(data_representation) +
                     "\n    HistoryDepth = " + std::to_string(history_depth) +
                     "\n    OwnershipStrength = " + std::to_string(ownership_strength) +
-                    "\n    TimeBasedFilterInterval = " + std::to_string(timebasedfilter_interval) +
-                    "\n    DeadlineInterval = " + std::to_string(deadline_interval) +
+                    "\n    TimeBasedFilterInterval = " + std::to_string(timebasedfilter_interval_us / 1000) + "ms" +
+                    "\n    DeadlineInterval = " + std::to_string(deadline_interval_us / 1000) + "ms" +
                     "\n    Shapesize = " + std::to_string(shapesize) +
                     "\n    Reading method = " + (use_read ? "read_next_instance" : "take_next_instance") +
                     "\n    Write period = " + std::to_string(write_period_us / 1000) + "ms" +
@@ -1215,11 +1219,14 @@ public:
             logger.log_message("    OwnershipStrength = " + std::to_string(dw_qos.ownership_strength FIELD_ACCESSOR.value), Verbosity::DEBUG);
         }
 
-        if ( options->deadline_interval > 0 ) {
-            dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval;
-            dw_qos.deadline FIELD_ACCESSOR.period.nanosec  = 0;
+        if ( options->deadline_interval_us > 0 ) {
+            dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
+            dw_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME) + "secs",
+                Verbosity::DEBUG);
+        logger.log_message("                     " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.nanosec) + "nanosecs",
+                Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
@@ -1236,7 +1243,8 @@ public:
 
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
         if (options->lifespan_us > 0) {
-            dw_qos.lifespan.duration = dw_qos.lifespan.duration.from_micros(options->lifespan_us);
+            dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
+            dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
         }
         logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
         logger.log_message("               " + std::to_string(dw_qos.lifespan.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
@@ -1394,21 +1402,28 @@ public:
             dr_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
         }
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
-        if ( options->timebasedfilter_interval > 0) {
+        if ( options->timebasedfilter_interval_us > 0) {
 #if defined(EPROSIMA_FAST_DDS)
             logger.log_message("    Time based filter not supported", Verbosity::ERROR);
 #else
-            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval;
-            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = 0;
+            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
+            dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = (options->timebasedfilter_interval_us % 1000000) * 1000;
 #endif
         }
-        logger.log_message("    TimeBasedFilter = " + std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME), Verbosity::DEBUG);
-
-        if ( options->deadline_interval > 0 ) {
-            dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval;
-            dr_qos.deadline FIELD_ACCESSOR.period.nanosec  = 0;
+        logger.log_message("    TimeBasedFilter = " +
+                    std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME) + "secs",
+                Verbosity::DEBUG);
+        logger.log_message("                      " +
+                    std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec) + "nanosecs",
+                Verbosity::DEBUG);
+        if ( options->deadline_interval_us > 0 ) {
+            dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
+            dr_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME), Verbosity::DEBUG);
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME) + "secs",
+                Verbosity::DEBUG);
+        logger.log_message("                     " + std::to_string(dr_qos.deadline FIELD_ACCESSOR.period.nanosec) + "nanosecs",
+                Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
         if ( options->history_depth > 0 )  {
