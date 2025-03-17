@@ -1271,7 +1271,11 @@ public:
 
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
         if (options->unregister) {
+#if   defined(RTI_CONNEXT_DDS)
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
+#elif defined(OPENDDS)
+            dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
+#endif
         }
         logger.log_message("    Autodispose_unregistered_instances = "
                 + std::string(dw_qos.writer_data_lifecycle.autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
@@ -1687,10 +1691,17 @@ public:
                                         sample->x FIELD_ACCESSOR,
                                         sample->y FIELD_ACCESSOR,
                                         sample->shapesize FIELD_ACCESSOR );
+#if   defined(OPENDDS)
+                                if (sample->additional_payload_size.length() > 0) {
+                                    int additional_payload_index = sample->additional_payload_size.length() - 1;
+                                    printf(" {%u}", sample->additional_payload_size[additional_payload_index] FIELD_ACCESSOR);
+                                }
+#else
                                 if (DDS_UInt8Seq_get_length(&sample->additional_payload_size FIELD_ACCESSOR) > 0) {
                                     int additional_payload_index = DDS_UInt8Seq_get_length(&sample->additional_payload_size FIELD_ACCESSOR) - 1;
                                     printf(" {%u}", sample->additional_payload_size FIELD_ACCESSOR [additional_payload_index]);  
                                 }
+#endif
                                 printf("\n");
 #if defined(EPROSIMA_FAST_DDS)
                                 instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
