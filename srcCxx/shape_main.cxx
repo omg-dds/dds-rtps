@@ -1157,6 +1157,24 @@ public:
                 std::string(pub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
+
+#elif  defined(TWINOAKS_COREDX)
+        if (options->coherent_set_enabled) {
+            pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled) {
+            pub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled || options->coherent_set_enabled) {
+            pub_qos.presentation.access_scope = options->coherent_set_access_scope;
+            if ( pub_qos.presentation.coherent_access >= GROUP_PRESENTATION_QOS )
+              {
+                logger.log_message("    Presentation Access Scope "
+                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+        }
+
 #else
         logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
         logger.log_message("    Presentation Ordered Access = Not supported", Verbosity::ERROR);
@@ -1241,7 +1259,7 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX)
         if (options->lifespan_us > 0) {
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
@@ -1269,9 +1287,9 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX)
         if (options->unregister) {
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
 #elif defined(OPENDDS)
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
@@ -1345,6 +1363,30 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
+        }
+
+        logger.log_message("    Presentation Coherent Access = " +
+                std::string(sub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
+        logger.log_message("    Presentation Ordered Access = " +
+                std::string(sub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
+        logger.log_message("    Presentation Access Scope = " +
+                QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
+
+#elif defined(TWINOAKS_COREDX)
+        if (options->coherent_set_enabled) {
+            sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled) {
+            sub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
+        }
+        if (options->ordered_access_enabled || options->coherent_set_enabled) {
+            sub_qos.presentation.access_scope = options->coherent_set_access_scope;
+            if ( sub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
+              {
+                logger.log_message("    Presentation Access Scope "
+                                   + QosUtils::to_string(sub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1587,7 +1629,6 @@ public:
                 previous_handles[i] = HANDLE_NIL;
                 do {
                     if (!options->use_read) {
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                         if (options->take_read_next_instance) {
                             logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
                             retval = drs[i]->take_next_instance ( samples,
@@ -1606,28 +1647,7 @@ public:
                                     ANY_VIEW_STATE,
                                     ANY_INSTANCE_STATE );
                         }
-#elif defined(TWINOAKS_COREDX)
-                        if (options->take_read_next_instance) {
-                            logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
-                            retval = drs[i]->take_next_instance ( &samples,
-                                    &sample_infos,
-                                    LENGTH_UNLIMITED,
-                                    previous_handles[i],
-                                    ANY_SAMPLE_STATE,
-                                    ANY_VIEW_STATE,
-                                    ANY_INSTANCE_STATE );
-                        } else {
-                            logger.log_message("Calling take() function", Verbosity::DEBUG);
-                            retval = drs[i]->take ( &samples,
-                                    &sample_infos,
-                                    LENGTH_UNLIMITED,
-                                    ANY_SAMPLE_STATE,
-                                    ANY_VIEW_STATE,
-                                    ANY_INSTANCE_STATE );
-                        }
-#endif
                     } else { /* Use read_next_instance*/
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                         if (options->take_read_next_instance) {
                             logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
                             retval = drs[i]->read_next_instance ( samples,
@@ -1646,26 +1666,6 @@ public:
                                     ANY_VIEW_STATE,
                                     ANY_INSTANCE_STATE );
                         }
-#elif defined(TWINOAKS_COREDX)
-                        if (options->take_read_next_instance) {
-                            logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
-                            retval = drs[i]->read_next_instance ( &samples,
-                                    &sample_infos,
-                                    LENGTH_UNLIMITED,
-                                    previous_handles[i],
-                                    ANY_SAMPLE_STATE,
-                                    ANY_VIEW_STATE,
-                                    ANY_INSTANCE_STATE );
-                        } else {
-                            logger.log_message("Calling read() function", Verbosity::DEBUG);
-                            retval = drs[i]->read_next_instance ( &samples,
-                                    &sample_infos,
-                                    LENGTH_UNLIMITED,
-                                    ANY_SAMPLE_STATE,
-                                    ANY_VIEW_STATE,
-                                    ANY_INSTANCE_STATE );
-                        }
-#endif
                     }
 
                     if (retval == RETCODE_OK) {
@@ -1728,11 +1728,11 @@ public:
 
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS) || defined(INTERCOM_DDS)
                         previous_handles[i] = sample_infos[0].instance_handle;
-                        drs[i]->return_loan( samples, sample_infos );
 #elif defined(TWINOAKS_COREDX)
                         previous_handles[i] = sample_infos[0]->instance_handle;
-                        drs[i]->return_loan( &samples, &sample_infos );
 #endif
+
+                        drs[i]->return_loan( samples, sample_infos );
                     }
                 } while (retval == RETCODE_OK);
             }
@@ -1800,7 +1800,7 @@ public:
         xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
         yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
         if (options->additional_payload_size > 0) {
             int size = options->additional_payload_size;
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, size, size);
@@ -1834,9 +1834,9 @@ public:
                         shape_set_color(shape, instance_color.c_str());
                     }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(INTERCOM_DDS) || defined(TWINOAKS_COREDX)
                     dws[i]->write( shape, HANDLE_NIL );
-#elif defined(TWINOAKS_COREDX) || defined(EPROSIMA_FAST_DDS)
+#elif defined(EPROSIMA_FAST_DDS)
                     dws[i]->write( &shape, HANDLE_NIL );
 #endif
 
@@ -1903,6 +1903,15 @@ public:
                 }
             }
         }
+
+#if defined(TWINOAKS_COREDX)
+        /* ensure that all updates have been acked by reader[s] */
+        /* otherwise the app may terminate before reader has seen all updates */
+        DDS::Duration_t max_wait( 1, 0 ); /* should not take long... */
+        for (unsigned int i = 0; i < options->num_topics; ++i) {
+          dws[i]->wait_for_acknowledgments( max_wait );
+        }
+#endif
 
         return true;
     }
