@@ -73,9 +73,13 @@ product versions.
 
 * **OpenDDS**:
 
+  * The commands used to build OpenDDS and the test can be found [here](https://github.com/OpenDDS/OpenDDS/blob/master/.github/workflows/dds-rtps.yml). None of the options used affect interoperability. See the [OpenDDS Developer's Guide](https://opendds.readthedocs.io/en/latest-release/devguide/introduction.html#building-and-configuring-for-interoperability) for additional information about interoperability.
+  * OpenDDS specific configuration for the test can be found in [shape_configurator_opendds.h](https://github.com/omg-dds/dds-rtps/blob/master/srcCxx/shape_configurator_opendds.h). A brief description is:
+    * Use RTPS as the default transport
+    * Use RTPS as the default discovery mechanism
+    * Disable XTypes Support
   * Content Filtered Topic expression created without single quotes around
     strings values
-  * Disabled XTypes Support
 
 * **CoreDX DDS**:
 
