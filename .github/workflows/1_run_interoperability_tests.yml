@@ -2,7 +2,7 @@ name: 1 - Run Interoperability Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
-  Testing_Interoperability:
+  connext_dds_612_shape_main_linux:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -30,16 +30,329 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          for i in ./* ; do \
-            for j in ./* ; do \
-              echo "Testing Publisher $i --- Subscriber $j"; \
-              python3 ./../interoperability_report.py -P $i -S $j -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done; \
+          publisher = connext_dds-6.1.2_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
           done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  connext_dds_750_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: connext_dds_612_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = connext_dds-7.5.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  dust_dds_0110_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: connext_dds_750_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = dust_dds-0.11.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  eprosima_fastdds_310_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: dust_dds_0110_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = eprosima_fastdds-3.1.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  intercom_dds_31620_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: eprosima_fastdds_310_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = intercom_dds-3.16.2.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  opendds3320_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: intercom_dds_31620_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = opendds-3.32.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  toc_coredx_dds_600_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: opendds3320_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Downloads assets
+        uses: robinraju/release-downloader@v1.10
+        with:
+          latest: true
+          fileName: "*"
+      - name: Unzip
+        run: unzip '*.zip' -d executables
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
+      - name: Run Interoperability script
+        # The test descriptions used are the generated for the last execution.
+        # This shouldn't be an issue because all test are run always
+        run: |
+          source .venv/bin/activate
+          cd executables
+          publisher = toc_coredx_dds-6.0.0_shape_main_linux
+          for subscriber in ./* ; do \
+            echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            if [ -d "./OpenDDS-durable-data-dir" ]; then \
+              echo Deleting OpenDDS-durable-data-dir; \
+              rm -rf ./OpenDDS-durable-data-dir; \
+            fi; \
+          done
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: interoperability_report
+          path: |
+            ./junit_interoperability_report.xml
+            ./timestamp
+  generate_report:
+    runs-on: ubuntu-latest
+    needs: toc_coredx_dds_600_shape_main_linux
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report
+      - name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
+      - name: Setting up environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
       - name: Generate xlsx report
         run: |
           source .venv/bin/activate
@@ -53,7 +366,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_complete
           path: |
             ./index.html
             ./junit_interoperability_report.xml
