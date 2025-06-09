@@ -31,6 +31,7 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=connext_dds-6.1.2_shape_main_linux
+          ls -la
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
