@@ -58,7 +58,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_connext612
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -69,7 +69,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_connext612
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -106,7 +106,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_connext750
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -117,7 +117,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_connext750
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -154,7 +154,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_dust_dds_0110
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -165,7 +165,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_dust_dds_0110
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -202,7 +202,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_fastdds_310
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -213,7 +213,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_fastdds_310
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -250,7 +250,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_intercom_dds_31620
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -261,7 +261,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_intercom_dds_31620
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -298,7 +298,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_opendds3320
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -309,7 +309,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_opendds3320
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -346,7 +346,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_toc_coredx_dds_600
           path: |
             ./junit_interoperability_report.xml
             ./timestamp
@@ -357,7 +357,7 @@ jobs:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: interoperability_report
+          name: interoperability_report_toc_coredx_dds_600
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
