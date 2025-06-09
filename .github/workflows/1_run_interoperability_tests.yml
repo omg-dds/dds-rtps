@@ -30,7 +30,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = connext_dds-6.1.2_shape_main_linux
+          publisher=connext_dds-6.1.2_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -78,7 +78,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = connext_dds-7.5.0_shape_main_linux
+          publisher=connext_dds-7.5.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -126,7 +126,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = dust_dds-0.11.0_shape_main_linux
+          publisher=dust_dds-0.11.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -174,7 +174,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = eprosima_fastdds-3.1.0_shape_main_linux
+          publisher=eprosima_fastdds-3.1.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -222,7 +222,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = intercom_dds-3.16.2.0_shape_main_linux
+          publisher=intercom_dds-3.16.2.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -270,7 +270,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = opendds-3.32.0_shape_main_linux
+          publisher=opendds-3.32.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
@@ -318,7 +318,7 @@ jobs:
         run: |
           source .venv/bin/activate
           cd executables
-          publisher = toc_coredx_dds-6.0.0_shape_main_linux
+          publisher=toc_coredx_dds-6.0.0_shape_main_linux
           for subscriber in ./* ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
