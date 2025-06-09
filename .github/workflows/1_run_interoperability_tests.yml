@@ -2,9 +2,26 @@ name: 1 - Run Interoperability Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
-  connext_dds_612_shape_main_linux:
+  generate_timestamp:
     runs-on: ubuntu-latest
     steps:
+      - name: Generate timestamp file
+        run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: timestamp
+          path: |
+            ./timestamp
+  connext_dds_612_shape_main_linux:
+    runs-on: ubuntu-latest
+    needs: generate_timestamp
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: timestamp
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -22,8 +39,6 @@ jobs:
           python3 -m venv .venv
           source .venv/bin/activate
           pip install -r requirements.txt
-      - name: Generate timestamp file
-        run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
       - name: Run Interoperability script
         # The test descriptions used are the generated for the last execution.
         # This shouldn't be an issue because all test are run always
@@ -31,10 +46,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=connext_dds-6.1.2_shape_main_linux
-          ls -la
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -80,9 +94,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=connext_dds-7.5.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -128,9 +142,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=dust_dds-0.11.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -176,9 +190,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=eprosima_fastdds-3.1.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -224,9 +238,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=intercom_dds-3.16.2.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -272,9 +286,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=opendds-3.32.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
@@ -320,9 +334,9 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=toc_coredx_dds-6.0.0_shape_main_linux
-          for subscriber in ./* ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            python3 ./../interoperability_report.py -P $publisher -S $subscriber -o=./../junit_interoperability_report.xml; \
+            python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
               rm -rf ./OpenDDS-durable-data-dir; \
