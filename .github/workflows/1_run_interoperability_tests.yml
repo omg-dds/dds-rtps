@@ -18,15 +18,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate_timestamp
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: timestamp
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: timestamp
       - name: Downloads assets
         uses: robinraju/release-downloader@v1.10
         with:
@@ -46,7 +46,7 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=connext_dds-6.1.2_shape_main_linux
-          for subscriber in connext_dds-6.1.2_shape_main_linux ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
@@ -68,13 +68,13 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11.4'
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_connext612
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11.4'
       - name: Downloads assets
         uses: robinraju/release-downloader@v1.10
         with:
@@ -94,11 +94,8 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=connext_dds-7.5.0_shape_main_linux
-          pwd
-          ls -la
-          for subscriber in connext_dds-6.1.2_shape_main_linux ; do \
+          for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-            ls -la ./../
             python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
             if [ -d "./OpenDDS-durable-data-dir" ]; then \
               echo Deleting OpenDDS-durable-data-dir; \
@@ -117,12 +114,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: connext_dds_750_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_connext750
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
@@ -165,12 +162,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: dust_dds_0110_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_dust_dds_0110
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
@@ -213,12 +210,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: eprosima_fastdds_310_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_fastdds_310
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
@@ -261,12 +258,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: intercom_dds_31620_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_intercom_dds_31620
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
@@ -309,12 +306,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: opendds3320_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_opendds3320
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
@@ -357,12 +354,12 @@ jobs:
     runs-on: ubuntu-latest
     needs: toc_coredx_dds_600_shape_main_linux
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: interoperability_report_toc_coredx_dds_600
-      - name: Checkout
-        uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
