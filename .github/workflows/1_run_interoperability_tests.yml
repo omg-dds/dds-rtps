@@ -66,15 +66,15 @@ jobs:
     runs-on: ubuntu-latest
     needs: connext_dds_612_shape_main_linux
     steps:
-      - name: Download artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: interoperability_report_connext612
       - name: Checkout
         uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11.4'
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: interoperability_report_connext612
       - name: Downloads assets
         uses: robinraju/release-downloader@v1.10
         with:
