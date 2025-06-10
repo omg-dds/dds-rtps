@@ -334,6 +334,8 @@ jobs:
           source .venv/bin/activate
           cd executables
           publisher=toc_coredx_dds-6.0.0_shape_main_linux
+          pwd
+          ls -la
           for subscriber in * ; do \
             echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
             python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
