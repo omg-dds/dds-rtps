@@ -13,36 +13,6 @@ import pexpect
 import queue
 import time
 
-# rtps_test_suite_1 is a dictionary that defines the TestSuite. Each element of
-# the dictionary is a Test Case that the interoperability_report.py
-# executes.
-# The dictionary has the following structure:
-#       'name' : {
-#           'apps' : [parameter_list],
-#           'expected_codes' : [expected_return_code_list],
-#           'check_function' : checking_function,
-#           'title' : 'This is the title of the test',
-#           'description' : 'This is a long description of the test'
-#       },
-# where:
-#       * name: TestCase's name
-#       * apps: list in which each element contains the parameters that
-#         the shape_main application will use. Each element of the list
-#         will run a new app.
-#       * expected_codes: list with expected ReturnCodes
-#         for a succeed test execution.
-#       * check_function [OPTIONAL]: function to check how the subscribers receive
-#         the samples from the publishers. By default, it just checks that
-#         the data is received. In case that it has a different behavior, that
-#         function must be implemented in the test_suite file and the test case
-#         should reference it in this parameter.
-#       * title: human-readable short description of the test
-#       * description: description of the test behavior and parameters
-#
-# The number of elements in 'apps' list defines how many shape_main
-# applications the interoperability_report will run. It should be the same as
-# the number of elements in expected_codes.
-
 # This constant is used to limit the maximum number of samples that tests that
 # check the behavior needs to read. For example, checking that the data
 # is received in order, or that OWNERSHIP works properly, etc...
