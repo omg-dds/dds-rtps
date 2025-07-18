@@ -414,7 +414,7 @@ public:
         if (publish && timebasedfilter_interval_us > 0) {
             logger.log_message("warning: time base filter [--time-filter] ignored on publisher applications", Verbosity::ERROR);
         }
-        if (publish && use_read == false ) {
+        if (publish && use_read == true ) {
             logger.log_message("warning: use read [-R] ignored on publisher applications", Verbosity::ERROR);
         }
         if (publish && take_read_next_instance == false ) {
