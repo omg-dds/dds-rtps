@@ -1904,14 +1904,16 @@ public:
             }
         }
 
-#if defined(TWINOAKS_COREDX)
         /* ensure that all updates have been acked by reader[s] */
         /* otherwise the app may terminate before reader has seen all updates */
-        DDS::Duration_t max_wait( 1, 0 ); /* should not take long... */
+#if defined(RTI_CONNEXT_DDS)
+        Duration_t max_wait = {1, 0}; /* should not take long... */
+#else
+        Duration_t max_wait( 1, 0 ); /* should not take long... */
+#endif
         for (unsigned int i = 0; i < options->num_topics; ++i) {
           dws[i]->wait_for_acknowledgments( max_wait );
         }
-#endif
 
         return true;
     }
