@@ -1926,16 +1926,16 @@ int main( int argc, char * argv[] )
     logger.log_message("Parsing command line parameters...", Verbosity::DEBUG);
     bool parseResult = options.parse(argc, argv);
     if ( !parseResult ) {
-        exit(ERROR_PARSING_ARGUMENTS);
+        return ERROR_PARSING_ARGUMENTS;
     }
     logger.log_message("Initializing ShapeApp...", Verbosity::DEBUG);
     ShapeApplication shapeApp;
     if ( !shapeApp.initialize(&options) ) {
-        exit(ERROR_INITIALIZING);
+        return ERROR_INITIALIZING;
     }
     logger.log_message("Running ShapeApp...", Verbosity::DEBUG);
     if ( !shapeApp.run(&options) ) {
-        exit(ERROR_RUNNING);
+        return ERROR_RUNNING;
     }
 
     printf("Done.\n");

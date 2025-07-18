@@ -169,6 +169,7 @@ def run_subscriber_shape_main(
     # Send SIGINT to nicely close the application
     if child_sub.isalive():
         child_sub.sendintr()
+        child_sub.wait()
     return
 
 
@@ -334,6 +335,7 @@ def run_publisher_shape_main(
     # Send SIGINT to nicely close the application
     if child_pub.isalive():
         child_pub.sendintr()
+        child_pub.wait()
     return
 
 
