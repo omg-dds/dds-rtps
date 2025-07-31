@@ -60,3 +60,8 @@ const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
   default: return "Unknown";
   }
 }
+
+uint64_t DDS_UInt8Seq_get_length(const std::vector<unsigned char>* seq)
+{
+  return seq->size();
+}

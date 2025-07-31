@@ -26,6 +26,8 @@ class ReturnCode(Enum):
     RECEIVING_FROM_ONE   : Subscriber receives from one Publisher
     RECEIVING_FROM_BOTH  : Subscriber receives from two Publishers
     DEADLINE_MISSED      : Publisher/Subscriber missed the deadline period
+    ORDERED_ACCESS_INSTANCE : Subscriber reading with ordered access and access scope INSTANCE
+    ORDERED_ACCESS_TOPIC : Subscriber reading with ordered access and access scope TOPIC
     """
     OK = 0
     TOPIC_NOT_CREATED = 1
@@ -40,6 +42,8 @@ class ReturnCode(Enum):
     RECEIVING_FROM_ONE = 12
     RECEIVING_FROM_BOTH = 13
     DEADLINE_MISSED = 14
+    ORDERED_ACCESS_INSTANCE = 15
+    ORDERED_ACCESS_TOPIC = 16
 
 def log_message(message, verbosity):
     if verbosity:
