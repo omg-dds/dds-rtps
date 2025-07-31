@@ -353,6 +353,66 @@ def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeo
     print(f'Samples read: {samples_read}')
     return produced_code
 
+def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests RELIABLE reliability, it checks whether the subscriber
+    receives the samples in order and with no losses (for several instances)
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern.
+    """
+
+    produced_code = ReturnCode.OK
+
+    instance_color = []
+    instance_seq_num = []
+    first_iteration = []
+    samples_read = 0
+
+    while samples_read < MAX_SAMPLES_READ:
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+
+        if sub_string is not None:
+            # add a new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+                instance_seq_num.append(int(sub_string.group(2)))
+                first_iteration.append(True)
+
+            if sub_string.group(1) in instance_color:
+                index = instance_color.index(sub_string.group(1))
+                if first_iteration[index]:
+                    first_iteration[index] = False
+                else:
+                    # check that the next sequence number is the next value
+                    instance_seq_num[index] += 1
+                    if instance_seq_num[index] != int(sub_string.group(2)):
+                        produced_code = ReturnCode.DATA_NOT_CORRECT
+                        break
+            else:
+                produced_code = ReturnCode.DATA_NOT_CORRECT
+                break
+
+        # Get the next sample the subscriber is receiving
+        index = child_sub.expect(
+            [
+                '\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+        if index == 0:
+            samples_read += 1
+
+    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    return produced_code
+
+
 def test_durability_volatile(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests the volatile durability, it checks that the sample the
@@ -450,3 +510,501 @@ def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
             return ReturnCode.OK
         else:
             return ReturnCode.DATA_NOT_RECEIVED
+
+def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests whether the subscriber application receives one sample
+    out of 10 (for each instance). For example, first sample received with size
+    5, the next one should have size 15, then 25...
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    instance_color = []
+    instance_seq_num = []
+    first_iteration = []
+    ignore_first_sample = []
+    max_samples_received = MAX_SAMPLES_READ / 20 # 25
+    samples_read = 0
+
+    while samples_read < max_samples_received:
+
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+
+        if sub_string is not None:
+            # add a new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+                instance_seq_num.append(int(sub_string.group(2)))
+                first_iteration.append(True)
+                ignore_first_sample.append(True)
+
+            if sub_string.group(1) in instance_color:
+                index = instance_color.index(sub_string.group(1))
+                if first_iteration[index]:
+                    first_iteration[index] = False
+                else:
+                    if ignore_first_sample[index]:
+                        ignore_first_sample[index] = False
+                    # check that the received sample has the sequence number
+                    # previous + 10
+                    elif instance_seq_num[index] + 10 != int(sub_string.group(2)):
+                        produced_code = ReturnCode.DATA_NOT_CORRECT
+                        break
+                    instance_seq_num[index] = int(sub_string.group(2))
+            else:
+                produced_code = ReturnCode.DATA_NOT_CORRECT
+                break
+
+        # Get the next sample the subscriber is receiving
+        index = child_sub.expect(
+            [
+                '\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+        if index == 0:
+            samples_read += 1
+
+    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    return produced_code
+
+def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests whether instances are correctly unregistered
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    instance_color = []
+    unregistered_instance_color = []
+
+    while True:
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+
+        if sub_string is not None:
+            # add a new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+        else:
+            # if no sample is received, it might be a UNREGISTER message
+            sub_string = re.search(r'\w+\s+(\w+)\s+NOT_ALIVE_NO_WRITERS_INSTANCE_STATE',
+                child_sub.before + child_sub.after)
+            if sub_string is not None:
+                unregistered_instance_color.append(sub_string.group(1))
+                if len(instance_color) == len(unregistered_instance_color):
+                    break
+        # Get the next sample the subscriber is receiving or unregister/dispose
+        index = child_sub.expect(
+            [
+                r'\w+\s+\w+\s+.*?\n', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+
+    # compare that arrays contain the same elements
+    if set(instance_color) == set(unregistered_instance_color):
+        produced_code = ReturnCode.OK
+    else:
+        produced_code = ReturnCode.DATA_NOT_CORRECT
+
+    print(f'Unregistered {len(unregistered_instance_color)} elements: {unregistered_instance_color}')
+
+    return produced_code
+
+def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests whether instances are correctly disposed
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    instance_color = []
+    disposed_instance_color = []
+
+    while True:
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+
+        if sub_string is not None:
+            # add a new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+        else:
+            # if no sample is received, it might be a DISPOSED message
+            sub_string = re.search(r'\w+\s+(\w+)\s+NOT_ALIVE_DISPOSED_INSTANCE_STATE',
+                child_sub.before + child_sub.after)
+            if sub_string is not None:
+                disposed_instance_color.append(sub_string.group(1))
+                if len(instance_color) == len(disposed_instance_color):
+                    break
+        # Get the next sample the subscriber is receiving or unregister/dispose
+        index = child_sub.expect(
+            [
+                r'\w+\s+\w+\s+.*?\n', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+
+    # compare that arrays contain the same elements
+    if set(instance_color) == set(disposed_instance_color):
+        produced_code = ReturnCode.OK
+    else:
+        produced_code = ReturnCode.DATA_NOT_CORRECT
+
+    print(f'Disposed {len(disposed_instance_color)} elements: {disposed_instance_color}')
+
+    return produced_code
+
+def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests whether large data is correctly received
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.DATA_NOT_CORRECT
+    # As the interoperability_test is just looking for the size [<size>],
+    # this does not count the data after it, we need to read one more full
+    # sample
+    index = child_sub.expect(
+        [
+            r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{[0-9]+\}', # index = 0
+            pexpect.TIMEOUT # index = 1
+        ],
+        timeout
+    )
+
+    if index == 0:
+        # Read the sample received, if it prints the additional_bytes == 255,
+        # it is sending large data correctly
+        sub_string = re.search(r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{([0-9]+)\}',
+            child_sub.before + child_sub.after)
+        # Check if the last element of the additional_bytes field element is
+        # received correctly
+        if sub_string is not None:
+            if int(sub_string.group(1)) == 255:
+                produced_code = ReturnCode.OK
+            else:
+                produced_code = ReturnCode.DATA_NOT_CORRECT
+
+    return produced_code
+
+def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests that lifespan works correctly. In the test situation,
+    only 2 or 3 consecutive samples should be received each time the reader
+    reads data.
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    # as the test is reading in a slower rate, reduce the number of samples read
+    max_samples_lifespan = MAX_SAMPLES_READ / 10 # 50
+
+    instance_color = []
+    previous_seq_num = []
+    first_iteration = []
+    samples_read = 0
+    consecutive_samples = []
+
+    while samples_read < max_samples_lifespan:
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+
+        if sub_string is not None:
+            # add a new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+                previous_seq_num.append(int(sub_string.group(2)))
+                first_iteration.append(True)
+                consecutive_samples.append(1) # take into account the first sample
+
+            # if the instance exists
+            if sub_string.group(1) in instance_color:
+                index = instance_color.index(sub_string.group(1))
+                # we should receive only 2 or 3 consecutive samples with the
+                # parameters defined by the test
+                if first_iteration[index]:
+                    # do nothing for the first sample received
+                    first_iteration[index] = False
+                else:
+                    # if the sequence number is consecutive, increase the counter
+                    if previous_seq_num[index] + 1 == int(sub_string.group(2)):
+                        consecutive_samples[index] += 1
+                    else:
+                        # if the sequence number is not consecutive, check that we
+                        # receive only 3 or 2 samples
+                        if consecutive_samples[index] == 3 or consecutive_samples[index] == 2:
+                            # reset value to 1, as this test consider that the first
+                            # sample is consecutive with itself
+                            consecutive_samples[index] = 1
+                        else:
+                            # if the amount of samples received is different than 3 or 2
+                            # this is an error
+                            produced_code = ReturnCode.DATA_NOT_CORRECT
+                            break
+                    previous_seq_num[index] = int(sub_string.group(2))
+
+            else:
+                produced_code = ReturnCode.DATA_NOT_CORRECT
+                break
+
+        # Get the next sample the subscriber is receiving
+        index = child_sub.expect(
+            [
+                '\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+        if index == 0:
+            samples_read += 1
+
+    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    return produced_code
+
+def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests that ordered access works correctly. This counts the
+    samples received in order and detects wether they are from the same instance
+    as the previously received sample or not.
+    If the number of consecutive samples from the same instance is greater than
+    the number of consecutive samples form different instances, this means that
+    the DW is using INSTANCE_PRESENTATION, if the case is the opposite, it is
+    using TOPIC_PRESENTATION.
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    instance_color = []
+    samples_read = 0
+    previous_sample_color = None
+    color_different_count = 0
+    color_equal_count = 0
+    samples_printed = False
+
+    while samples_read < MAX_SAMPLES_READ:
+        sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
+            child_sub.before + child_sub.after)
+
+        # if a sample is read
+        if sub_string is not None:
+            # samples have been printed at least once
+            samples_printed = True
+            # add new instance to instance_color
+            if sub_string.group(1) not in instance_color:
+                instance_color.append(sub_string.group(1))
+
+            # the instance exists
+            if sub_string.group(1) in instance_color:
+                index = instance_color.index(sub_string.group(1))
+                current_color = sub_string.group(1)
+                # check the previous color and increase the different or equal
+                # counters
+                if previous_sample_color is not None:
+                    if current_color != previous_sample_color:
+                        color_different_count += 1
+                    else:
+                        color_equal_count += 1
+                previous_sample_color = current_color
+        # different message than a sample
+        else:
+            sub_string = re.search(r'Reading with ordered access',
+                child_sub.before + child_sub.after)
+            # if 'Reading with ordered access' message, it means that the DataReader
+            # is reading a new set of data (DataReader reads data slower that a
+            # DataWriter writes it)
+            if sub_string is not None:
+                # if samples have been already received by the DataReader and the
+                # counter addition (samples read) is greater than 5. It is 5 because
+                # there are 4 instances and we need to make sure that we receive
+                # at least 1 sample for every instance
+                # Note: color_equal_count + color_different_count will be the samples read
+                if samples_printed and color_equal_count + color_different_count > 5:
+                    # if produced_code is not OK (this will happen in all iterations
+                    # except for the first one). We check that the behavior is the same
+                    # as in previous iterations.
+                    if produced_code != ReturnCode.OK:
+                        current_behavior = None
+                        if color_equal_count > color_different_count:
+                            current_behavior = ReturnCode.ORDERED_ACCESS_INSTANCE
+                        elif color_equal_count < color_different_count:
+                            current_behavior = ReturnCode.ORDERED_ACCESS_TOPIC
+                        # in case of a behavior change, this will be an error
+                        if produced_code != current_behavior:
+                            produced_code = ReturnCode.DATA_NOT_CORRECT
+                            break
+                    # this only happens on the first iteration and then this sets
+                    # the initial ReturnCode
+                    else:
+                        if color_equal_count > color_different_count:
+                            produced_code = ReturnCode.ORDERED_ACCESS_INSTANCE
+                        elif color_equal_count < color_different_count:
+                            produced_code = ReturnCode.ORDERED_ACCESS_TOPIC
+                # reset counters for the next set of samples read
+                color_equal_count = 0
+                color_different_count = 0
+
+        # Get the next sample the subscriber is receiving or the next
+        # 'Reading with ordered access message'
+        index = child_sub.expect(
+            [
+                r'(Reading with ordered access.*?\n|[\[[0-9]+\])', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+        if index == 0:
+            samples_read += 1
+
+    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    return produced_code
+
+def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    This function tests that coherent sets works correctly. This counts the
+    consecutive samples received from the same instance. The value should be 3
+    as this is the coherent set count that the test is setting.
+    Note: when using GROUP_PRESENTATION, the first iteration may print more
+    samples (more coherent sets), the test check that the samples received per
+    instance is a multiple of 3, so the coherent sets are received complete.
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern
+    """
+
+    produced_code = ReturnCode.OK
+
+    topics = {}
+    samples_read = 0
+    previous_sample_color = None
+    new_coherent_set_read = False
+    first_time_reading = True
+    ignore_firsts_coherent_set = 2
+
+    while samples_read < MAX_SAMPLES_READ:
+        sub_string = re.search(r'(\w+)\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
+            child_sub.before + child_sub.after)
+
+        # if a sample is read
+        if sub_string is not None:
+            # DataReader has received a new coherent set
+            new_coherent_set_read = True
+            # add new instances to the corresponding topic
+            topic_name = sub_string.group(1)
+            instance_color = sub_string.group(2)
+
+            if topic_name not in topics:
+                topics[topic_name] = {}
+            if instance_color not in topics[topic_name]:
+                topics[topic_name][instance_color] = 1
+            # if the instance is already added
+            if instance_color in topics[topic_name]:
+                # the instance exists
+                current_color = instance_color
+                # check the previous color and increase consecutive samples
+                if previous_sample_color is not None:
+                    if current_color == previous_sample_color:
+                        topics[topic_name][instance_color] += 1
+                previous_sample_color = current_color
+        # different message than a sample
+        else:
+            sub_string = re.search(r'Reading coherent sets',
+                child_sub.before + child_sub.after)
+            # if 'Reading coherent sets' message, it means that the DataReader
+            # is trying to read a new coherent set, it might not read any sample
+            if sub_string is not None:
+                # if DataReader has received samples
+                if ignore_firsts_coherent_set != 0 and new_coherent_set_read:
+                    ignore_firsts_coherent_set -= 1
+                    for topic in topics:
+                        for color in topics[topic]:
+                            topics[topic][color] = 1
+                elif new_coherent_set_read:
+                    for topic in topics:
+                        for color in topics[topic]:
+                            if first_time_reading:
+                                # with group presentation we may get several coherent
+                                # sets at the beginning, just checking that the samples
+                                # received are multiple of 3
+                                if topics[topic][color] % 3 != 0:
+                                    produced_code = ReturnCode.DATA_NOT_CORRECT
+                                    break
+                            else:
+                                # there should be 3 consecutive samples per instance,
+                                # as the test specifies this with the argument
+                                # --coherent-sample-count 3
+                                if topics[topic][color] != 3:
+                                    produced_code = ReturnCode.DATA_NOT_CORRECT
+                                    break
+                            topics[topic][color] = 1
+                    if produced_code == ReturnCode.DATA_NOT_CORRECT:
+                        break
+                    first_time_reading = False
+                new_coherent_set_read = False
+
+        # Get the next sample the subscriber is receiving or the next
+        # 'Reading with ordered access message'
+        index = child_sub.expect(
+            [
+                r'(Reading coherent sets.*?\n|[\[[0-9]+\])', # index = 0
+                pexpect.TIMEOUT # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            # no more data to process
+            break
+        if index == 0:
+            samples_read += 1
+
+    print(f'Samples read: {samples_read}')
+    print("Instances:")
+    for topic in topics:
+        print(f"Topic {topic}: {', '.join(topics[topic].keys())}")
+
+    return produced_code
