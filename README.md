@@ -169,15 +169,15 @@ The Shape application allows the following parameters:
 
 ~~~
    --help, -h      : print this menu
+   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
    -P              : publish samples
    -S              : subscribe samples
    -d <int>        : domain id (default: 0)
    -b              : BEST_EFFORT reliability
    -r              : RELIABLE reliability
    -k <depth>      : keep history depth [0: KEEP_ALL]
-   -f <interval>   : set a 'deadline' with interval (seconds) [0: OFF]
-   -i <interval>   : apply 'time based filter' with interval (seconds) [0: OFF]
-   -s <int>        : set ownership strength [-1: SHARED]
+   -f <interval>   : set a 'deadline' with interval (ms) [0: OFF]
+   -s <strength>   : set ownership strength [-1: SHARED]
    -t <topic_name> : set the topic name
    -c <color>      : set color to publish (filter if subscriber)
    -p <partition>  : set a 'partition' string
@@ -191,7 +191,40 @@ The Shape application allows the following parameters:
                         Default: 33ms
    --read-period <ms> : waiting period between 'read()' or 'take()' operations
                         in ms. Default: 100ms
-   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
+   --time-filter <interval> : apply 'time based filter' with interval
+                              in ms [0: OFF]
+   --lifespan <int>      : indicates the lifespan of a sample in ms
+   --num-iterations <int>: indicates the number of iterations of the main loop
+                           After that, the application will exit.
+                           Default: infinite
+   --num-instances <int>: indicates the number of instances a DataWriter writes
+                          If the value is > 1, the additional instances are
+                          created by appending a number. For example, if the
+                          original color is "BLUE" the instances used are
+                          "BLUE", "BLUE1", "BLUE2"...
+   --num-topics <int>: indicates the number of topics created (using the same
+                       type). This also creates a DataReader or DataWriter per
+                       topic. If the value is > 1, the additional topic names
+                       are created by appending a number: For example, if the
+                       original topic name is "Square", the topics created are
+                       "Square", "Square1", "Square2"...
+   --final-instance-state [u|d]: indicates the action performed after the
+                                 DataWriter finishes its execution (before
+                                 deleting it):
+                                   - u: unregister
+                                   - d: dispose
+   --access-scope [i|t|g]: sets Presentation.access_scope to INSTANCE, TOPIC
+                           or GROUP
+   --coherent            : sets Presentation.coherent_access = true
+   --ordered             : sets Presentation.ordered_access = true
+   --coherent-sample-count <int>: amount of samples sent for each DataWriter
+                                  and instance that are grouped in a coherent
+                                  set
+   --additional-payload-size <bytes>: indicates the amount of bytes added to
+                                      the samples written (for example to use
+                                      large data)
+   --take-read           : uses take()/read() instead of take_next_instance()
+                           read_next_instance()
 
 ~~~
 
