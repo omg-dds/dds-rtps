@@ -1906,7 +1906,7 @@ public:
 
         /* ensure that all updates have been acked by reader[s] */
         /* otherwise the app may terminate before reader has seen all updates */
-#if defined(RTI_CONNEXT_DDS)
+#if defined(RTI_CONNEXT_DDS) || defined (OPENDDS)
         Duration_t max_wait = {1, 0}; /* should not take long... */
 #else
         Duration_t max_wait( 1, 0 ); /* should not take long... */
