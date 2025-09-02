@@ -45,6 +45,7 @@ jobs:
           ref: latest-release
           path: OpenDDS
           fetch-depth: 1
+          submodules: true
       - name: 'Set environment variables'
         shell: bash
         run: |-
