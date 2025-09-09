@@ -18,7 +18,16 @@
 
 void StringSeq_push(DDS::StringSeq  &string_seq, const char *elem)
 {
-  string_seq.push_back((char*)elem);
+  char * e = NULL;
+  if ( elem )
+    {
+      e = new char[strlen(elem)+1];
+      if ( e )
+        {
+          strcpy( e, elem );
+          string_seq.push_back(e);
+        }
+    }
 }
 
 const char *get_qos_policy_name(DDS_QosPolicyId_t policy_id)
