@@ -1259,7 +1259,7 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->lifespan_us > 0) {
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
@@ -1287,11 +1287,11 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX)
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->unregister) {
 #if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
-#elif defined(OPENDDS)
+#elif defined(OPENDDS) || defined(INTERCOM_DDS)
             dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
 #endif
         }
@@ -1669,7 +1669,11 @@ public:
                     }
 
                     if (retval == RETCODE_OK) {
+#if   defined(INTERCOM_DDS)
+                        auto n_samples = samples.size();
+#else
                         auto n_samples = samples.length();
+#endif
                         logger.log_message("Read " + std::to_string(n_samples)
                                 + " sample(s), printing them...", Verbosity::DEBUG);
                         for (decltype(n_samples) n_sample = 0; n_sample < n_samples; n_sample++)  {
@@ -1800,7 +1804,7 @@ public:
         xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
         yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
 
-#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->additional_payload_size > 0) {
             int size = options->additional_payload_size;
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, size, size);
