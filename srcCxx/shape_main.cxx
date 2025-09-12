@@ -1263,6 +1263,13 @@ public:
 
 #if   defined(RTI_CONNEXT_DDS)
         // usage of large data
+        if (PropertyQosPolicyHelper::assert_property(
+                dw_qos.property,
+                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                "65536",
+                DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+            logger.log_message("failed to set property pool_buffer_max_size", Verbosity::ERROR);
+        }
         if (options->additional_payload_size > 64000) {
             dw_qos.publish_mode.kind = ASYNCHRONOUS_PUBLISH_MODE_QOS;
         }
