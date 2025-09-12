@@ -1140,7 +1140,7 @@ public:
 
         logger.log_message("Publisher QoS:", Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->coherent_set_enabled) {
             pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
         }
@@ -1149,10 +1149,18 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
-  #if  defined(TWINOAKS_COREDX)
-            if ( pub_qos.presentation.coherent_access >= GROUP_PRESENTATION_QOS )
+  #if  defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+            if ( pub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
               {
                 logger.log_message("    Presentation Access Scope "
+                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+  #endif
+  #if  defined(INTERCOM_DDS)
+            if (pub_qos.presentation.coherent_access && pub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
+              {
+                logger.log_message("    Coherent Access with Presentation Access Scope "
                                    + QosUtils::to_string(pub_qos.presentation.access_scope)
                                    + std::string(" : Not supported"), Verbosity::ERROR);
               }
