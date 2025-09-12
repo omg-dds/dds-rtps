@@ -54,6 +54,30 @@ void StringSeq_push(DDS::StringSeq& string_seq, const char* elem)
   string_seq[i] = elem;
 }
 
+template <typename Seq>
+DDS::UInt32 DDS_UInt8Seq_get_length(const Seq* seq)
+{
+  return seq->length();
+}
+
+template <typename Seq>
+void DDS_UInt8Seq_ensure_length(Seq* seq, DDS::UInt32 len, DDS::UInt32 = 0)
+{
+  seq->length(len);
+}
+
+template <typename Seq>
+DDS::UInt8* DDS_UInt8Seq_get_reference(Seq* seq, DDS::UInt32 idx)
+{
+  return &(*seq)[idx];
+}
+
+template <typename Seq>
+const DDS::UInt8* DDS_UInt8Seq_get_reference(const Seq* seq, DDS::UInt32 idx)
+{
+  return &(*seq)[idx];
+}
+
 void configure_rtps()
 {
   using namespace OpenDDS::DCPS;
