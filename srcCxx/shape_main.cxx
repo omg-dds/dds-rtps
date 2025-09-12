@@ -1140,7 +1140,7 @@ public:
 
         logger.log_message("Publisher QoS:", Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
         if (options->coherent_set_enabled) {
             pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
         }
@@ -1149,6 +1149,14 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
+  #if  defined(TWINOAKS_COREDX)
+            if ( pub_qos.presentation.coherent_access >= GROUP_PRESENTATION_QOS )
+              {
+                logger.log_message("    Presentation Access Scope "
+                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+  #endif
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1157,23 +1165,6 @@ public:
                 std::string(pub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
-
-#elif  defined(TWINOAKS_COREDX)
-        if (options->coherent_set_enabled) {
-            pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled) {
-            pub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled || options->coherent_set_enabled) {
-            pub_qos.presentation.access_scope = options->coherent_set_access_scope;
-            if ( pub_qos.presentation.coherent_access >= GROUP_PRESENTATION_QOS )
-              {
-                logger.log_message("    Presentation Access Scope "
-                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
-              }
-        }
 
 #else
         logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
@@ -1259,23 +1250,16 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->lifespan_us > 0) {
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
-        }
-        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
-        logger.log_message("               " + std::to_string(dw_qos.lifespan.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
-#elif  defined(EPROSIMA_FAST_DDS)
-        if (options->lifespan_us > 0) {
+#elif defined(EPROSIMA_FAST_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration = Duration_t(options->lifespan_us * 1e-6);
-        }
-        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.seconds) + " secs", Verbosity::DEBUG);
-        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
-
-#else
-        logger.log_message("    Lifespan = Not supported", Verbosity::ERROR);
 #endif
+        }
+        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
+        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS)
         // usage of large data
@@ -1287,25 +1271,15 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->unregister) {
 #if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
-            dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
-#elif defined(OPENDDS) || defined(INTERCOM_DDS)
-            dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
-#endif
-        }
-        logger.log_message("    Autodispose_unregistered_instances = "
-                + std::string(dw_qos.writer_data_lifecycle.autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
-#elif defined(EPROSIMA_FAST_DDS)
-        if (options->unregister) {
+            dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
+#elif defined(OPENDDS) || defined(INTERCOM_DDS) || defined(EPROSIMA_FAST_DDS)
             dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = false;
+#endif
         }
         logger.log_message("    Autodispose_unregistered_instances = "
-            + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
-#else
-        logger.log_message("    Autodispose_unregistered_instances = Not supported", Verbosity::ERROR);
-#endif
+                + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
 
         // Create different DataWriters (depending on the number of entities)
         // The DWs are attached to the same array index of the topics.
@@ -1354,7 +1328,7 @@ public:
 
         logger.log_message("Subscriber QoS:", Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
         if (options->coherent_set_enabled) {
             sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
         }
@@ -1363,30 +1337,14 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
-        }
-
-        logger.log_message("    Presentation Coherent Access = " +
-                std::string(sub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
-        logger.log_message("    Presentation Ordered Access = " +
-                std::string(sub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
-        logger.log_message("    Presentation Access Scope = " +
-                QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
-
-#elif defined(TWINOAKS_COREDX)
-        if (options->coherent_set_enabled) {
-            sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled) {
-            sub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled || options->coherent_set_enabled) {
-            sub_qos.presentation.access_scope = options->coherent_set_access_scope;
+  #if defined(TWINOAKS_COREDX)
             if ( sub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
               {
                 logger.log_message("    Presentation Access Scope "
                                    + QosUtils::to_string(sub_qos.presentation.access_scope)
                                    + std::string(" : Not supported"), Verbosity::ERROR);
               }
+  #endif
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1495,7 +1453,7 @@ public:
                     (i > 0 ? std::to_string(i) : "") +
                     "_filtered";
             const char* filtered_topic_name = filtered_topic_name_str.c_str();
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(INTERCOM_DDS)
                 char parameter[64];
                 snprintf(parameter, 64, "'%s'",  options->color);
                 StringSeq_push(cf_params, parameter);
@@ -1508,15 +1466,6 @@ public:
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
-
-#elif defined(INTERCOM_DDS)
-                char parameter[64];
-                sprintf(parameter, "'%s'",  options->color);
-                StringSeq_push(cf_params, parameter);
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color = "
-                    + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
-
 #elif defined(EPROSIMA_FAST_DDS)
                 cf_params.push_back(std::string("'") + options->color + std::string("'"));
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);

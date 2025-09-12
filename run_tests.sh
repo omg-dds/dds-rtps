@@ -59,7 +59,7 @@ done
 # If publisher is not provided, find publisher applications
 if [[ -z $publisher ]]; then
     echo "Searching for publisher applications in directory: $input"
-    publisher=$(find "$input" -type f -name '*_shape_main_linux')
+    publisher=$(find "$input" -type f -name '*shape_main_linux')
 fi
 
 # If subscriber is not provided, find subscriber applications
