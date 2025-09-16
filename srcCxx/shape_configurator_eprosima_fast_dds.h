@@ -32,6 +32,9 @@
 namespace DDS = eprosima::fastdds::dds;
 #define RETCODE_OK DDS::RETCODE_OK
 
+#define DDS_BOOLEAN_TRUE                   true
+#define DDS_BOOLEAN_FALSE                  false
+
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {
   switch (policy_id) {
