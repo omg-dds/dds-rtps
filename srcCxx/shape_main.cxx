@@ -1768,7 +1768,6 @@ public:
         xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
         yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
 
-#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS) || defined(OPENDDS) || defined(EPROSIMA_FAST_DDS)
         if (options->additional_payload_size > 0) {
             int size = options->additional_payload_size;
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, size, size);
@@ -1776,9 +1775,7 @@ public:
         } else {
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, 0, 0);
         }
-#else
-        printf("DDS_UInt8Seq_ensure_length: Not supported\n");
-#endif
+
         while ( ! all_done ) {
             moveShape(&shape);
 
