@@ -1287,7 +1287,11 @@ public:
 #endif
 
         if (options->unregister) {
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
             dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
+#elif defined(OPENDDS) || defined(INTERCOM_DDS) || defined(EPROSIMA_FAST_DDS)
+            dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = false;
+#endif
         }
         logger.log_message("    Autodispose_unregistered_instances = "
                 + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);

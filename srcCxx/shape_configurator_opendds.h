@@ -18,9 +18,6 @@
 #define STRING_INOUT .inout()
 #define STRING_ALLOC(LHS, RHS) LHS = CORBA::string_alloc(RHS)
 
-#define DDS_BOOLEAN_TRUE                   true
-#define DDS_BOOLEAN_FALSE                  false
-
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {
   switch (policy_id) {
