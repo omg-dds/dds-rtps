@@ -48,6 +48,8 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
     list_data_received_second = []
     list_data_received_first = []
     max_samples_received = MAX_SAMPLES_READ
+    max_retries = 500
+    current_retries = 0
     samples_read = 0
     list_samples_processed = []
     last_first_sample = ''
@@ -113,7 +115,13 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
             print(f'Last samples: {last_first_sample}, {last_second_sample}')
             # Otherwise, wait a bit and continue
             time.sleep(0.1)
+            current_retries += 1
+            if current_retries > max_retries:
+                print('Max retries exceeded')
+                return ReturnCode.DATA_NOT_CORRECT
             continue
+
+        current_retries = 0
 
         # Keep all samples processed in a single list, so we can check whether
         # the last sample published by any publisher has already been processed
