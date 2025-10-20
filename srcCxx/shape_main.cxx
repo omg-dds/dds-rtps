@@ -852,7 +852,7 @@ public:
                 break;
             case 'N': {
                 int converted_param = 0;
-                if (sscanf(optarg, "%u", &converted_param) == 0) {
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
                     logger.log_message("unrecognized value for periodic-announcement "
                                 + std::string(1, optarg[0]),
                             Verbosity::ERROR);
