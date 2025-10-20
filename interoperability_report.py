@@ -815,12 +815,16 @@ def main():
 
                     assert(len(parameters) == len(expected_codes))
 
-                    for element in parameters:
+                    for i,element in enumerate(parameters):
                         if not '-x ' in element:
-                            element += f'-x {options["data_representation"]}'
+                            element += f' -x {options["data_representation"]}'
+                        # Add periodic announcement argument if needed
                         if options['periodic_announcement_ms'] > 0 \
-                                and not '--periodic-announcement ' in element:
+                                and not '--periodic-announcement ' in element \
+                                and 'connext' in options['publisher'].lower() \
+                                and '-P' in element:
                             element += f' --periodic-announcement {options["periodic_announcement_ms"]}'
+                        parameters[i] = element  # Update the list in place
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
