@@ -58,8 +58,12 @@ jobs:
           for publisher in connext_dds-* ; do \
             if [ -e "$publisher" ]; then \
               for subscriber in * ; do \
+                extra_args=""; \
+                if [[ "${subscriber,,}" == *opendds* ]]; then \
+                  extra_args="--periodic-announcements 5000"; \
+                fi; \
                 echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml $extra_args; \
                 if [ -d "./OpenDDS-durable-data-dir" ]; then \
                   echo Deleting OpenDDS-durable-data-dir; \
                   rm -rf ./OpenDDS-durable-data-dir; \

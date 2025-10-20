@@ -635,7 +635,8 @@ class Arguments:
             help='Print debug information to stdout. This option also shows the '
                 'shape_main application output in case of error. '
                 'If this option is not used, only the test results are printed '
-                'in the stdout. (Default: False).')
+                'in the stdout. '
+                'Default: False')
         optional.add_argument('-x','--data-representation',
             default="2",
             required=None,
@@ -643,9 +644,17 @@ class Arguments:
             choices=["1","2"],
             help='Data Representation used if no provided when running the '
                 'shape_main application. If this application already sets the '
-                'data representation, this parameter is not used.'
+                'data representation, this parameter is not used. '
                 'The potential values are 1 for XCDR1 and 2 for XCDR2.'
                 'Default value 2.')
+
+        optional.add_argument('-a', '--periodic-announcement',
+            default=0,
+            required=False,
+            type=int,
+            metavar='periodic_announcement_ms',
+            help='Indicates the periodic participant announcement period in ms. '
+                'Default: 0 (off).')
 
         tests = parser.add_argument_group(title='Test Case and Test Suite')
         tests.add_argument('-s', '--suite',
@@ -659,7 +668,7 @@ class Arguments:
                 'This value should not contain the extension ".py", '
                 'only the name of the file. '
                 'It will run all the dictionaries defined in the file. '
-                '(Default: test_suite).')
+                'Default: test_suite.')
 
         enable_disable = tests.add_mutually_exclusive_group(required=False)
         enable_disable.add_argument('-t', '--test',
@@ -671,7 +680,7 @@ class Arguments:
             help='Test Case that the script will run. '
                 'This option is not supported with --disable-test. '
                 'This allows to set multiple values separated by a space. '
-                '(Default: run all Test Cases from the Test Suite.)')
+                'Default: run all Test Cases from the Test Suite.')
         enable_disable.add_argument('-d', '--disable-test',
             nargs='+',
             default=None,
@@ -680,7 +689,8 @@ class Arguments:
             metavar='test_cases_disabled',
             help='Test Case that the script will skip. '
                 'This allows to set multiple values separated by a space. '
-                'This option is not supported with --test. (Default: None)')
+                'This option is not supported with --test. '
+                'Default: None')
 
         out_opts = parser.add_argument_group(title='output options')
         out_opts.add_argument('-o', '--output-name',
@@ -691,7 +701,7 @@ class Arguments:
                 'If the file passed already exists, it will add '
                 'the new results to it. In other case it will create '
                 'a new file. '
-                '(Default: <publisher_name>-<subscriber_name>-date.xml)')
+                'Default: <publisher_name>-<subscriber_name>-date.xml')
 
         return parser
 
@@ -718,6 +728,7 @@ def main():
         'test_cases': args.test,
         'test_cases_disabled': args.disable_test,
         'data_representation': args.data_representation,
+        'periodic_announcement_ms': args.periodic_announcement,
     }
 
     # The executables's names are supposed to follow the pattern: name_shape_main
@@ -807,6 +818,9 @@ def main():
                     for element in parameters:
                         if not '-x ' in element:
                             element += f'-x {options["data_representation"]}'
+                        if options['periodic_announcement_ms'] > 0 \
+                                and not '--periodic-announcement ' in element:
+                            element += f' --periodic-announcement {options["periodic_announcement_ms"]}'
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
