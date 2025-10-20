@@ -30,6 +30,38 @@ from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_c
 # MAX_SAMPLES_SAVED is the maximum number of samples saved.
 MAX_SAMPLES_SAVED = 500
 
+def stop_process(child_process, timeout=30, poll_interval=0.2):
+    """
+    Stops a pexpect child process using SIGINT (Ctrl+C),
+    and forcefully terminates it if it doesn't exit within the timeout.
+
+    Parameters:
+        child_process (pexpect.spawn): The process to stop.
+        timeout (int): Max time (in seconds) to wait for graceful exit.
+        poll_interval (float): Time between checks in seconds.
+
+    Returns:
+        bool: True if process exited gracefully, False if it was killed.
+    """
+    if child_process.isalive():
+        try:
+            child_process.sendintr()
+        except Exception as e:
+            return True  # Process already exited
+    else:
+        return True  # Process already exited
+
+    start_time = time.time()
+
+    while child_process.isalive() and (time.time() - start_time < timeout):
+        time.sleep(poll_interval)
+
+    if child_process.isalive():
+        child_process.terminate(force=True)
+        return False  # Process was forcefully terminated
+
+    return True
+
 def run_subscriber_shape_main(
         name_executable: str,
         parameters: str,
@@ -165,11 +197,13 @@ def run_subscriber_shape_main(
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
             'finish', verbosity)
     for element in publishers_finished:
-        element.wait()   # wait for all publishers to finish
-    # Send SIGINT to nicely close the application
-    if child_sub.isalive():
-        child_sub.sendintr()
-        child_sub.wait()
+        element.wait() # wait for all publishers to finish
+    # Stop process
+    if not stop_process(child_sub):
+        log_message(f'Subscriber {subscriber_index} process did not exit '
+                    'gracefully; it was forcefully terminated.',
+                    verbosity)
+
     return
 
 
@@ -332,10 +366,12 @@ def run_publisher_shape_main(
     for element in subscribers_finished:
         element.wait() # wait for all subscribers to finish
     publisher_finished.set()   # set publisher as finished
-    # Send SIGINT to nicely close the application
-    if child_pub.isalive():
-        child_pub.sendintr()
-        child_pub.wait()
+    # Stop process
+    if not stop_process(child_pub):
+        log_message(f'Publisher {publisher_index} process did not exit '
+                    'gracefully; it was forcefully terminated.',
+                    verbosity)
+
     return
 
 
