@@ -60,6 +60,9 @@ product versions.
 
   * Content Filtered Topic expression created with single quotes around strings
     values
+  * Content Filtered Topic uses MATCH operator for string comparisons.
+  * Increased the periodic discovery announcements to 5s in the tests where
+    the subscriber is OpenDDS and the publisher is Connext DDS.
 
 * **FastDDS**:
 

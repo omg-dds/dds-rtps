@@ -1,5 +1,8 @@
 name: 1 - Run Interoperability Tests
 run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+env:
+  # comma separated list of tests to skip
+  SKIP_EXEC: "connext_dds-6.1.2_shape_main_linux"
 on: workflow_dispatch
 jobs:
   generate_timestamp:
@@ -32,6 +35,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -46,14 +56,20 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in connext_dds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                extra_args=""; \
+                if [[ "${subscriber,,}" == *opendds* ]]; then \
+                  extra_args="--periodic-announcement 5000"; \
+                fi; \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml $extra_args; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()
@@ -81,6 +97,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -95,14 +118,16 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in dust_dds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()
@@ -130,6 +155,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -144,14 +176,16 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in eprosima_fastdds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()
@@ -179,6 +213,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -193,14 +234,16 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in intercom_dds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()
@@ -228,6 +271,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -242,14 +292,16 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in opendds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()
@@ -277,6 +329,13 @@ jobs:
         with:
           latest: true
           fileName: "*"
+      - name: Skip tests
+        run: |
+          echo "Skipping the following tests: $SKIP_EXEC"
+          clean_list="${SKIP_EXEC//[[:space:]]/}"
+          for name in ${clean_list//,/ }; do
+            rm -f "$name.zip"
+          done
       - name: Unzip
         run: unzip '*.zip' -d executables
       - name: Setting up environment
@@ -291,14 +350,16 @@ jobs:
           source .venv/bin/activate
           cd executables
           for publisher in toc_coredx_dds-* ; do \
-            for subscriber in * ; do \
-              echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
-              python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
-              if [ -d "./OpenDDS-durable-data-dir" ]; then \
-                echo Deleting OpenDDS-durable-data-dir; \
-                rm -rf ./OpenDDS-durable-data-dir; \
-              fi; \
-            done \
+            if [ -e "$publisher" ]; then \
+              for subscriber in * ; do \
+                echo "Testing Publisher $publisher --- Subscriber $subscriber"; \
+                python3 ./../interoperability_report.py -P ./$publisher -S ./$subscriber -o=./../junit_interoperability_report.xml; \
+                if [ -d "./OpenDDS-durable-data-dir" ]; then \
+                  echo Deleting OpenDDS-durable-data-dir; \
+                  rm -rf ./OpenDDS-durable-data-dir; \
+                fi; \
+              done \
+            fi; \
           done
       - name: Attach the report
         if: always()

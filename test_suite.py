@@ -423,8 +423,8 @@ rtps_test_suite_1 = {
                         'The test passes if the publisher and subscriber do not discover each other\n'
     },
 
-    # COLOR
-    'Test_Color_0' : {
+    # Content Filtered Topic
+    'Test_Cft_0' : {
         'apps' : ['-P -t Square -r -c BLUE', '-P -t Square -r -c RED', '-S -t Square -r -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : tsf.test_color_receivers,

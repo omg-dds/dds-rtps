@@ -57,6 +57,12 @@
 #ifndef ADD_PARTITION
 #define ADD_PARTITION(field, value) StringSeq_push(field.name, value)
 #endif
+#ifndef DDS_BOOLEAN_TRUE
+#define DDS_BOOLEAN_TRUE true
+#endif
+#ifndef DDS_BOOLEAN_FALSE
+#define DDS_BOOLEAN_FALSE false
+#endif
 
 using namespace DDS;
 
@@ -268,6 +274,8 @@ public:
 
     bool                take_read_next_instance;
 
+    useconds_t          periodic_announcement_period_us;
+
 public:
     //-------------------------------------------------------------
     ShapeOptions()
@@ -320,6 +328,8 @@ public:
         additional_payload_size = 0;
 
         take_read_next_instance = true;
+
+        periodic_announcement_period_us = 0;
     }
 
     //-------------------------------------------------------------
@@ -386,11 +396,13 @@ public:
         printf("   --coherent-sample-count <int>: amount of samples sent for each DataWriter\n");
         printf("                                  and instance that are grouped in a coherent\n");
         printf("                                  set\n");
-        printf("   --additional-payload-size <bytes>: indicates the amount of bytes added to \n");
+        printf("   --additional-payload-size <bytes>: indicates the amount of bytes added to\n");
         printf("                                      the samples written (for example to use\n");
         printf("                                      large data)\n");
         printf("   --take-read           : uses take()/read() instead of take_next_instance()\n");
         printf("                           read_next_instance()\n");
+        printf("   --periodic-announcement <ms> : indicates the periodic participant\n");
+        printf("                                  announcement period in ms. Default 0 (off)\n");
     }
 
     //-------------------------------------------------------------
@@ -470,6 +482,7 @@ public:
             {"num-iterations", required_argument, NULL, 'n'},
             {"take-read", no_argument, NULL, 'K'},
             {"time-filter", required_argument, NULL, 'i'},
+            {"periodic-announcement", required_argument, NULL, 'N'},
             {NULL, 0, NULL, 0 }
         };
 
@@ -837,6 +850,23 @@ public:
             case 'K' :
                 take_read_next_instance = false;
                 break;
+            case 'N': {
+                int converted_param = 0;
+                if (sscanf(optarg, "%d", &converted_param) == 0) {
+                    logger.log_message("unrecognized value for periodic-announcement "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                } else if (converted_param < 0) {
+                    logger.log_message("incorrect value for periodic-announcement, "
+                            "it must be >=0 "
+                                + std::to_string(periodic_announcement_period_us),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                periodic_announcement_period_us = (useconds_t) converted_param * 1000;
+                break;
+            }
             case '?':
                 parse_ok = false;
                 break;
@@ -865,17 +895,19 @@ public:
                     "\n    Reading method = " + (use_read ? "read_next_instance" : "take_next_instance") +
                     "\n    Write period = " + std::to_string(write_period_us / 1000) + "ms" +
                     "\n    Read period = " + std::to_string(read_period_us / 1000) + "ms" +
-                    "\n    Lifespan: " + std::to_string(lifespan_us / 1000) + "ms" +
+                    "\n    Lifespan = " + std::to_string(lifespan_us / 1000) + "ms" +
                     "\n    Number of iterations = " + std::to_string(num_iterations) +
-                    "\n    Number of instances: " + std::to_string(num_instances) +
-                    "\n    Number of entities: " + std::to_string(num_topics) +
-                    "\n    Coherent sets: " + (coherent_set_enabled ? "true" : "false") +
-                    "\n    Ordered access: " + (ordered_access_enabled ? "true" : "false") +
-                    "\n    Access Scope: " + QosUtils::to_string(coherent_set_access_scope) +
-                    "\n    Coherent Sample Count: " + std::to_string(coherent_set_sample_count) +
-                    "\n    Additional Payload Size: " + std::to_string(additional_payload_size) +
-                    "\n    Final Instance State: "
-                            + (unregister ? "Unregister" : (dispose ? "Dispose" : "not specified")),
+                    "\n    Number of instances = " + std::to_string(num_instances) +
+                    "\n    Number of entities = " + std::to_string(num_topics) +
+                    "\n    Coherent sets = " + (coherent_set_enabled ? "true" : "false") +
+                    "\n    Ordered access = " + (ordered_access_enabled ? "true" : "false") +
+                    "\n    Access Scope = " + QosUtils::to_string(coherent_set_access_scope) +
+                    "\n    Coherent Sample Count = " + std::to_string(coherent_set_sample_count) +
+                    "\n    Additional Payload Size = " + std::to_string(additional_payload_size) +
+                    "\n    Final Instance State = "
+                            + (unregister ? "Unregister" : (dispose ? "Dispose" : "not specified")) +
+                    "\n    Periodic Announcement Period = "
+                            + std::to_string(periodic_announcement_period_us / 1000) + "ms",
                     Verbosity::DEBUG);
             if (topic_name != NULL){
                 logger.log_message("    Topic = " + std::string(topic_name),
@@ -1073,7 +1105,14 @@ public:
         CONFIGURE_PARTICIPANT_FACTORY
 #endif
 
-        dp = dpf->create_participant( options->domain_id, PARTICIPANT_QOS_DEFAULT, &dp_listener, LISTENER_STATUS_MASK_ALL );
+        DomainParticipantQos dp_qos;
+        dpf->get_default_participant_qos(dp_qos);
+
+#ifdef RTI_CONNEXT_DDS
+        configure_participant_announcements_period(dp_qos, options->periodic_announcement_period_us);
+#endif
+
+        dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, LISTENER_STATUS_MASK_ALL );
         if (dp == NULL) {
             logger.log_message("failed to create participant (missing license?).", Verbosity::ERROR);
             return false;
@@ -1140,7 +1179,7 @@ public:
 
         logger.log_message("Publisher QoS:", Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->coherent_set_enabled) {
             pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
         }
@@ -1149,6 +1188,22 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
+  #if  defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+            if ( pub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
+              {
+                logger.log_message("    Presentation Access Scope "
+                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+  #endif
+  #if  defined(INTERCOM_DDS)
+            if (pub_qos.presentation.coherent_access && pub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
+              {
+                logger.log_message("    Coherent Access with Presentation Access Scope "
+                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+  #endif
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1157,23 +1212,6 @@ public:
                 std::string(pub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
-
-#elif  defined(TWINOAKS_COREDX)
-        if (options->coherent_set_enabled) {
-            pub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled) {
-            pub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled || options->coherent_set_enabled) {
-            pub_qos.presentation.access_scope = options->coherent_set_access_scope;
-            if ( pub_qos.presentation.coherent_access >= GROUP_PRESENTATION_QOS )
-              {
-                logger.log_message("    Presentation Access Scope "
-                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
-              }
-        }
 
 #else
         logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
@@ -1259,26 +1297,26 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dw_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->lifespan_us > 0) {
+#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
-        }
-        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
-        logger.log_message("               " + std::to_string(dw_qos.lifespan.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
-#elif  defined(EPROSIMA_FAST_DDS)
-        if (options->lifespan_us > 0) {
+#elif defined(EPROSIMA_FAST_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration = Duration_t(options->lifespan_us * 1e-6);
-        }
-        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.seconds) + " secs", Verbosity::DEBUG);
-        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
-
-#else
-        logger.log_message("    Lifespan = Not supported", Verbosity::ERROR);
 #endif
+        }
+        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
+        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS)
         // usage of large data
+        if (PropertyQosPolicyHelper::assert_property(
+                dw_qos.property,
+                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+                "65536",
+                DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+            logger.log_message("failed to set property pool_buffer_max_size", Verbosity::ERROR);
+        }
         if (options->additional_payload_size > 64000) {
             dw_qos.publish_mode.kind = ASYNCHRONOUS_PUBLISH_MODE_QOS;
         }
@@ -1287,25 +1325,11 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->unregister) {
-#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX)
-            dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
-#elif defined(OPENDDS) || defined(INTERCOM_DDS)
-            dw_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
-#endif
+            dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
         }
         logger.log_message("    Autodispose_unregistered_instances = "
-                + std::string(dw_qos.writer_data_lifecycle.autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
-#elif defined(EPROSIMA_FAST_DDS)
-        if (options->unregister) {
-            dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = false;
-        }
-        logger.log_message("    Autodispose_unregistered_instances = "
-            + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
-#else
-        logger.log_message("    Autodispose_unregistered_instances = Not supported", Verbosity::ERROR);
-#endif
+                + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
 
         // Create different DataWriters (depending on the number of entities)
         // The DWs are attached to the same array index of the topics.
@@ -1354,7 +1378,7 @@ public:
 
         logger.log_message("Subscriber QoS:", Verbosity::DEBUG);
 
-#if   defined(RTI_CONNEXT_DDS)
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->coherent_set_enabled) {
             sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
         }
@@ -1363,30 +1387,22 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
-        }
-
-        logger.log_message("    Presentation Coherent Access = " +
-                std::string(sub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
-        logger.log_message("    Presentation Ordered Access = " +
-                std::string(sub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
-        logger.log_message("    Presentation Access Scope = " +
-                QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
-
-#elif defined(TWINOAKS_COREDX)
-        if (options->coherent_set_enabled) {
-            sub_qos.presentation.coherent_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled) {
-            sub_qos.presentation.ordered_access = DDS_BOOLEAN_TRUE;
-        }
-        if (options->ordered_access_enabled || options->coherent_set_enabled) {
-            sub_qos.presentation.access_scope = options->coherent_set_access_scope;
+  #if defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             if ( sub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
               {
                 logger.log_message("    Presentation Access Scope "
                                    + QosUtils::to_string(sub_qos.presentation.access_scope)
                                    + std::string(" : Not supported"), Verbosity::ERROR);
               }
+  #endif
+  #if defined(INTERCOM_DDS)
+            if (sub_qos.presentation.coherent_access && sub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
+              {
+                logger.log_message("    Coherent Access with Presentation Access Scope "
+                                   + QosUtils::to_string(sub_qos.presentation.access_scope)
+                                   + std::string(" : Not supported"), Verbosity::ERROR);
+              }
+  #endif
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1495,7 +1511,15 @@ public:
                     (i > 0 ? std::to_string(i) : "") +
                     "_filtered";
             const char* filtered_topic_name = filtered_topic_name_str.c_str();
-#if   defined(RTI_CONNEXT_DDS)
+#if defined(RTI_CONNEXT_DDS)
+                char parameter[64];
+                snprintf(parameter, 64, "'%s'",  options->color);
+                StringSeq_push(cf_params, parameter);
+
+                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color MATCH %0", cf_params);
+                logger.log_message("    ContentFilterTopic = \"color MATCH "
+                    + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
+#elif  defined(INTERCOM_DDS)
                 char parameter[64];
                 snprintf(parameter, 64, "'%s'",  options->color);
                 StringSeq_push(cf_params, parameter);
@@ -1508,15 +1532,6 @@ public:
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
-
-#elif defined(INTERCOM_DDS)
-                char parameter[64];
-                sprintf(parameter, "'%s'",  options->color);
-                StringSeq_push(cf_params, parameter);
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color = "
-                    + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
-
 #elif defined(EPROSIMA_FAST_DDS)
                 cf_params.push_back(std::string("'") + options->color + std::string("'"));
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
@@ -1804,7 +1819,6 @@ public:
         xvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
         yvel                   =  ((random() % 5) + 1) * ((random()%2)?-1:1);
 
-#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
         if (options->additional_payload_size > 0) {
             int size = options->additional_payload_size;
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, size, size);
@@ -1812,9 +1826,7 @@ public:
         } else {
             DDS_UInt8Seq_ensure_length(&shape.additional_payload_size FIELD_ACCESSOR, 0, 0);
         }
-#else
-        printf("DDS_UInt8Seq_ensure_length: Not supported\n");
-#endif
+
         while ( ! all_done ) {
             moveShape(&shape);
 
