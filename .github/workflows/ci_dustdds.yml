@@ -1,0 +1,31 @@
+name: CI DustDDS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+    - 'srcRs/DustDDS/**'
+
+jobs:
+  create_bin_release:
+    name: Create binary release
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: srcRs/DustDDS
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Build executable
+      run: cargo build --package dust_dds_shape_main_linux --release
+    - name: Rename executable
+      run: |
+        version=$( cargo tree --package dust_dds --depth 0 --prefix none | tr -d 'dust_dds v' )
+        cp ./target/release/dust_dds_shape_main_linux ./dust_dds-${version}_shape_main_linux
+        mkdir artifacts
+        zip --junk-paths artifacts/dust_dds-${version}_shape_main_linux.zip ./dust_dds-${version}_shape_main_linux
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: interoperability_executable
+        path: srcRs/DustDDS/artifacts/
