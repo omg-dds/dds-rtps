@@ -18,12 +18,10 @@ jobs:
       uses: actions/checkout@v4
     - name: Build executable
       run: cargo build --package dust_dds_shape_main_linux --release
-    - name: Determine DustDDS version
-      run: version=$( cargo tree --package dust_dds --depth 0 --prefix none --frozen | tr -d 'dust_dds v' )
-    - name: Add version to executable name
-      run: cp ./target/release/dust_dds_shape_main_linux ./dust_dds-${version}_shape_main_linux
-    - name: Zip executable
+    - name: Rename executable
       run: |
+        version=$( cargo tree --package dust_dds --depth 0 --prefix none | tr -d 'dust_dds v' )
+        cp ./target/release/dust_dds_shape_main_linux ./dust_dds-${version}_shape_main_linux
         mkdir artifacts
         zip --junk-paths artifacts/dust_dds-${version}_shape_main_linux.zip ./dust_dds-${version}_shape_main_linux
     - name: Upload executable artifact
