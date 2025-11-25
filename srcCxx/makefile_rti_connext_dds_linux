@@ -18,6 +18,10 @@ ifndef NDDSHOME
 $(error NDDSHOME not defined)
 endif
 
+ifndef CONNEXTDDS_ARCH
+$(error CONNEXTDDS_ARCH not defined)
+endif
+
 COMPILER_FLAGS = -m64
 LINKER_FLAGS = -m64 -static-libgcc
 
@@ -27,7 +31,7 @@ version_name = $(lastword $(split_path_name))
 common_name = "_shape_main_linux"
 executable_name = $(version_name)$(common_name)
 
-TARGET_ARCH = x64Linux4gcc7.3.0
+TARGET_ARCH = $(CONNEXTDDS_ARCH)
 
 ifndef COMPILER
 COMPILER = g++
@@ -73,7 +77,7 @@ shape_main.cxx : shape_configurator_rti_connext_dds.h
 
 # Generate type-specific sources
 $(AUTOGENSOURCES) : $(CDRSOURCES)
-	$(NDDSHOME)/bin/rtiddsgen $(CDRSOURCES) -replace -language C++
+	$(NDDSHOME)/bin/rtiddsgen $(CDRSOURCES) -replace -language C++ -unboundedSupport
 
 $(AUTOGENOBJS): |  objs/$(TARGET_ARCH)
 

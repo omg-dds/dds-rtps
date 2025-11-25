@@ -169,15 +169,15 @@ The Shape application allows the following parameters:
 
 ~~~
    --help, -h      : print this menu
+   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
    -P              : publish samples
    -S              : subscribe samples
    -d <int>        : domain id (default: 0)
    -b              : BEST_EFFORT reliability
    -r              : RELIABLE reliability
    -k <depth>      : keep history depth [0: KEEP_ALL]
-   -f <interval>   : set a 'deadline' with interval (seconds) [0: OFF]
-   -i <interval>   : apply 'time based filter' with interval (seconds) [0: OFF]
-   -s <int>        : set ownership strength [-1: SHARED]
+   -f <interval>   : set a 'deadline' with interval (ms) [0: OFF]
+   -s <strength>   : set ownership strength [-1: SHARED]
    -t <topic_name> : set the topic name
    -c <color>      : set color to publish (filter if subscriber)
    -p <partition>  : set a 'partition' string
@@ -191,8 +191,42 @@ The Shape application allows the following parameters:
                         Default: 33ms
    --read-period <ms> : waiting period between 'read()' or 'take()' operations
                         in ms. Default: 100ms
-   -v [e|d]        : set log message verbosity [e: ERROR, d: DEBUG]
-
+   --time-filter <interval> : apply 'time based filter' with interval 
+                              in ms [0: OFF]
+   --lifespan <int>      : indicates the lifespan of a sample in ms
+   --num-iterations <int>: indicates the number of iterations of the main loop
+                           After that, the application will exit.
+                           Default: infinite
+   --num-instances <int>: indicates the number of instances a DataWriter writes
+                          If the value is > 1, the additional instances are
+                          created by appending a number. For example, if the
+                          original color is "BLUE" the instances used are
+                          "BLUE", "BLUE1", "BLUE2"...
+   --num-topics <int>: indicates the number of topics created (using the same
+                       type). This also creates a DataReader or DataWriter per
+                       topic. If the value is > 1, the additional topic names
+                       are created by appending a number: For example, if the
+                       original topic name is "Square", the topics created are
+                       "Square", "Square1", "Square2"...
+   --final-instance-state [u|d]: indicates the action performed after the
+                                 DataWriter finishes its execution (before
+                                 deleting it):
+                                   - u: unregister
+                                   - d: dispose
+   --access-scope [i|t|g]: sets Presentation.access_scope to INSTANCE, TOPIC
+                           or GROUP
+   --coherent            : sets Presentation.coherent_access = true
+   --ordered             : sets Presentation.ordered_access = true
+   --coherent-sample-count <int>: amount of samples sent for each DataWriter
+                                  and instance that are grouped in a coherent
+                                  set
+   --additional-payload-size <bytes>: indicates the amount of bytes added to
+                                      the samples written (for example to use
+                                      large data)
+   --take-read           : uses take()/read() instead of take_next_instance()
+                           read_next_instance()
+   --periodic-announcement <ms> : indicates the periodic participant
+                                  announcement period in ms. Default 0 (off)
 ~~~
 
 ## Return Code
@@ -323,62 +357,72 @@ The `interoperability_report.py` may configure the following options:
 $ python3 interoperability_report.py -h
 
 usage: interoperability_report.py [-h] -P publisher_executable_name -S subscriber_executable_name
-                                  [-v] [-s test_suite_dictionary_file]
-                                  [-t test_cases [test_cases ...] | -d
-                                  test_cases_disabled
-                                  [test_cases_disabled ...]] [-o filename]
+                                  [-v] [-x {1,2}] [-a periodic_announcement_period]
+                                  [-s test_suite_dictionary_file]
+                                  [-t test_cases [test_cases ...] | -d test_cases_disabled [test_cases_disabled ...]]
+                                  [-o filename]
 
-Validation of interoperability of products compliant with OMG DDS-RTPS
-standard. This script generates automatically the verification between two
-shape_main executables. It also generates an XML report in JUnit format.
+Validation of interoperability of products compliant with OMG DDS-RTPS standard.
+This script generates automatically the verification between two shape_main
+executables. It also generates an XML report in JUnit format.
 
 optional arguments:
   -h, --help            show this help message and exit
 
 general options:
   -P publisher_executable_name, --publisher publisher_executable_name
-                        Path to the Publisher shape_main application. It may
-                        be absolute or relative path. Example: if the
-                        executable is in the same folder as the script: "-P
-                        ./rti_connext_dds-6.1.1_shape_main_linux".
+                        Path to the Publisher shape_main application. It may be
+                        absolute or relative path. Example: if the executable is
+                        in the same folder as the script:
+                        "-P ./rti_connext_dds-6.1.1_shape_main_linux".
   -S subscriber_executable_name, --subscriber subscriber_executable_name
-                        Path to the Subscriber shape_main application. It may
-                        be absolute or relative path. Example: if the
-                        executable is in the same folder as the script: "-S
-                        ./rti_connext_dds-6.1.1_shape_main_linux".
+                        Path to the Subscriber shape_main application. It may be
+                        absolute or relative path. Example: if the executable is
+                        in the same folder as the script:
+                        "-S ./rti_connext_dds-6.1.1_shape_main_linux".
 
 optional parameters:
   -v, --verbose         Print debug information to stdout. This option also
                         shows the shape_main application output in case of
-                        error. If this option is not used, only the test
-                        results are printed in the stdout. (Default: False).
+                        error. If this option is not used, only the test results
+                        are printed in the stdout.
+                        Default: False.
+  -x {1,2}, --data-representation {1,2}
+                        Data Representation used if no provided when running the
+                        shape_main application. If this application already sets
+                        the data representation, this parameter is not used. The
+                        potential values are 1 for XCDR1 and 2 for XCDR2.
+                        Default value 2.
+  -a periodic_announcement_period, --periodic-announcement periodic_announcement_ms
+                        Indicates the periodic participant announcement period in ms.
+                        Default: 0 (off).
 
 Test Case and Test Suite:
   -s test_suite_dictionary_file, --suite test_suite_dictionary_file
                         Test Suite that is going to be tested. Test Suite is a
                         file with a Python dictionary defined. It must be
-                        located on the same directory as
-                        interoperability_report. This value should not contain
-                        the extension ".py", only the name of the file. It
-                        will run all the dictionaries defined in the file.
-                        (Default: test_suite).
+                        located on the same directory as interoperability_report.
+                        This value should not contain the extension ".py", only
+                        the name of the file. It will run all the dictionaries
+                        defined in the file.
+                        Default: test_suite.
   -t test_cases [test_cases ...], --test test_cases [test_cases ...]
                         Test Case that the script will run. This option is not
                         supported with --disable-test. This allows to set
-                        multiple values separated by a space. (Default: run
-                        all Test Cases from the Test Suite.)
+                        multiple values separated by a space.
+                        Default: run all Test Cases from the Test Suite.
   -d test_cases_disabled [test_cases_disabled ...], --disable-test test_cases_disabled [test_cases_disabled ...]
-                        Test Case that the script will skip. This allows to
-                        set multiple values separated by a space. This option
-                        is not supported with --test. (Default: None)
+                        Test Case that the script will skip. This allows to set
+                        multiple values separated by a space. This option is not
+                        supported with --test.
+                        Default: None
 
 output options:
   -o filename, --output-name filename
                         Name of the xml report that will be generated. If the
-                        file passed already exists, it will add the new
-                        results to it. In other case it will create a new
-                        file. (Default:
-                        <publisher_name>-<subscriber_name>-date.xml)
+                        file passed already exists, it will add the new results
+                        to it. In other case it will create a new file.
+                        Default: <publisher_name>-<subscriber_name>-date.xml
 ```
 
 

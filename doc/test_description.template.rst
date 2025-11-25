@@ -60,6 +60,9 @@ product versions.
 
   * Content Filtered Topic expression created with single quotes around strings
     values
+  * Content Filtered Topic uses MATCH operator for string comparisons.
+  * Increased the periodic discovery announcements to 5s in the tests where
+    the subscriber is OpenDDS and the publisher is Connext DDS.
 
 * **FastDDS**:
 
@@ -73,9 +76,13 @@ product versions.
 
 * **OpenDDS**:
 
+  * The commands used to build OpenDDS and the test can be found [here](https://github.com/OpenDDS/OpenDDS/blob/master/.github/workflows/dds-rtps.yml). None of the options used affect interoperability. See the [OpenDDS Developer's Guide](https://opendds.readthedocs.io/en/latest-release/devguide/introduction.html#building-and-configuring-for-interoperability) for additional information about interoperability.
+  * OpenDDS specific configuration for the test can be found in [shape_configurator_opendds.h](https://github.com/omg-dds/dds-rtps/blob/master/srcCxx/shape_configurator_opendds.h). A brief description is:
+    * Use RTPS as the default transport
+    * Use RTPS as the default discovery mechanism
+    * Disable XTypes Support
   * Content Filtered Topic expression created without single quotes around
     strings values
-  * Disabled XTypes Support
 
 * **CoreDX DDS**:
 
@@ -89,5 +96,8 @@ product versions.
   * Set environment variable `COREDX_UDP_RX_BUFFER_SIZE` to `65536` that
     increases the buffer sizes to that value
 
+* **Dust DDS**:
+
+  *  Content Filtered Topic disabled
 
 |TEST_DESCRIPTION|

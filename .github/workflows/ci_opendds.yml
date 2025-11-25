@@ -1,0 +1,120 @@
+name: CI OpenDDS
+on:
+  pull_request:
+  push:
+  schedule:
+    - cron: '10 0 * * 0'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        dds:
+          - opendds
+        runner:
+          - ubuntu-24.04
+
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: 'Checkout dds-rtps'
+        uses: actions/checkout@v4
+      - name: 'Checkout MPC'
+        uses: actions/checkout@v4
+        with:
+          repository: DOCGroup/MPC
+          path: MPC
+          fetch-depth: 1
+      - name: 'Checkout ACE_TAO'
+        uses: actions/checkout@v4
+        with:
+          repository: DOCGroup/ACE_TAO
+          ref: ace6tao2
+          path: ACE_TAO
+          fetch-depth: 1
+      - name: 'Checkout OpenDDS'
+        uses: actions/checkout@v4
+        with:
+          repository: OpenDDS/OpenDDS
+          ref: latest-release
+          path: OpenDDS
+          fetch-depth: 1
+          submodules: true
+      - name: 'Set environment variables'
+        shell: bash
+        run: |-
+          echo "ACE_ROOT=$GITHUB_WORKSPACE/ACE_TAO/ACE" >> $GITHUB_ENV
+          echo "TAO_ROOT=$GITHUB_WORKSPACE/ACE_TAO/TAO" >> $GITHUB_ENV
+          echo "DDS_ROOT=$GITHUB_WORKSPACE/OpenDDS" >> $GITHUB_ENV
+          echo "MPC_ROOT=$GITHUB_WORKSPACE/MPC" >> $GITHUB_ENV
+          export COMPILER_VERSION=$(c++ --version 2>&1 | head -n 1)
+          echo "COMPILER_VERSION=$COMPILER_VERSION" >> $GITHUB_ENV
+          echo "OBJ_EXT=\\.o" >> $GITHUB_ENV
+          cd ACE_TAO
+          export ACE_COMMIT=$(git rev-parse HEAD)
+          echo "ACE_COMMIT=$ACE_COMMIT" >> $GITHUB_ENV
+          cd ../OpenDDS
+          export DDS_COMMIT=$(git rev-parse HEAD)
+          echo "DDS_COMMIT=$DDS_COMMIT" >> $GITHUB_ENV
+          export MATRIX_MD5=$(echo "${{ matrix }}" | md5sum | cut -d ' ' -f 1)
+          echo "MATRIX_MD5=$MATRIX_MD5" >> $GITHUB_ENV
+          export COMPILER_MD5=$(echo "$COMPILER_VERSION" | md5sum | cut -d ' ' -f 1)
+          echo "COMPILER_MD5=$COMPILER_MD5" >> $GITHUB_ENV
+          export CONFIG_OPTIONS="--optimize --no-debug --static --no-inline"
+          echo "CONFIG_OPTIONS=$CONFIG_OPTIONS" >> $GITHUB_ENV
+          export CONFIG_MD5=$(echo "$CONFIG_OPTIONS" | md5sum | cut -d ' ' -f 1)
+          echo "CONFIG_MD5=$CONFIG_MD5" >> $GITHUB_ENV
+      - name: 'Check Build Cache'
+        id: cache-build
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.MATRIX_MD5 }}.tar.xz
+          key: c01_${{ env.MATRIX_MD5 }}_${{ env.COMPILER_MD5 }}_${{ env.ACE_COMMIT }}_${{ env.DDS_COMMIT }}_${{ env.CONFIG_MD5 }}
+      - name: 'Extract Build Cache'
+        if: steps.cache-build.outputs.cache-hit == 'true'
+        shell: bash
+        run: |
+          tar xvfJ ${{ env.MATRIX_MD5 }}.tar.xz
+      - name: 'Configure OpenDDS'
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        shell: bash
+        run: |-
+          cd OpenDDS
+          ./configure ${{ env.CONFIG_OPTIONS }}
+          tools/scripts/show_build_config.pl
+      - name: 'Build OpenDDS'
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        shell: bash
+        run: |-
+          cd OpenDDS
+          . setenv.sh
+          make -j3 OpenDDS_Rtps_Udp
+      - name: 'Create Build Cache'
+        if: steps.cache-build.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          cd ACE_TAO
+          find . -iname "*$OBJ_EXT" | xargs rm
+          git clean -xdn | cut -d ' ' -f 3- | sed 's/^/ACE_TAO\//g' | tee ../ACE_TAO_files.txt
+          cd ..
+          tar cvf ${{ env.MATRIX_MD5 }}.tar ACE_TAO/ACE/ace/config.h
+          cat ACE_TAO_files.txt | xargs tar uvf ${{ env.MATRIX_MD5 }}.tar
+          cd OpenDDS
+          find . -iname "*$OBJ_EXT" | xargs rm
+          git clean -xdn | cut -d ' ' -f 3- | sed 's/^/OpenDDS\//g' | tee ../OpenDDS_files.txt
+          cd ..
+          cat OpenDDS_files.txt | xargs tar uvf ${{ env.MATRIX_MD5 }}.tar
+          xz -3 ${{ env.MATRIX_MD5 }}.tar
+      - name: 'Set Up Problem Matcher'
+        uses: ammaraskar/gcc-problem-matcher@0.3.0
+      - name: 'Build Application'
+        shell: bash
+        run: |-
+          cmake -G Ninja -S srcCxx/opendds-cmake -B build -D OpenDDS_ROOT=OpenDDS
+          cmake --build build

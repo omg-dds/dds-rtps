@@ -19,7 +19,7 @@ usage() {
     echo "  -p, --publisher   Specify the publisher application"
     echo "  -s, --subscriber  Specify the subscriber application"
     echo "  -o, --output      Specify the output XML file"
-    echo "  -i, --input       Specify the directory where publisher/subscriber applications are located"
+    echo "  -i, --input       Specify the directory where publisher/subscriber applications are located (only if -p and -s are not provided)"
     echo "  -h, --help        Print this help message"
     echo "Examples:"
     echo "Run Connext as publisher and all executables under './executables' as subscribers"
@@ -59,7 +59,7 @@ done
 # If publisher is not provided, find publisher applications
 if [[ -z $publisher ]]; then
     echo "Searching for publisher applications in directory: $input"
-    publisher=$(find "$input" -type f -name '*_shape_main_linux')
+    publisher=$(find "$input" -type f -name '*shape_main_linux')
 fi
 
 # If subscriber is not provided, find subscriber applications
@@ -80,10 +80,14 @@ for i in $publisher; do
         publisher_name=$(basename "$i" _shape_main_linux)
         subscriber_name=$(basename "$j" _shape_main_linux)
         echo "Testing Publisher $publisher_name --- Subscriber $subscriber_name"
+        extra_args=""
+        if [[ "${subscriber,,}" == *opendds* && "${publisher,,}" == *connext* ]]; then
+            extra_args="--periodic-announcement 5000"
+        fi;
         if [[ -n $output ]]; then
-            python3 ./interoperability_report.py -P "$i" -S "$j" -o "$output"
+            python3 ./interoperability_report.py -P "$i" -S "$j" -o "$output" $extra_args
         else
-            python3 ./interoperability_report.py -P "$i" -S "$j"
+            python3 ./interoperability_report.py -P "$i" -S "$j" $extra_args
         fi
         if [ -d "./OpenDDS-durable-data-dir" ]; then
             echo Deleting OpenDDS-durable-data-dir;

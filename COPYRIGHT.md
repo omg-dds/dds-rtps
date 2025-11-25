@@ -13,9 +13,16 @@ Copyright holders
 -----------------
 
 © 2024 Real-Time Innovations, Inc.
+
 © 2024 Atostek Oy.
+
 © 2024 Proyectos y Sistemas de Mantenimiento SL (eProsima).
+
 © 2024 Kongsberg Defence & Aerospace.
+
 © 2024 Object Computing, Inc.
+
 © 2024 OpenDDS Foundation.
+
 © 2024 Twin Oaks Computing, Inc.
+© 2024 S2E Software Systems B.V.

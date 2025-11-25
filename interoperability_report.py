@@ -19,12 +19,48 @@ from datetime import datetime
 import tempfile
 from os.path import exists
 import inspect
+import platform
+
+if __name__ == "__main__" and platform.system() == "Darwin":
+    multiprocessing.set_start_method('fork')
 
 from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_colors
 
 # This parameter is used to save the samples the Publisher sends.
 # MAX_SAMPLES_SAVED is the maximum number of samples saved.
 MAX_SAMPLES_SAVED = 500
+
+def stop_process(child_process, timeout=30, poll_interval=0.2):
+    """
+    Stops a pexpect child process using SIGINT (Ctrl+C),
+    and forcefully terminates it if it doesn't exit within the timeout.
+
+    Parameters:
+        child_process (pexpect.spawn): The process to stop.
+        timeout (int): Max time (in seconds) to wait for graceful exit.
+        poll_interval (float): Time between checks in seconds.
+
+    Returns:
+        bool: True if process exited gracefully, False if it was killed.
+    """
+    if child_process.isalive():
+        try:
+            child_process.sendintr()
+        except Exception as e:
+            return True  # Process already exited
+    else:
+        return True  # Process already exited
+
+    start_time = time.time()
+
+    while child_process.isalive() and (time.time() - start_time < timeout):
+        time.sleep(poll_interval)
+
+    if child_process.isalive():
+        child_process.terminate(force=True)
+        return False  # Process was forcefully terminated
+
+    return True
 
 def run_subscriber_shape_main(
         name_executable: str,
@@ -33,6 +69,7 @@ def run_subscriber_shape_main(
         produced_code_index: int,
         subscriber_index: int,
         samples_sent: "list[multiprocessing.Queue]",
+        last_sample_saved: "list[multiprocessing.Queue]",
         verbosity: bool,
         timeout: int,
         file: tempfile.TemporaryFile,
@@ -56,6 +93,9 @@ def run_subscriber_shape_main(
         samples_sent <<in>>: list of multiprocessing Queues with the samples
                 the Publishers send. Element 1 of the list is for
                 Publisher 1, etc.
+        last_sample_saved <<in>>: list of multiprocessing Queues with the last
+                sample saved on samples_sent for each Publisher. Element 1 of
+                the list is for Publisher 1, etc.
         verbosity <<in>>: print debug information.
         timeout <<in>>: time pexpect waits until it matches a pattern.
         file <<inout>>: temporal file to save shape_main application output.
@@ -126,9 +166,8 @@ def run_subscriber_shape_main(
         elif index == 2:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
         elif index == 0:
-            # Step 4: Check if the reader matches the writer
-            log_message(f'Subscriber {subscriber_index}: Waiting for matching '
-                    'DataWriter', verbosity)
+            # Step 4: Read data or incompatible qos or deadline missed
+            log_message(f'Subscriber {subscriber_index}: Waiting for data', verbosity)
             index = child_sub.expect(
                 [
                     '\[[0-9]+\]', # index = 0
@@ -156,15 +195,19 @@ def run_subscriber_shape_main(
                 # to the Subscriber. By default it does not check
                 # anything and returns ReturnCode.OK.
                 produced_code[produced_code_index] = check_function(
-                    child_sub, samples_sent, timeout)
+                    child_sub, samples_sent, last_sample_saved, timeout)
 
     subscriber_finished.set()   # set subscriber as finished
     log_message(f'Subscriber {subscriber_index}: Waiting for Publishers to '
             'finish', verbosity)
     for element in publishers_finished:
-        element.wait()   # wait for all publishers to finish
-    # Send SIGINT to nicely close the application
-    child_sub.sendintr()
+        element.wait() # wait for all publishers to finish
+    # Stop process
+    if not stop_process(child_sub):
+        log_message(f'Subscriber {subscriber_index} process did not exit '
+                    'gracefully; it was forcefully terminated.',
+                    verbosity)
+
     return
 
 
@@ -175,6 +218,7 @@ def run_publisher_shape_main(
         produced_code_index: int,
         publisher_index: int,
         samples_sent: multiprocessing.Queue,
+        last_sample_saved: multiprocessing.Queue,
         verbosity: bool,
         timeout: int,
         file: tempfile.TemporaryFile,
@@ -196,6 +240,8 @@ def run_publisher_shape_main(
                 publisher it is 1, for the second 2, etc.
         samples_sent <<out>>: this variable contains the samples
                 the Publisher sends.
+        last_sample_saved <<out>>: this variable contains the last sample
+                saved on samples_sent.
         verbosity <<in>>: print debug information.
         timeout <<in>>: time pexpect waits until it matches a pattern.
         file <<inout>>: temporal file to save shape_main application output.
@@ -281,7 +327,7 @@ def run_publisher_shape_main(
                 # such as reliability.
                 # In the case that the option -w is not selected, the Publisher
                 # will only save the ReturnCode OK.
-                if '-w' in parameters:
+                if '-w ' in parameters or parameters.endswith('-w'):
                     # Step 5: Check whether the writer sends the samples
                     index = child_pub.expect([
                             '\[[0-9]+\]', # index = 0
@@ -298,12 +344,14 @@ def run_publisher_shape_main(
                         produced_code[produced_code_index] = ReturnCode.OK
                         log_message(f'Publisher {publisher_index}: Sending '
                                 'samples', verbosity)
+                        last_sample = ''
                         for x in range(0, MAX_SAMPLES_SAVED, 1):
                             # At this point, at least one sample has been printed
                             # Therefore, that sample is added to samples_sent.
                             pub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
                                     child_pub.before + child_pub.after)
-                            samples_sent.put(pub_string.group(0))
+                            last_sample = pub_string.group(0)
+                            samples_sent.put(last_sample)
                             index = child_pub.expect([
                                     '\[[0-9]+\]', # index = 0
                                     'on_offered_deadline_missed()', # index = 1
@@ -316,6 +364,7 @@ def run_publisher_shape_main(
                             elif index == 2:
                                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                                 break
+                        last_sample_saved.put(last_sample)
                 else:
                     produced_code[produced_code_index] = ReturnCode.OK
 
@@ -324,8 +373,12 @@ def run_publisher_shape_main(
     for element in subscribers_finished:
         element.wait() # wait for all subscribers to finish
     publisher_finished.set()   # set publisher as finished
-    # Send SIGINT to nicely close the application
-    child_pub.sendintr()
+    # Stop process
+    if not stop_process(child_pub):
+        log_message(f'Publisher {publisher_index} process did not exit '
+                    'gracefully; it was forcefully terminated.',
+                    verbosity)
+
     return
 
 
@@ -397,6 +450,7 @@ def run_test(
     return_codes = manager.list(range(num_entities))
     samples_sent = [] # used for storing the samples the Publishers send.
                       # It is a list with one Queue for each Publisher.
+    last_sample_saved = [] # used for storing the last value sent by each Publisher.
 
     # list of multiprocessing Events used as semaphores to control the end of
     # the processes, one for each entity.
@@ -421,6 +475,7 @@ def run_test(
         if ('-P ' in element or element.endswith('-P')):
             publishers_finished.append(multiprocessing.Event())
             samples_sent.append(multiprocessing.Queue())
+            last_sample_saved.append(multiprocessing.Queue())
         elif ('-S ' in element or element.endswith('-S')):
             subscribers_finished.append(multiprocessing.Event())
         else:
@@ -440,6 +495,7 @@ def run_test(
                         'produced_code_index':i,
                         'publisher_index':publisher_number+1,
                         'samples_sent':samples_sent[publisher_number],
+                        'last_sample_saved':last_sample_saved[publisher_number],
                         'verbosity':verbosity,
                         'timeout':timeout,
                         'file':temporary_file[i],
@@ -463,6 +519,7 @@ def run_test(
                         'produced_code_index':i,
                         'subscriber_index':subscriber_number+1,
                         'samples_sent':samples_sent,
+                        'last_sample_saved':last_sample_saved,
                         'verbosity':verbosity,
                         'timeout':timeout,
                         'file':temporary_file[i],
@@ -585,7 +642,8 @@ class Arguments:
             help='Print debug information to stdout. This option also shows the '
                 'shape_main application output in case of error. '
                 'If this option is not used, only the test results are printed '
-                'in the stdout. (Default: False).')
+                'in the stdout. '
+                'Default: False')
         optional.add_argument('-x','--data-representation',
             default="2",
             required=None,
@@ -593,9 +651,17 @@ class Arguments:
             choices=["1","2"],
             help='Data Representation used if no provided when running the '
                 'shape_main application. If this application already sets the '
-                'data representation, this parameter is not used.'
+                'data representation, this parameter is not used. '
                 'The potential values are 1 for XCDR1 and 2 for XCDR2.'
                 'Default value 2.')
+
+        optional.add_argument('-a', '--periodic-announcement',
+            default=0,
+            required=False,
+            type=int,
+            metavar='periodic_announcement_ms',
+            help='Indicates the periodic participant announcement period in ms. '
+                'Default: 0 (off).')
 
         tests = parser.add_argument_group(title='Test Case and Test Suite')
         tests.add_argument('-s', '--suite',
@@ -609,7 +675,7 @@ class Arguments:
                 'This value should not contain the extension ".py", '
                 'only the name of the file. '
                 'It will run all the dictionaries defined in the file. '
-                '(Default: test_suite).')
+                'Default: test_suite.')
 
         enable_disable = tests.add_mutually_exclusive_group(required=False)
         enable_disable.add_argument('-t', '--test',
@@ -621,7 +687,7 @@ class Arguments:
             help='Test Case that the script will run. '
                 'This option is not supported with --disable-test. '
                 'This allows to set multiple values separated by a space. '
-                '(Default: run all Test Cases from the Test Suite.)')
+                'Default: run all Test Cases from the Test Suite.')
         enable_disable.add_argument('-d', '--disable-test',
             nargs='+',
             default=None,
@@ -630,7 +696,8 @@ class Arguments:
             metavar='test_cases_disabled',
             help='Test Case that the script will skip. '
                 'This allows to set multiple values separated by a space. '
-                'This option is not supported with --test. (Default: None)')
+                'This option is not supported with --test. '
+                'Default: None')
 
         out_opts = parser.add_argument_group(title='output options')
         out_opts.add_argument('-o', '--output-name',
@@ -641,7 +708,7 @@ class Arguments:
                 'If the file passed already exists, it will add '
                 'the new results to it. In other case it will create '
                 'a new file. '
-                '(Default: <publisher_name>-<subscriber_name>-date.xml)')
+                'Default: <publisher_name>-<subscriber_name>-date.xml')
 
         return parser
 
@@ -668,6 +735,7 @@ def main():
         'test_cases': args.test,
         'test_cases_disabled': args.disable_test,
         'data_representation': args.data_representation,
+        'periodic_announcement_ms': args.periodic_announcement,
     }
 
     # The executables's names are supposed to follow the pattern: name_shape_main
@@ -700,7 +768,7 @@ def main():
     # applications. A TestSuite contains a collection of TestCases.
     suite = junitparser.TestSuite(f"{name_publisher}---{name_subscriber}")
 
-    timeout = 10
+    timeout = 15
     now = datetime.now()
 
     t_suite_module = importlib.import_module(options['test_suite'])
@@ -754,9 +822,16 @@ def main():
 
                     assert(len(parameters) == len(expected_codes))
 
-                    for element in parameters:
+                    for i,element in enumerate(parameters):
                         if not '-x ' in element:
-                            element += f'-x {options["data_representation"]}'
+                            element += f' -x {options["data_representation"]}'
+                        # Add periodic announcement argument if needed
+                        if options['periodic_announcement_ms'] > 0 \
+                                and not '--periodic-announcement ' in element \
+                                and 'connext' in options['publisher'].lower() \
+                                and '-P' in element:
+                            element += f' --periodic-announcement {options["periodic_announcement_ms"]}'
+                        parameters[i] = element  # Update the list in place
 
                     case = junitparser.TestCase(f'{test_suite_name}_{test_case_name}')
                     now_test_case = datetime.now()
