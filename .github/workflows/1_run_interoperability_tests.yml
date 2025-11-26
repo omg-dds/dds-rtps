@@ -1,5 +1,5 @@
 name: 1 - Run Interoperability Tests
-run-name: Run Interoperability Tests by ${{ github.actor }}
+run-name: Run Interoperability Tests
 on: workflow_dispatch
 jobs:
   generate_timestamp:
@@ -19,8 +19,8 @@ jobs:
     needs: generate_timestamp
     strategy:
       matrix:
-        publisher: [dust_dds, eprosima_fastdds] #[connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
-        subscriber: [dust_dds, eprosima_fastdds] #[connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
+        publisher: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
+        subscriber: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
 
     steps:
     - name: Checkout sources
@@ -40,7 +40,7 @@ jobs:
     - name: Install Python requirements
       run: pip install --requirement requirements.txt
     - name: Run Interoperability script
-      timeout-minutes: 30
+      timeout-minutes: 60
       run: python3 interoperability_report.py --publisher executables/${{ matrix.publisher }}*shape_main_linux --subscriber executables/${{ matrix.subscriber }}*shape_main_linux --output-name junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
     - name: Download timestamp
       uses: actions/download-artifact@v4
