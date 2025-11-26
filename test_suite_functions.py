@@ -21,6 +21,86 @@ MAX_SAMPLES_READ = 500
 def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
     """
+    This function is used by test cases that have several publishers and one
+    subscriber.
+    This tests that the Ownership QoS works correctly. In order to do that the
+    function checks if the subscriber has received samples from one publisher or
+    from both. Each publisher should publish data with a different size.
+    A subscriber has received from both publishers if there is a sample
+    from each publisher interleaved. This is done to make sure the subscriber
+    did not started receiving samples from the publisher that was run before,
+    and then change to the publisher with the greatest ownership.
+
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern.
+
+    This functions assumes that the subscriber has already received samples
+    from, at least, one publisher.
+    """
+    ignore_first_samples = True
+    max_samples_received = MAX_SAMPLES_READ
+    samples_read = 0
+    sizes_received = []
+    last_size_received = 0
+
+    while(samples_read < max_samples_received):
+        # take the topic, color, position and size of the ShapeType.
+        # child_sub.before contains x and y, and child_sub.after contains
+        # [shapesize]
+        # Example: child_sub.before contains 'Square     BLUE       191 152'
+        #          child_sub.after contains '[30]'
+        sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
+            child_sub.before + child_sub.after)
+        # sub_string contains 'x y [shapesize]', example: '191 152 [30]'
+
+        # Determine from which publisher the current sample belongs to
+        # size determines the publisher
+        if sub_string is not None:
+            if int(sub_string.group(1)) not in sizes_received:
+                last_size_received = int(sub_string.group(1))
+                sizes_received.append(last_size_received)
+        else:
+            return ReturnCode.DATA_NOT_RECEIVED
+
+        # A potential case is that the reader gets data from one writer and
+        # then start receiving from a different writer with a higher
+        # ownership. This avoids returning RECEIVING_FROM_BOTH if this is
+        # the case.
+        # This if is only run once we process the first sample received by the
+        # subscriber application
+        if ignore_first_samples == True and len(sizes_received) == 2:
+            # if we have received samples from both publishers, then we stop
+            # ignoring samples
+            ignore_first_samples = False
+            # only leave the last received sample in the sizes_received list
+            sizes_received.clear()
+            sizes_received.append(last_size_received)
+
+        # Get the next samples the subscriber is receiving
+        index = child_sub.expect(
+            [
+                '\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT, # index = 1
+            ],
+            timeout
+        )
+        if index == 1:
+            break
+
+        samples_read += 1
+
+    print(f'Samples read: {samples_read}')
+    if len(sizes_received) == 2:
+        return ReturnCode.RECEIVING_FROM_BOTH
+    elif len(sizes_received) == 1:
+        return ReturnCode.RECEIVING_FROM_ONE
+    return ReturnCode.DATA_NOT_RECEIVED
+
+def test_ownership_receivers_by_samples_sent(child_sub, samples_sent, last_sample_saved, timeout):
+
+    """
     This function is used by test cases that have two publishers and one subscriber.
     This tests that the Ownership QoS works correctly. In order to do that the
     function checks if the subscriber has received samples from one publisher or
@@ -48,6 +128,8 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
     list_data_received_second = []
     list_data_received_first = []
     max_samples_received = MAX_SAMPLES_READ
+    max_retries = 500
+    current_retries = 0
     samples_read = 0
     list_samples_processed = []
     last_first_sample = ''
@@ -113,7 +195,13 @@ def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout
             print(f'Last samples: {last_first_sample}, {last_second_sample}')
             # Otherwise, wait a bit and continue
             time.sleep(0.1)
+            current_retries += 1
+            if current_retries > max_retries:
+                print('Max retries exceeded')
+                return ReturnCode.DATA_NOT_CORRECT
             continue
+
+        current_retries = 0
 
         # Keep all samples processed in a single list, so we can check whether
         # the last sample published by any publisher has already been processed

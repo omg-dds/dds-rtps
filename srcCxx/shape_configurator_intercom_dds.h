@@ -13,6 +13,9 @@
 #define DDS_UInt8Seq_ensure_length(s,l,x)  (s)->resize(l)
 #define DDS_UInt8Seq_get_reference(s,l)    &( (*s)[l] )
 
+#define DDS_BOOLEAN_TRUE                   true
+#define DDS_BOOLEAN_FALSE                  false
+
 inline const char *get_qos_policy_name(DDS::QosPolicyId_t policy_id) {
   switch (policy_id) {
   case DDS::USERDATA_QOS_POLICY_ID:

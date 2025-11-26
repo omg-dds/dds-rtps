@@ -65,3 +65,18 @@ uint64_t DDS_UInt8Seq_get_length(const std::vector<unsigned char>* seq)
 {
   return seq->size();
 }
+
+void DDS_UInt8Seq_ensure_length(std::vector<unsigned char>* seq, uint64_t length, uint64_t = 0)
+{
+  seq->resize(length);
+}
+
+unsigned char* DDS_UInt8Seq_get_reference(std::vector<unsigned char>* seq, uint64_t index)
+{
+  return &((*seq)[index]);
+}
+
+const unsigned char* DDS_UInt8Seq_get_reference(const std::vector<unsigned char>* seq, uint64_t index)
+{
+  return &((*seq)[index]);
+}
