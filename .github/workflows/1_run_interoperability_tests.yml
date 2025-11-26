@@ -1,19 +1,18 @@
 name: 1 - Run Interoperability Tests
-run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
+run-name: Run Interoperability Tests by ${{ github.actor }}
 on: workflow_dispatch
 jobs:
   generate_timestamp:
     runs-on: ubuntu-latest
     steps:
-      - name: Generate timestamp file
-        run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
-      - name: Attach the report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: timestamp
-          path: |
-            ./timestamp
+    - name: Generate timestamp file
+      run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
+    - name: Upload timestamp file
+      uses: actions/upload-artifact@v4
+      with:
+        name: timestamp
+        path: |
+          ./timestamp
 
   run_tests:
     runs-on: ubuntu-latest
