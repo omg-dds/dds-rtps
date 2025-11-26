@@ -73,6 +73,11 @@ jobs:
         run: junitparser merge *.xml junit_interoperability_report.xml
       - name: Generate xlsx report
         run: python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
+      - name: XUnit
+        uses: AutoModality/action-xunit-viewer@v1
+        with:
+          results: ./junit_interoperability_report.xml
+          fail: false
       - name: Download timestamp
         uses: actions/download-artifact@v4
         with:
