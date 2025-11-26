@@ -7,6 +7,10 @@ on:
         description: Publishers to use
         type: string
         default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]'
+      subscribers:
+        description: Subscribers to use
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]'
 jobs:
   generate_timestamp:
     runs-on: ubuntu-latest
@@ -26,7 +30,7 @@ jobs:
     strategy:
       matrix:
         publisher: ${{ fromJson(github.event.inputs.publishers) }}
-        subscriber: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
+        subscriber: ${{ fromJson(github.event.inputs.subscribers) }}
 
     steps:
     - name: Checkout sources
