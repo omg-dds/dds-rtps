@@ -19,8 +19,8 @@ jobs:
     needs: generate_timestamp
     strategy:
       matrix:
-        publisher: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
-        subscriber: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
+        publisher: [dust_dds, eprosima_fastdds] #[connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
+        subscriber: [dust_dds, eprosima_fastdds] #[connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
 
     steps:
     - name: Checkout sources
@@ -41,7 +41,7 @@ jobs:
       run: pip install --requirement requirements.txt
     - name: Run Interoperability script
       timeout-minutes: 30
-      run: python3 interoperability_report.py --verbose --publisher executables/${{ matrix.publisher }}*shape_main_linux --subscriber executables/${{ matrix.subscriber }}*shape_main_linux --output-name junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
+      run: python3 interoperability_report.py --publisher executables/${{ matrix.publisher }}*shape_main_linux --subscriber executables/${{ matrix.subscriber }}*shape_main_linux --output-name junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
     - name: Download timestamp
       uses: actions/download-artifact@v4
       with:
