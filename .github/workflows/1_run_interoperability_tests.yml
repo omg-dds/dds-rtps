@@ -1,6 +1,12 @@
 name: 1 - Run Interoperability Tests
 run-name: Run Interoperability Tests
-on: workflow_dispatch
+on:
+  workflow_dispatch:
+    inputs:
+      publishers:
+        description: Publishers to use
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]'
 jobs:
   generate_timestamp:
     runs-on: ubuntu-latest
@@ -19,7 +25,7 @@ jobs:
     needs: generate_timestamp
     strategy:
       matrix:
-        publisher: ${{ fromJson(github.event.inputs.publishers || '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]') }}
+        publisher: ${{ fromJson(github.event.inputs.publishers) }}
         subscriber: [connext_dds, dust_dds, eprosima_fastdds, intercom_dds, opendds, toc_coredx_dds]
 
     steps:
