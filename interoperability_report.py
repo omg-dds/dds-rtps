@@ -170,7 +170,7 @@ def run_subscriber_shape_main(
             log_message(f'Subscriber {subscriber_index}: Waiting for data', verbosity)
             index = child_sub.expect(
                 [
-                    '\[[0-9]+\]', # index = 0
+                    r'\[[0-9]+\]', # index = 0
                     'on_requested_incompatible_qos()', # index = 1
                     'on_requested_deadline_missed()', # index = 2
                     pexpect.TIMEOUT, # index = 3
@@ -330,7 +330,7 @@ def run_publisher_shape_main(
                 if '-w ' in parameters or parameters.endswith('-w'):
                     # Step 5: Check whether the writer sends the samples
                     index = child_pub.expect([
-                            '\[[0-9]+\]', # index = 0
+                            r'\[[0-9]+\]', # index = 0
                             'on_offered_deadline_missed()', # index = 1
                             pexpect.TIMEOUT, # index = 2
                             pexpect.EOF # index == 3
@@ -348,12 +348,12 @@ def run_publisher_shape_main(
                         for x in range(0, MAX_SAMPLES_SAVED, 1):
                             # At this point, at least one sample has been printed
                             # Therefore, that sample is added to samples_sent.
-                            pub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
+                            pub_string = re.search(r'[0-9]+ [0-9]+ \[[0-9]+\]',
                                     child_pub.before + child_pub.after)
                             last_sample = pub_string.group(0)
                             samples_sent.put(last_sample)
                             index = child_pub.expect([
-                                    '\[[0-9]+\]', # index = 0
+                                    r'\[[0-9]+\]', # index = 0
                                     'on_offered_deadline_missed()', # index = 1
                                     pexpect.TIMEOUT # index = 2
                                 ],

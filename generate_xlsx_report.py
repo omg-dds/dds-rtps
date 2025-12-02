@@ -9,6 +9,7 @@
 #################################################################
 
 import argparse
+from io import BytesIO
 import junitparser
 import lxml
 import pathlib
@@ -168,8 +169,11 @@ class JunitData:
     @staticmethod
     def xml_parser(file):
         """Function to parse the XML file"""
+        # Remove null bytes from the file
+        with open(file, "rb") as f:
+            data = f.read().replace(b"\x00", b"")
         parser = lxml.etree.XMLParser(huge_tree=True)
-        return lxml.etree.parse(file, parser)
+        return lxml.etree.parse(BytesIO(data), parser)
 
     def update_value_aggregated_data_dict(self,
             dictionary: dict,

@@ -18,26 +18,26 @@ ifndef RTIMEHOME
 $(error RTIMEHOME not defined)
 endif
 
-COMPILER_FLAGS = -m64
-LINKER_FLAGS = -m64 -static-libgcc
+COMPILER_FLAGS = -std=c++11
+LINKER_FLAGS =
 
 split_path_name = $(subst /rti_, , $(RTIMEHOME))
 
 version_name = $(lastword $(split_path_name))
-common_name = "_shape_main_linux"
+common_name = "_shape_main_macos"
 executable_name = $(version_name)$(common_name)
 
-RTIMEARCH = x64Linux4gcc7.3.0
+RTIMEARCH = arm64Darwin23clang15.0
 
 ifndef COMPILER
-COMPILER = g++
+COMPILER = clang++
 endif
 
 ifndef LINKER
-LINKER = g++
+LINKER = clang++
 endif
 
-SYSLIBS = -ldl -lnsl -lm -lpthread -lrt
+#SYSLIBS = 
 
 ifeq ($(DEBUG),1)
 COMPILER_FLAGS += -g -O0
@@ -48,14 +48,14 @@ LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
         -lrti_me_whsmzd -lrti_mezd -lrti_me_ddsxtypeszd $(SYSLIBS)
 else
 # This option strips the executable symbols
-LINKER_FLAGS += -s
+#LINKER_FLAGS += -s
 LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
         -lrti_me_cppz -lrti_me_netiosdmz \
 		-lrti_me_discdpdez -lrti_me_ddsfilterz -lrti_me_rhsmz \
 		-lrti_me_whsmz -lrti_mez -lrti_me_ddsxtypesz $(SYSLIBS)
 endif
 
-DEFINES = -DRTI_UNIX -DRTI_LINUX -DRTI_CONNEXT_MICRO -DOSAPI_CC_DEF_H=osapi/osapi_cc_gcc.h
+DEFINES = -DRTI_UNIX -DRTI_DARWIN -DRTI_CONNEXT_MICRO -DOSAPI_CC_DEF_H=osapi/osapi_cc_gcc.h
 
 INCLUDES = -I. -I$(RTIMEHOME)/include -I$(RTIMEHOME)/include/rti_me
 

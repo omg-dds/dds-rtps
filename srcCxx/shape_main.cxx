@@ -329,7 +329,11 @@ public:
 
         additional_payload_size = 0;
 
+#if defined(RTI_CONNEXT_MICRO)
+        take_read_next_instance = false;
+#else
         take_read_next_instance = true;
+#endif
 
         periodic_announcement_period_us = 0;
     }
@@ -1056,6 +1060,10 @@ public:
         pub = NULL;
         sub = NULL;
         color = NULL;
+
+        topics = NULL;
+        drs = NULL;
+        dws = NULL;
     }
 
     //-------------------------------------------------------------
@@ -1084,23 +1092,26 @@ public:
             topics[i] = NULL;
         }
 
-        drs = (ShapeTypeDataReader**) malloc(sizeof(ShapeTypeDataReader*) * options->num_topics);
-        if (drs == NULL) {
-            logger.log_message("Error allocating memory for DataReaders", Verbosity::ERROR);
-            return false;
-        }
-        for (unsigned int i = 0; i < options->num_topics; ++i) {
-            drs[i] = NULL;
+        if (options->publish) {
+            dws = (ShapeTypeDataWriter**) malloc(sizeof(ShapeTypeDataWriter*) * options->num_topics);
+            if (dws == NULL) {
+                logger.log_message("Error allocating memory for DataWriters", Verbosity::ERROR);
+                return false;
+            }
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                dws[i] = NULL;
+            }
+        } else {
+            drs = (ShapeTypeDataReader**) malloc(sizeof(ShapeTypeDataReader*) * options->num_topics);
+            if (drs == NULL) {
+                logger.log_message("Error allocating memory for DataReaders", Verbosity::ERROR);
+                return false;
+            }
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                drs[i] = NULL;
+            }
         }
 
-        dws = (ShapeTypeDataWriter**) malloc(sizeof(ShapeTypeDataWriter*) * options->num_topics);
-        if (dws == NULL) {
-            logger.log_message("Error allocating memory for DataWriters", Verbosity::ERROR);
-            return false;
-        }
-        for (unsigned int i = 0; i < options->num_topics; ++i) {
-            dws[i] = NULL;
-        }
 
 #ifndef OBTAIN_DOMAIN_PARTICIPANT_FACTORY
 #define OBTAIN_DOMAIN_PARTICIPANT_FACTORY DomainParticipantFactory::get_instance()
@@ -1117,34 +1128,14 @@ public:
         CONFIGURE_PARTICIPANT_FACTORY
 #endif
 
-#ifdef RTI_CONNEXT_MICRO
         DDS::DomainParticipantQos dp_qos;
+        dpf->get_default_participant_qos(dp_qos);
 
-        if (!dp_qos.discovery.discovery.name.set_name("dpde"))
-        {
-            printf("ERROR: unable to set discovery plugin name\n");
+#ifdef RTI_CONNEXT_MICRO
+        if (!configure_dp_qos(dp_qos)) {
             return false;
         }
-
-        dp_qos.discovery.initial_peers.maximum(1);
-        dp_qos.discovery.initial_peers.length(1);
-        dp_qos.discovery.initial_peers[0] = DDS_String_dup("127.0.0.1");
-        /* if there are more remote or local endpoints, you need to increase these limits */
-        dp_qos.resource_limits.max_destination_ports = 32;
-        dp_qos.resource_limits.max_receive_ports = 32;
-        dp_qos.resource_limits.local_topic_allocation = 2;
-        dp_qos.resource_limits.local_type_allocation = 2;
-        dp_qos.resource_limits.local_reader_allocation = 2;
-        dp_qos.resource_limits.local_writer_allocation = 2;
-        dp_qos.resource_limits.remote_participant_allocation = 8;
-        dp_qos.resource_limits.remote_reader_allocation = 8;
-        dp_qos.resource_limits.remote_writer_allocation = 8;
-
-        DDS_StatusMask dp_listener_mask = (DDS_STATUS_MASK_ALL & ~DDS_DATA_ON_READERS_STATUS) & ~DDS_LIVELINESS_CHANGED_STATUS;
-
-        dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, dp_listener_mask );
-
-#else
+#endif
 
 #ifdef RTI_CONNEXT_DDS
         configure_participant_announcements_period(dp_qos, options->periodic_announcement_period_us);
@@ -1156,7 +1147,6 @@ public:
             return false;
         }
         logger.log_message("Participant created", Verbosity::DEBUG);
-#endif
 
 #ifndef REGISTER_TYPE
 #define REGISTER_TYPE ShapeTypeTypeSupport::register_type
@@ -1337,9 +1327,10 @@ public:
             dw_qos.history FIELD_ACCESSOR.depth = options->history_depth;
         }
         else if ( options->history_depth == 0 ) {
+            //TODO check if KEEP_ALL is supported with micro
 #if defined (RTI_CONNEXT_MICRO)
-            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_LAST_HISTORY_QOS;
-            dw_qos.history FIELD_ACCESSOR.depth = 500;
+            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
+            //dw_qos.history FIELD_ACCESSOR.depth = 500;
 #else
             dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
 #endif
@@ -1350,6 +1341,7 @@ public:
         }
 
         if (options->lifespan_us > 0) {
+
 #if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
@@ -1357,8 +1349,13 @@ public:
             dw_qos.lifespan FIELD_ACCESSOR.duration = Duration_t(options->lifespan_us * 1e-6);
 #endif
         }
+#if !defined(RTI_CONNEXT_MICRO)
         logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
         logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
+
+#else
+        logger.log_message("    Lifespan = Not supported", Verbosity::ERROR);
+#endif
 
 #if   defined(RTI_CONNEXT_DDS)
         // usage of large data
@@ -1377,11 +1374,13 @@ public:
                         ? "ASYNCHRONOUS_PUBLISH_MODE_QOS" : "SYNCHRONOUS_PUBLISH_MODE_QOS"), Verbosity::DEBUG);
 #endif
 
+#if !defined(RTI_CONNEXT_MICRO)
         if (options->unregister) {
             dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances = DDS_BOOLEAN_FALSE;
         }
         logger.log_message("    Autodispose_unregistered_instances = "
                 + std::string(dw_qos.writer_data_lifecycle FIELD_ACCESSOR .autodispose_unregistered_instances ? "true" : "false"), Verbosity::DEBUG);
+#endif
 
         // Create different DataWriters (depending on the number of entities)
         // The DWs are attached to the same array index of the topics.
@@ -1527,12 +1526,12 @@ public:
         }
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if ( options->timebasedfilter_interval_us > 0) {
-#if defined(EPROSIMA_FAST_DDS)
-            logger.log_message("    Time based filter not supported", Verbosity::ERROR);
+#if defined(EPROSIMA_FAST_DDS) || defined(RTI_CONNEXT_MICRO)
+            logger.log_message("    TimeBasedFilter = not supported", Verbosity::ERROR);
 #else
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = (options->timebasedfilter_interval_us % 1000000) * 1000;
-#endif
+
         }
         logger.log_message("    TimeBasedFilter = " +
                     std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME) + "secs",
@@ -1540,7 +1539,8 @@ public:
         logger.log_message("                      " +
                     std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec) + "nanosecs",
                 Verbosity::DEBUG);
-        if ( options->deadline_interval_us > 0 ) {
+#endif
+                if ( options->deadline_interval_us > 0 ) {
             dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
             dr_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;;
         }
@@ -1575,7 +1575,7 @@ public:
                     (i > 0 ? std::to_string(i) : "") +
                     "_filtered";
             const char* filtered_topic_name = filtered_topic_name_str.c_str();
-#if defined(RTI_CONNEXT_DDS)
+  #if defined(RTI_CONNEXT_DDS)
                 char parameter[64];
                 snprintf(parameter, 64, "'%s'",  options->color);
                 StringSeq_push(cf_params, parameter);
@@ -1583,7 +1583,7 @@ public:
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color MATCH %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color MATCH "
                     + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
-#elif  defined(INTERCOM_DDS)
+  #elif  defined(INTERCOM_DDS)
                 char parameter[64];
                 snprintf(parameter, 64, "'%s'",  options->color);
                 StringSeq_push(cf_params, parameter);
@@ -1591,17 +1591,17 @@ public:
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
-#elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
+  #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
                 StringSeq_push(cf_params, options->color);
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
-#elif defined(EPROSIMA_FAST_DDS)
+  #elif defined(EPROSIMA_FAST_DDS)
                 cf_params.push_back(std::string("'") + options->color + std::string("'"));
                 cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
                 logger.log_message("    ContentFilterTopic = \"color = "
                     + cf_params[0] + std::string("\""), Verbosity::DEBUG);
-#endif
+  #endif
                 if (cft == NULL) {
                     logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
                     return false;
@@ -1613,7 +1613,9 @@ public:
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
                     return false;
                 }
+#endif
             }
+
         } else {
             // Create different DataReaders (depending on the number of entities)
             // The DRs are attached to the same array index of the topics.
@@ -1680,6 +1682,8 @@ public:
 #if  defined(EPROSIMA_FAST_DDS)
         // TODO: Remove when Fast DDS supports `get_key_value()`
         std::map<InstanceHandle_t, std::string> instance_handle_color;
+#elif defined(RTI_CONNEXT_MICRO)
+        std::map<InstanceHandle_t, std::string, InstanceHandle_t_less_op> instance_handle_color;
 #endif
 
         while ( ! all_done ) {
@@ -1702,7 +1706,9 @@ public:
                 printf("Reading with ordered access, iteration %d\n",n);
             }
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
+#if !defined(RTI_CONNEXT_MICRO)
                 sub->begin_access();
+#endif
             }
             for (unsigned int i = 0; i < options->num_topics; ++i) {
                 previous_handles[i] = HANDLE_NIL;
@@ -1710,6 +1716,7 @@ public:
                     if (!options->use_read) {
                         if (options->take_read_next_instance) {
                             logger.log_message("Calling take_next_instance() function", Verbosity::DEBUG);
+#if !defined(RTI_CONNEXT_MICRO)
                             retval = drs[i]->take_next_instance ( samples,
                                     sample_infos,
                                     LENGTH_UNLIMITED,
@@ -1717,6 +1724,7 @@ public:
                                     ANY_SAMPLE_STATE,
                                     ANY_VIEW_STATE,
                                     ANY_INSTANCE_STATE );
+#endif
                         } else {
                             logger.log_message("Calling take() function", Verbosity::DEBUG);
                             retval = drs[i]->take ( samples,
@@ -1728,6 +1736,7 @@ public:
                         }
                     } else { /* Use read_next_instance*/
                         if (options->take_read_next_instance) {
+#if !defined(RTI_CONNEXT_MICRO)
                             logger.log_message("Calling read_next_instance() function", Verbosity::DEBUG);
                             retval = drs[i]->read_next_instance ( samples,
                                     sample_infos,
@@ -1736,6 +1745,7 @@ public:
                                     ANY_SAMPLE_STATE,
                                     ANY_VIEW_STATE,
                                     ANY_INSTANCE_STATE );
+#endif
                         } else {
                             logger.log_message("Calling read() function", Verbosity::DEBUG);
                             retval = drs[i]->read ( samples,
@@ -1788,12 +1798,17 @@ public:
                                 printf("\n");
 #if defined(EPROSIMA_FAST_DDS)
                                 instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
+#elif defined(RTI_CONNEXT_MICRO)
+                                instance_handle_color[sample_info->instance_handle] =
+                                        std::string(sample->color FIELD_ACCESSOR STRING_IN);
 #endif
                             } else {
                                 ShapeType shape_key;
                                 shape_initialize_w_color(shape_key, NULL);
 #if defined(EPROSIMA_FAST_DDS)
                                 shape_key.color FIELD_ACCESSOR = instance_handle_color[sample_info->instance_handle] NAME_ACCESSOR;
+#elif defined(RTI_CONNEXT_MICRO)
+                                strncpy(shape_key.color, instance_handle_color[sample_info->instance_handle].c_str(), sizeof(shape_key.color));
 #else
                                 drs[i]->get_key_value(shape_key, sample_info->instance_handle);
 #endif
@@ -1821,7 +1836,9 @@ public:
             }
 
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
+#if !defined(RTI_CONNEXT_MICRO)
                 sub->end_access();
+#endif
             }
 
             // increasing number of iterations
@@ -1898,6 +1915,7 @@ public:
                 shape.shapesize FIELD_ACCESSOR += 1;
             }
 
+#if !defined(RTI_CONNEXT_MICRO)
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
                 // n also represents the number of samples written per publisher per instance
                 if (options->coherent_set_sample_count != 0 && n % options->coherent_set_sample_count == 0) {
@@ -1905,6 +1923,7 @@ public:
                     pub->begin_coherent_changes();
                 }
             }
+#endif
 
             for (unsigned int i = 0; i < options->num_topics; ++i) {
                 for (unsigned int j = 0; j < options->num_instances; ++j) {
@@ -1935,6 +1954,7 @@ public:
                 }
             }
 
+#if !defined(RTI_CONNEXT_MICRO)
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
                 // n also represents the number of samples written per publisher per instance
                 if (options->coherent_set_sample_count != 0
@@ -1943,6 +1963,7 @@ public:
                     pub->end_coherent_changes();
                 }
             }
+#endif
             usleep(options->write_period_us);
 
             // increase number of iterations
@@ -1986,13 +2007,15 @@ public:
 
         /* ensure that all updates have been acked by reader[s] */
         /* otherwise the app may terminate before reader has seen all updates */
-#if defined(RTI_CONNEXT_DDS) || defined (OPENDDS)
+#if defined(RTI_CONNEXT_DDS) || defined (RTI_CONNEXT_MICRO) || defined (OPENDDS)
         Duration_t max_wait = {1, 0}; /* should not take long... */
 #else
         Duration_t max_wait( 1, 0 ); /* should not take long... */
 #endif
         for (unsigned int i = 0; i < options->num_topics; ++i) {
+#if !defined(RTI_CONNEXT_MICRO)
           dws[i]->wait_for_acknowledgments( max_wait );
+#endif
         }
 
         return true;
