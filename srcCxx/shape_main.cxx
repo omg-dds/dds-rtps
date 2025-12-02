@@ -1532,15 +1532,15 @@ public:
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = (options->timebasedfilter_interval_us % 1000000) * 1000;
 
-        }
-        logger.log_message("    TimeBasedFilter = " +
+            logger.log_message("    TimeBasedFilter = " +
                     std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME) + "secs",
                 Verbosity::DEBUG);
-        logger.log_message("                      " +
+            logger.log_message("                      " +
                     std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec) + "nanosecs",
                 Verbosity::DEBUG);
 #endif
-                if ( options->deadline_interval_us > 0 ) {
+        }
+        if ( options->deadline_interval_us > 0 ) {
             dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
             dr_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;;
         }
@@ -1569,12 +1569,12 @@ public:
             ContentFilteredTopic *cft = NULL;
             StringSeq             cf_params;
 
-        for (unsigned int i = 0; i < options->num_topics; ++i) {
-            const std::string filtered_topic_name_str =
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                const std::string filtered_topic_name_str =
                     std::string(options->topic_name) +
                     (i > 0 ? std::to_string(i) : "") +
                     "_filtered";
-            const char* filtered_topic_name = filtered_topic_name_str.c_str();
+                const char* filtered_topic_name = filtered_topic_name_str.c_str();
   #if defined(RTI_CONNEXT_DDS)
                 char parameter[64];
                 snprintf(parameter, 64, "'%s'",  options->color);
@@ -1613,8 +1613,9 @@ public:
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
                     return false;
                 }
-#endif
             }
+#endif
+
 
         } else {
             // Create different DataReaders (depending on the number of entities)
@@ -1729,10 +1730,14 @@ public:
                             logger.log_message("Calling take() function", Verbosity::DEBUG);
                             retval = drs[i]->take ( samples,
                                     sample_infos,
-                                    LENGTH_UNLIMITED,
-                                    ANY_SAMPLE_STATE,
-                                    ANY_VIEW_STATE,
-                                    ANY_INSTANCE_STATE );
+                                    DDS_LENGTH_UNLIMITED,
+                                    DDS_ANY_SAMPLE_STATE,
+                                    DDS_ANY_VIEW_STATE,
+                                    DDS_ANY_INSTANCE_STATE );
+                            if (retval == DDS_RETCODE_OK) {
+                                logger.log_message("Taken " + std::to_string(samples.length())
+                                        + " sample(s)", Verbosity::DEBUG);
+                            }
                         }
                     } else { /* Use read_next_instance*/
                         if (options->take_read_next_instance) {
