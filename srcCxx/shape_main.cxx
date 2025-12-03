@@ -1519,27 +1519,32 @@ public:
 #if defined(EPROSIMA_FAST_DDS)
         logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation().m_value[0]), Verbosity::DEBUG);
 #else
-    logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
+        logger.log_message("    DataRepresentation = " + QosUtils::to_string(dr_qos.representation FIELD_ACCESSOR.value[0]), Verbosity::DEBUG);
 #endif
         if ( options->ownership_strength != -1 ) {
             dr_qos.ownership FIELD_ACCESSOR.kind = EXCLUSIVE_OWNERSHIP_QOS;
         }
         logger.log_message("    Ownership = " + QosUtils::to_string(dr_qos.ownership FIELD_ACCESSOR.kind), Verbosity::DEBUG);
+
+
         if ( options->timebasedfilter_interval_us > 0) {
 #if defined(EPROSIMA_FAST_DDS) || defined(RTI_CONNEXT_MICRO)
             logger.log_message("    TimeBasedFilter = not supported", Verbosity::ERROR);
 #else
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = (options->timebasedfilter_interval_us % 1000000) * 1000;
-
-            logger.log_message("    TimeBasedFilter = " +
-                    std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME) + "secs",
-                Verbosity::DEBUG);
-            logger.log_message("                      " +
-                    std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec) + "nanosecs",
-                Verbosity::DEBUG);
 #endif
         }
+
+#if !defined(EPROSIMA_FAST_DDS) && !defined(RTI_CONNEXT_MICRO)
+        logger.log_message("    TimeBasedFilter = " +
+                std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME) + "secs",
+            Verbosity::DEBUG);
+        logger.log_message("                      " +
+                std::to_string(dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec) + "nanosecs",
+            Verbosity::DEBUG);
+#endif
+
         if ( options->deadline_interval_us > 0 ) {
             dr_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
             dr_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;;
@@ -1730,10 +1735,10 @@ public:
                             logger.log_message("Calling take() function", Verbosity::DEBUG);
                             retval = drs[i]->take ( samples,
                                     sample_infos,
-                                    DDS_LENGTH_UNLIMITED,
-                                    DDS_ANY_SAMPLE_STATE,
-                                    DDS_ANY_VIEW_STATE,
-                                    DDS_ANY_INSTANCE_STATE );
+                                    LENGTH_UNLIMITED,
+                                    ANY_SAMPLE_STATE,
+                                    ANY_VIEW_STATE,
+                                    ANY_INSTANCE_STATE );
                             if (retval == DDS_RETCODE_OK) {
                                 logger.log_message("Taken " + std::to_string(samples.length())
                                         + " sample(s)", Verbosity::DEBUG);
@@ -1813,7 +1818,8 @@ public:
 #if defined(EPROSIMA_FAST_DDS)
                                 shape_key.color FIELD_ACCESSOR = instance_handle_color[sample_info->instance_handle] NAME_ACCESSOR;
 #elif defined(RTI_CONNEXT_MICRO)
-                                strncpy(shape_key.color, instance_handle_color[sample_info->instance_handle].c_str(), sizeof(shape_key.color));
+                                // 128 is the max length of the color string
+                                strncpy(shape_key.color, instance_handle_color[sample_info->instance_handle].c_str(), 128);
 #else
                                 drs[i]->get_key_value(shape_key, sample_info->instance_handle);
 #endif

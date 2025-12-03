@@ -81,6 +81,8 @@ static void config_micro()
 {
   RT::Registry *registry = NULL;
 
+  OSAPI_Log_set_verbosity(OSAPI_LOG_VERBOSITY_SILENT);
+
   registry = DDSTheParticipantFactory->get_registry();
 
   /* Register Writer History */
