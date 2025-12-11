@@ -138,14 +138,17 @@ def run_subscriber_shape_main(
     index = child_sub.expect(
         [
             'Create topic:', # index = 0
-            pexpect.TIMEOUT, # index = 1
-            pexpect.EOF # index = 2
+            re.compile('not supported', re.IGNORECASE), # index = 1
+            pexpect.TIMEOUT, # index = 2
+            pexpect.EOF # index = 3
         ],
         timeout
     )
 
-    if index == 1 or index == 2:
+    if index == 2 or index == 3:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
+    elif index == 1:
+        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
     elif index == 0:
         # Step 3: Check if the reader is created
         log_message(f'Subscriber {subscriber_index}: Waiting for DataReader '
@@ -153,18 +156,21 @@ def run_subscriber_shape_main(
         index = child_sub.expect(
             [
                 'Create reader for topic:', # index = 0
-                pexpect.TIMEOUT, # index = 1
-                'failed to create content filtered topic', # index = 2
-                pexpect.EOF # index = 3
+                'failed to create content filtered topic', # index = 1
+                re.compile('not supported', re.IGNORECASE), # index = 2
+                pexpect.TIMEOUT, # index = 3
+                pexpect.EOF # index = 4
 
             ],
             timeout
         )
 
-        if index == 1 or index == 3:
+        if index == 3 or index == 4:
             produced_code[produced_code_index] = ReturnCode.READER_NOT_CREATED
-        elif index == 2:
+        elif index == 1:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
+        elif index == 2:
+            produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
         elif index == 0:
             # Step 4: Read data or incompatible qos or deadline missed
             log_message(f'Subscriber {subscriber_index}: Waiting for data', verbosity)
@@ -173,8 +179,9 @@ def run_subscriber_shape_main(
                     r'\[[0-9]+\]', # index = 0
                     'on_requested_incompatible_qos()', # index = 1
                     'on_requested_deadline_missed()', # index = 2
-                    pexpect.TIMEOUT, # index = 3
-                    pexpect.EOF # index = 4
+                    re.compile('not supported', re.IGNORECASE), # index = 3
+                    pexpect.TIMEOUT, # index = 4
+                    pexpect.EOF # index = 5
 
                 ],
                 timeout
@@ -184,8 +191,10 @@ def run_subscriber_shape_main(
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
             elif index == 2:
                 produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
-            elif index == 3 or index == 4:
+            elif index == 4 or index == 5:
                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
+            elif index == 3:
+                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
             elif index == 0:
                 # Step 5: Receiving samples
                 log_message(f'Subscriber {subscriber_index}: Receiving samples',
@@ -281,14 +290,17 @@ def run_publisher_shape_main(
     index = child_pub.expect(
         [
             'Create topic:', # index == 0
-            pexpect.TIMEOUT, # index == 1
-            pexpect.EOF # index == 2
+            re.compile('not supported', re.IGNORECASE), # index = 1
+            pexpect.TIMEOUT, # index == 2
+            pexpect.EOF # index == 3
         ],
         timeout
     )
 
-    if index == 1 or index == 2:
+    if index == 2 or index == 3:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
+    elif index == 1:
+        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
     elif index == 0:
         # Step 3: Check if the writer is created
         log_message(f'Publisher {publisher_index}: Waiting for DataWriter '
@@ -296,13 +308,16 @@ def run_publisher_shape_main(
         index = child_pub.expect(
             [
                 'Create writer for topic', # index = 0
-                pexpect.TIMEOUT, # index = 1
-                pexpect.EOF # index == 2
+                re.compile('not supported', re.IGNORECASE), # index = 1
+                pexpect.TIMEOUT, # index = 2
+                pexpect.EOF # index == 3
             ],
             timeout
         )
-        if index == 1 or index == 2:
+        if index == 2 or index == 3:
             produced_code[produced_code_index] = ReturnCode.WRITER_NOT_CREATED
+        elif index == 1:
+            produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
         elif index == 0:
             # Step 4: Check if the writer matches the reader
             log_message(f'Publisher {publisher_index}: Waiting for matching '
@@ -310,16 +325,19 @@ def run_publisher_shape_main(
             index = child_pub.expect(
                 [
                     'on_publication_matched()', # index = 0
-                    pexpect.TIMEOUT, # index = 1
-                    'on_offered_incompatible_qos', # index = 2
-                    pexpect.EOF # index == 3
+                    'on_offered_incompatible_qos', # index = 1
+                    re.compile('not supported', re.IGNORECASE), # index = 2
+                    pexpect.TIMEOUT, # index = 3
+                    pexpect.EOF # index == 4
                 ],
                 timeout
             )
-            if index == 1 or index == 3:
+            if index == 3 or index == 4:
                 produced_code[produced_code_index] = ReturnCode.READER_NOT_MATCHED
-            elif index == 2:
+            elif index == 1:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
+            elif index == 2:
+                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
             elif index == 0:
                 # In the case that the option -w is selected, the Publisher
                 # saves the samples sent in order, so the Subscriber can check
@@ -332,14 +350,17 @@ def run_publisher_shape_main(
                     index = child_pub.expect([
                             r'\[[0-9]+\]', # index = 0
                             'on_offered_deadline_missed()', # index = 1
-                            pexpect.TIMEOUT, # index = 2
-                            pexpect.EOF # index == 3
+                            re.compile('not supported', re.IGNORECASE), # index = 2
+                            pexpect.TIMEOUT, # index = 3
+                            pexpect.EOF # index == 4
                         ],
                         timeout)
                     if index == 1:
                         produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
-                    elif index == 2 or index == 3:
+                    elif index == 3 or index == 4:
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
+                    elif index == 2:
+                        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
                     elif index == 0:
                         produced_code[produced_code_index] = ReturnCode.OK
                         log_message(f'Publisher {publisher_index}: Sending '
@@ -355,13 +376,17 @@ def run_publisher_shape_main(
                             index = child_pub.expect([
                                     r'\[[0-9]+\]', # index = 0
                                     'on_offered_deadline_missed()', # index = 1
-                                    pexpect.TIMEOUT # index = 2
+                                    re.compile('not supported', re.IGNORECASE), # index = 2
+                                    pexpect.TIMEOUT # index = 3
                                 ],
                                 timeout)
                             if index == 1:
                                 produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
                                 break
                             elif index == 2:
+                                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+                                break
+                            elif index == 3:
                                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                                 break
                         last_sample_saved.put(last_sample)
