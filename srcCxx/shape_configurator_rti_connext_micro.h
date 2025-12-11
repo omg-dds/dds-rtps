@@ -129,12 +129,9 @@ static void config_micro()
 
 #if defined(RTI_LINUX)
     udp_property->allow_interface[0] = DDS_String_dup("lo");
-    printf("Configured UDP to allow interface lo\n");
 #elif defined(RTI_DARWIN)
     udp_property->allow_interface[0] = DDS_String_dup("lo0");
-    printf("Configured UDP to allow interface lo0\n");
 #endif
-  //udp_property->allow_interface[1] = DDS_String_dup("eth0");
 
   if (!registry->register_component(
       NETIO_DEFAULT_UDP_NAME,
@@ -180,15 +177,29 @@ static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos)
     /* if there are more remote or local endpoints, you need to increase these limits */
     dp_qos.resource_limits.max_destination_ports = 32;
     dp_qos.resource_limits.max_receive_ports = 32;
-    dp_qos.resource_limits.local_topic_allocation = 2;
-    dp_qos.resource_limits.local_type_allocation = 2;
+    dp_qos.resource_limits.local_topic_allocation = 8;
+    dp_qos.resource_limits.local_type_allocation = 8;
     //TODO we need to increase this
-    dp_qos.resource_limits.local_reader_allocation = 2;
-    dp_qos.resource_limits.local_writer_allocation = 2;
-    dp_qos.resource_limits.remote_participant_allocation = 8;
-    dp_qos.resource_limits.remote_reader_allocation = 8;
-    dp_qos.resource_limits.remote_writer_allocation = 8;
+    dp_qos.resource_limits.local_reader_allocation = 8;
+    dp_qos.resource_limits.local_writer_allocation = 8;
+    dp_qos.resource_limits.remote_participant_allocation = 16;
+    dp_qos.resource_limits.remote_reader_allocation = 16;
+    dp_qos.resource_limits.remote_writer_allocation = 16;
     return true;
+}
+
+void config_dw_qos(DDS::DataWriterQos &dw_qos) {
+    dw_qos.resource_limits.max_instances = 500;
+    dw_qos.resource_limits.max_samples = 500;
+    dw_qos.resource_limits.max_samples_per_instance = 500;
+}
+
+void config_dr_qos(DDS::DataReaderQos &dr_qos) {
+    dr_qos.resource_limits.max_instances = 500;
+    dr_qos.resource_limits.max_samples = 500;
+    dr_qos.resource_limits.max_samples_per_instance = 500;
+    dr_qos.reader_resource_limits.max_remote_writers = 16;
+    dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
 }
 
 uint64_t DDS_UInt8Seq_get_length(DDS_OctetSeq * seq)

@@ -329,11 +329,7 @@ public:
 
         additional_payload_size = 0;
 
-#if defined(RTI_CONNEXT_MICRO)
-        take_read_next_instance = false;
-#else
         take_read_next_instance = true;
-#endif
 
         periodic_announcement_period_us = 0;
     }
@@ -429,16 +425,6 @@ public:
             color = strdup("BLUE");
             logger.log_message("warning: color was not specified, defaulting to \"BLUE\"", Verbosity::ERROR);
         }
-#if defined(RTI_CONNEXT_MICRO)
-        if (!publish && color != NULL) {
-            free(color);
-            color = NULL;
-            logger.log_message("warning: content filtered topic not supported, normal topic used", Verbosity::ERROR);
-        }
-        if (!publish && take_read_next_instance == true ) {
-            logger.log_message("warning: use of take/read_next_instance() not supported, using take/read()", Verbosity::ERROR);
-        }
-#endif
         if (publish && timebasedfilter_interval_us > 0) {
             logger.log_message("warning: time base filter [--time-filter] ignored on publisher applications", Verbosity::ERROR);
         }
@@ -472,6 +458,17 @@ public:
         if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_access_scope_set) {
             logger.log_message("warning: --access-scope ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
         }
+#if defined(RTI_CONNEXT_MICRO)
+        if (!publish && color != NULL) {
+            free(color);
+            color = NULL;
+            logger.log_message("warning: content filtered topic not supported, normal topic used", Verbosity::ERROR);
+        }
+        if (!publish && take_read_next_instance == true ) {
+            take_read_next_instance = false;
+            logger.log_message("warning: use of take/read_next_instance() not available, using take/read()", Verbosity::ERROR);
+        }
+#endif
 
         return true;
     }
@@ -1223,7 +1220,8 @@ public:
               {
                 logger.log_message("    Presentation Access Scope "
                                    + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
+                                   + std::string(" : not supported"), Verbosity::ERROR);
+                return false;
               }
   #endif
   #if  defined(INTERCOM_DDS)
@@ -1231,22 +1229,31 @@ public:
               {
                 logger.log_message("    Coherent Access with Presentation Access Scope "
                                    + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
+                                   + std::string(" : not supported"), Verbosity::ERROR);
+                return false;
               }
   #endif
         }
-
         logger.log_message("    Presentation Coherent Access = " +
                 std::string(pub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Ordered Access = " +
                 std::string(pub_qos.presentation.ordered_access ? "true" : "false"), Verbosity::DEBUG);
         logger.log_message("    Presentation Access Scope = " +
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
-
 #else
-        logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Presentation Ordered Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
+        if (options->coherent_set_enabled) {
+            logger.log_message("    Presentation Coherent Access = not supported", Verbosity::ERROR);
+            return false;
+        }
+        if (options->ordered_access_enabled) {
+            logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
+            return false;
+        }
+        if ((options->coherent_set_enabled || options->ordered_access_enabled)
+                && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
+            logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
+            return false;
+        }
 #endif
 
         pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
@@ -1259,14 +1266,21 @@ public:
         pub->get_default_datawriter_qos( dw_qos );
 
 #if defined (RTI_CONNEXT_MICRO)
-        dw_qos.resource_limits.max_instances = 500;
-        dw_qos.resource_limits.max_samples = 500;
-        dw_qos.resource_limits.max_samples_per_instance = 500;
+        config_dw_qos(dw_qos);
 #endif
 
         dw_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
         logger.log_message("    Reliability = " + QosUtils::to_string(dw_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         dw_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
+#if defined(RTI_CONNEXT_MICRO)
+        if (dw_qos.durability FIELD_ACCESSOR.kind == TRANSIENT_DURABILITY_QOS) {
+            logger.log_message("    Durability = TRANSIENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            return false;
+        } else if (dw_qos.durability FIELD_ACCESSOR.kind == PERSISTENT_DURABILITY_QOS) {
+            logger.log_message("    Durability = PERSISTENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            return false;
+        }
+#endif
         logger.log_message("    Durability = " + QosUtils::to_string(dw_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS) || defined (RTI_CONNEXT_MICRO)
@@ -1327,13 +1341,7 @@ public:
             dw_qos.history FIELD_ACCESSOR.depth = options->history_depth;
         }
         else if ( options->history_depth == 0 ) {
-            //TODO check if KEEP_ALL is supported with micro
-#if defined (RTI_CONNEXT_MICRO)
             dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
-            //dw_qos.history FIELD_ACCESSOR.depth = 500;
-#else
-            dw_qos.history FIELD_ACCESSOR.kind  = KEEP_ALL_HISTORY_QOS;
-#endif
         }
         logger.log_message("    History = " + QosUtils::to_string(dw_qos.history FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         if (dw_qos.history FIELD_ACCESSOR.kind == KEEP_LAST_HISTORY_QOS){
@@ -1341,8 +1349,10 @@ public:
         }
 
         if (options->lifespan_us > 0) {
-
-#if   defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+#if defined (RTI_CONNEXT_MICRO)
+            logger.log_message("    Lifespan = not supported", Verbosity::ERROR);
+            return false;
+#elif defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
 #elif defined(EPROSIMA_FAST_DDS)
@@ -1350,11 +1360,10 @@ public:
 #endif
         }
 #if !defined(RTI_CONNEXT_MICRO)
-        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME) + " secs", Verbosity::DEBUG);
-        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs", Verbosity::DEBUG);
-
-#else
-        logger.log_message("    Lifespan = Not supported", Verbosity::ERROR);
+        logger.log_message("    Lifespan = " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME) + " secs",
+                    Verbosity::DEBUG);
+        logger.log_message("               " + std::to_string(dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec) + " nanosecs",
+                Verbosity::DEBUG);
 #endif
 
 #if   defined(RTI_CONNEXT_DDS)
@@ -1443,7 +1452,8 @@ public:
               {
                 logger.log_message("    Presentation Access Scope "
                                    + QosUtils::to_string(sub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
+                                   + std::string(" : not supported"), Verbosity::ERROR);
+                return false;
               }
   #endif
   #if defined(INTERCOM_DDS)
@@ -1451,7 +1461,8 @@ public:
               {
                 logger.log_message("    Coherent Access with Presentation Access Scope "
                                    + QosUtils::to_string(sub_qos.presentation.access_scope)
-                                   + std::string(" : Not supported"), Verbosity::ERROR);
+                                   + std::string(" : not supported"), Verbosity::ERROR);
+                return false;
               }
   #endif
         }
@@ -1464,9 +1475,19 @@ public:
                 QosUtils::to_string(sub_qos.presentation.access_scope), Verbosity::DEBUG);
 
 #else
-        logger.log_message("    Presentation Coherent Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Presentation Ordered Access = Not supported", Verbosity::ERROR);
-        logger.log_message("    Presentation Access Scope = Not supported", Verbosity::ERROR);
+        if (options->coherent_set_enabled) {
+            logger.log_message("    Presentation Coherent Access = not supported", Verbosity::ERROR);
+            return false;
+        }
+        if (options->ordered_access_enabled) {
+            logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
+            return false;
+        }
+        if ((options->coherent_set_enabled || options->ordered_access_enabled)
+                && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
+            logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
+            return false;
+        }
 #endif
 
         sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
@@ -1480,16 +1501,21 @@ public:
         sub->get_default_datareader_qos( dr_qos );
 
 #if defined (RTI_CONNEXT_MICRO)
-        dr_qos.resource_limits.max_instances = 500;
-        dr_qos.resource_limits.max_samples = 500;
-        dr_qos.resource_limits.max_samples_per_instance = 500;
-        dr_qos.reader_resource_limits.max_remote_writers = 2;
-        dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
+        config_dr_qos(dr_qos);
 #endif
 
         dr_qos.reliability FIELD_ACCESSOR.kind = options->reliability_kind;
         logger.log_message("    Reliability = " + QosUtils::to_string(dr_qos.reliability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
         dr_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
+#if defined(RTI_CONNEXT_MICRO)
+        if (dr_qos.durability FIELD_ACCESSOR.kind == TRANSIENT_DURABILITY_QOS) {
+            logger.log_message("    Durability = TRANSIENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            return false;
+        } else if (dr_qos.durability FIELD_ACCESSOR.kind == PERSISTENT_DURABILITY_QOS) {
+            logger.log_message("    Durability = PERSISTENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            return false;
+        }
+#endif
         logger.log_message("    Durability = " + QosUtils::to_string(dr_qos.durability FIELD_ACCESSOR.kind), Verbosity::DEBUG);
 
 #if   defined(RTI_CONNEXT_DDS) || defined (RTI_CONNEXT_MICRO)
@@ -1530,6 +1556,7 @@ public:
         if ( options->timebasedfilter_interval_us > 0) {
 #if defined(EPROSIMA_FAST_DDS) || defined(RTI_CONNEXT_MICRO)
             logger.log_message("    TimeBasedFilter = not supported", Verbosity::ERROR);
+            return false;
 #else
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.nanosec = (options->timebasedfilter_interval_us % 1000000) * 1000;
