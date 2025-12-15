@@ -148,7 +148,7 @@ def run_subscriber_shape_main(
     if index == 2 or index == 3:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
     elif index == 1:
-        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+        produced_code[produced_code_index] = ReturnCode.SUB_UNSUPPORTED_FEATURE
     elif index == 0:
         # Step 3: Check if the reader is created
         log_message(f'Subscriber {subscriber_index}: Waiting for DataReader '
@@ -170,7 +170,7 @@ def run_subscriber_shape_main(
         elif index == 1:
             produced_code[produced_code_index] = ReturnCode.FILTER_NOT_CREATED
         elif index == 2:
-            produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+            produced_code[produced_code_index] = ReturnCode.SUB_UNSUPPORTED_FEATURE
         elif index == 0:
             # Step 4: Read data or incompatible qos or deadline missed
             log_message(f'Subscriber {subscriber_index}: Waiting for data', verbosity)
@@ -194,7 +194,7 @@ def run_subscriber_shape_main(
             elif index == 4 or index == 5:
                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_RECEIVED
             elif index == 3:
-                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+                produced_code[produced_code_index] = ReturnCode.SUB_UNSUPPORTED_FEATURE
             elif index == 0:
                 # Step 5: Receiving samples
                 log_message(f'Subscriber {subscriber_index}: Receiving samples',
@@ -300,7 +300,7 @@ def run_publisher_shape_main(
     if index == 2 or index == 3:
         produced_code[produced_code_index] = ReturnCode.TOPIC_NOT_CREATED
     elif index == 1:
-        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+        produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
     elif index == 0:
         # Step 3: Check if the writer is created
         log_message(f'Publisher {publisher_index}: Waiting for DataWriter '
@@ -317,7 +317,7 @@ def run_publisher_shape_main(
         if index == 2 or index == 3:
             produced_code[produced_code_index] = ReturnCode.WRITER_NOT_CREATED
         elif index == 1:
-            produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+            produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
         elif index == 0:
             # Step 4: Check if the writer matches the reader
             log_message(f'Publisher {publisher_index}: Waiting for matching '
@@ -337,7 +337,7 @@ def run_publisher_shape_main(
             elif index == 1:
                 produced_code[produced_code_index] = ReturnCode.INCOMPATIBLE_QOS
             elif index == 2:
-                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+                produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
             elif index == 0:
                 # In the case that the option -w is selected, the Publisher
                 # saves the samples sent in order, so the Subscriber can check
@@ -360,7 +360,7 @@ def run_publisher_shape_main(
                     elif index == 3 or index == 4:
                         produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                     elif index == 2:
-                        produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+                        produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
                     elif index == 0:
                         produced_code[produced_code_index] = ReturnCode.OK
                         log_message(f'Publisher {publisher_index}: Sending '
@@ -384,7 +384,7 @@ def run_publisher_shape_main(
                                 produced_code[produced_code_index] = ReturnCode.DEADLINE_MISSED
                                 break
                             elif index == 2:
-                                produced_code[produced_code_index] = ReturnCode.UNSUPPORTED_FEATURE
+                                produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
                                 break
                             elif index == 3:
                                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT

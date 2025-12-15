@@ -28,7 +28,8 @@ class ReturnCode(Enum):
     DEADLINE_MISSED      : Publisher/Subscriber missed the deadline period
     ORDERED_ACCESS_INSTANCE : Subscriber reading with ordered access and access scope INSTANCE
     ORDERED_ACCESS_TOPIC : Subscriber reading with ordered access and access scope TOPIC
-    UNSUPPORTED_FEATURE  : The test requires a feature not supported by the implementation
+    PUB_UNSUPPORTED_FEATURE  : The test requires a feature not supported by the publisher implementation
+    SUB_UNSUPPORTED_FEATURE  : The test requires a feature not supported by the subscriber implementation
     """
     OK = 0
     TOPIC_NOT_CREATED = 1
@@ -45,7 +46,8 @@ class ReturnCode(Enum):
     DEADLINE_MISSED = 14
     ORDERED_ACCESS_INSTANCE = 15
     ORDERED_ACCESS_TOPIC = 16
-    UNSUPPORTED_FEATURE = 17
+    PUB_UNSUPPORTED_FEATURE = 17
+    SUB_UNSUPPORTED_FEATURE = 18
 
 def log_message(message, verbosity):
     if verbosity:

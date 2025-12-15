@@ -22,9 +22,19 @@ import test_suite
 from enum import Enum
 
 class TestStatus(Enum):
+    """
+    Enumeration of the test status.
+    PASSED: The test has passed
+    FAILED: The test has failed
+    PUB_UNSUPPORTED: The test is unsupported for the Publisher
+    SUB_UNSUPPORTED: The test is unsupported for the Subscriber
+    PUB_SUB_UNSUPPORTED: The test is unsupported for both Publisher and Subscriber
+    """
     PASSED = 1
     FAILED = 2
-    UNSUPPORTED = 3
+    PUB_UNSUPPORTED = 3
+    SUB_UNSUPPORTED = 4
+    PUB_SUB_UNSUPPORTED = 5
 
 class XlxsReportArgumentParser:
     """Class that parse the arguments of the application."""
@@ -236,15 +246,34 @@ class JunitData:
             # subscriber
             unsupported_tests_count = 0
             for case in list(iter(suite)):
-                this_test_unsupported = False
+                is_pub_unsupported = False
+                is_sub_unsupported = False
+                status = None
                 test_name = re.search(r'((?:Test_)[\S]+_\d+)', case.name).group(1)
 
                 # count number of unsupported tests for the summary
                 # result array is not empty and the message contains 'UNSUPPORTED_FEATURE'
-                if case.result and len(case.result) > 0 \
-                        and 'UNSUPPORTED_FEATURE' in case.result[0].message.upper():
+                if case.result and len(case.result) > 0:
+                    if 'PUB_UNSUPPORTED_FEATURE' in case.result[0].message.upper():
+                        is_pub_unsupported = True
+                    if 'SUB_UNSUPPORTED_FEATURE' in case.result[0].message.upper():
+                        is_sub_unsupported = True
+
+                if is_pub_unsupported or is_sub_unsupported:
                     unsupported_tests_count += 1
-                    this_test_unsupported = True
+
+                # Get test status
+                if case.is_passed:
+                    status = TestStatus.PASSED
+                elif is_pub_unsupported and is_sub_unsupported:
+                    status = TestStatus.PUB_SUB_UNSUPPORTED
+                elif is_pub_unsupported:
+                    status = TestStatus.PUB_UNSUPPORTED
+                elif is_sub_unsupported:
+                    status = TestStatus.SUB_UNSUPPORTED
+                else:
+                    status = TestStatus.FAILED
+
 
                 # update the value of the publisher_name as publisher with
                 # all products as subscribers.
@@ -252,9 +281,7 @@ class JunitData:
                 publisher_test_result = JunitTestCaseAggregatedData(
                     product=subscriber_name,
                     test_name=test_name,
-                    status=TestStatus.PASSED if case.is_passed
-                           else TestStatus.FAILED if not this_test_unsupported
-                           else TestStatus.UNSUPPORTED
+                    status=status
                 )
 
                 # add the resulting tuple to the publisher dictionary, the key
@@ -272,9 +299,7 @@ class JunitData:
                 subscriber_test_result = JunitTestCaseAggregatedData(
                     product=publisher_name,
                     test_name=test_name,
-                    status=TestStatus.PASSED if case.is_passed
-                           else TestStatus.FAILED if not this_test_unsupported
-                           else TestStatus.UNSUPPORTED
+                    status=status
                 )
 
                 # add the resulting tuple to the subscriber dictionary, the key
@@ -677,10 +702,21 @@ class XlsxReport:
                             element.get_test_name(),
                             self.__formats['bold_w_border'])
 
-            # set OK or ERROR if the test passed or not
-            str_result = 'OK' if element.get_status() == TestStatus.PASSED \
-                              else 'ERROR' if element.get_status() == TestStatus.FAILED \
-                              else 'UNSUPPORTED'
+            # get status string of the test result
+            if element.get_status() == TestStatus.PASSED:
+                str_result = 'OK'
+            elif element.get_status() == TestStatus.FAILED:
+                str_result = 'ERROR'
+            elif element.get_status() == TestStatus.PUB_UNSUPPORTED:
+                str_result = 'PUB UNSUPPORTED'
+            elif element.get_status() == TestStatus.SUB_UNSUPPORTED:
+                str_result = 'SUB UNSUPPORTED'
+            elif element.get_status() == TestStatus.PUB_SUB_UNSUPPORTED:
+                str_result = 'PUB/SUB UNSUPPORTED'
+            else:
+                str_result = 'UNKNOWN'
+
+            # write status string to the test result
             worksheet.write(
                     process_row,
                     process_column,
