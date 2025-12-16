@@ -113,26 +113,6 @@ static void config_micro()
       return;
   }
 
-  /* For additional allowed interface(s), increase maximum and length, and
-  set interface below:
-  */
-  if (!udp_property->allow_interface.maximum(1))
-  {
-      printf("ERROR: unable to set allow_interface maximum\n");
-      return;
-  }
-  if (!udp_property->allow_interface.length(1))
-  {
-      printf("ERROR: unable to set allow_interface length\n");
-      return;
-  }
-
-#if defined(RTI_LINUX)
-    udp_property->allow_interface[0] = DDS_String_dup("lo");
-#elif defined(RTI_DARWIN)
-    udp_property->allow_interface[0] = DDS_String_dup("lo0");
-#endif
-
   if (!registry->register_component(
       NETIO_DEFAULT_UDP_NAME,
       UDPInterfaceFactory::get_interface(),
@@ -171,15 +151,17 @@ static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos)
         return false;
     }
 
-    dp_qos.discovery.initial_peers.maximum(1);
-    dp_qos.discovery.initial_peers.length(1);
+    dp_qos.discovery.initial_peers.maximum(2);
+    dp_qos.discovery.initial_peers.length(2);
     dp_qos.discovery.initial_peers[0] = DDS_String_dup("127.0.0.1");
+    dp_qos.discovery.initial_peers[1] = DDS_String_dup("_udp://239.255.0.1");
+
     /* if there are more remote or local endpoints, you need to increase these limits */
     dp_qos.resource_limits.max_destination_ports = 32;
     dp_qos.resource_limits.max_receive_ports = 32;
     dp_qos.resource_limits.local_topic_allocation = 8;
     dp_qos.resource_limits.local_type_allocation = 8;
-    //TODO we need to increase this
+
     dp_qos.resource_limits.local_reader_allocation = 8;
     dp_qos.resource_limits.local_writer_allocation = 8;
     dp_qos.resource_limits.remote_participant_allocation = 16;
