@@ -476,7 +476,13 @@ class XlsxReport:
         Return the corresponding color format depending on the ratio of
         passed_tests/total_tests
         """
+        # this might only happen for supported tests when the total supported
+        # scenarios is 0
+        if num_elements == 0:
+            return self.__formats['result_red']
+
         ratio = index / num_elements
+
         if ratio < 0.25:
             return self.__formats['result_red']
         elif ratio < 0.5:
@@ -488,7 +494,7 @@ class XlsxReport:
         else: # ratio == 1
             return self.__formats['result_green']
 
-    def get_format_color_bool(self, status: TestStatus):
+    def get_format_color_test_status(self, status: TestStatus):
         """
         Get the corresponding color format depending on 'status'.
         Green if status is PASSED, Red if FAILED, Yellow if UNSUPPORTED
@@ -721,7 +727,7 @@ class XlsxReport:
                     process_row,
                     process_column,
                     str_result,
-                    self.get_format_color_bool(element.get_status()))
+                    self.get_format_color_test_status(element.get_status()))
         return (current_row, current_column)
 
     def add_data_summary_worksheet(self,
