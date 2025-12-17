@@ -60,3 +60,15 @@ def remove_ansi_colors(text):
 
 def no_check(child_sub, samples_sent, last_sample_saved, timeout):
     return ReturnCode.OK
+
+def basic_check(child_sub, samples_sent, last_sample_saved, timeout):
+    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
+        child_sub.before + child_sub.after)
+
+    # check the sample contains some info, just checking the size is different
+    # than zero is enough
+    if sub_string is not None:
+        if int(sub_string.group(1)) != 0:
+            return ReturnCode.OK
+
+    return ReturnCode.DATA_NOT_CORRECT
