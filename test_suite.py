@@ -122,7 +122,7 @@ rtps_test_suite_1 = {
 
     # RELIABILITY
     'Test_Reliability_0' : {
-        'apps' : ['-P -t Square -b -z 0', '-S -t Square -b -z 0'],
+        'apps' : ['-P -t Square -b -z 0', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.test_reliability_order,
         'title' : 'Communication between BEST_EFFORT publisher and subscriber',

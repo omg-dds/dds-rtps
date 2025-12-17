@@ -51,16 +51,19 @@ def stop_process(child_process, timeout=30, poll_interval=0.2):
     else:
         return True  # Process already exited
 
-    start_time = time.time()
+    return_value = True
 
+    start_time = time.time()
     while child_process.isalive() and (time.time() - start_time < timeout):
         time.sleep(poll_interval)
 
     if child_process.isalive():
         child_process.terminate(force=True)
-        return False  # Process was forcefully terminated
+        return_value = False  # Process was forcefully terminated
 
-    return True
+    child_process.expect(pexpect.EOF, timeout=5)
+
+    return return_value
 
 def run_subscriber_shape_main(
         name_executable: str,
