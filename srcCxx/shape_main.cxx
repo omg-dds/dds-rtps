@@ -905,7 +905,9 @@ public:
                     "\n    TimeBasedFilterInterval = " + std::to_string(timebasedfilter_interval_us / 1000) + "ms" +
                     "\n    DeadlineInterval = " + std::to_string(deadline_interval_us / 1000) + "ms" +
                     "\n    Shapesize = " + std::to_string(shapesize) +
-                    "\n    Reading method = " + (use_read ? "read_next_instance" : "take_next_instance") +
+                    "\n    Reading method = " + (use_read
+                            ? (take_read_next_instance ? "read_next_instance" : "read")
+                            : (take_read_next_instance ? "take_next_instance" : "take")) +
                     "\n    Write period = " + std::to_string(write_period_us / 1000) + "ms" +
                     "\n    Read period = " + std::to_string(read_period_us / 1000) + "ms" +
                     "\n    Lifespan = " + std::to_string(lifespan_us / 1000) + "ms" +
@@ -1166,7 +1168,7 @@ public:
         logger.log_message("Topics created:", Verbosity::DEBUG);
         for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("    topic[%d]=%p\n",i,(void*)topics[i]);
+                printf("    topic(%d)=%p\n",i,(void*)topics[i]);
             }
         }
 
@@ -1330,9 +1332,9 @@ public:
             dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME = options->deadline_interval_us / 1000000;
             dw_qos.deadline FIELD_ACCESSOR.period.nanosec = (options->deadline_interval_us % 1000000) * 1000;
         }
-        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME) + "secs",
+        logger.log_message("    DeadlinePeriod = " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.SECONDS_FIELD_NAME) + " secs",
                 Verbosity::DEBUG);
-        logger.log_message("                     " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.nanosec) + "nanosecs",
+        logger.log_message("                     " + std::to_string(dw_qos.deadline FIELD_ACCESSOR.period.nanosec) + " nanosecs",
                 Verbosity::DEBUG);
 
         // options->history_depth < 0 means leave default value
@@ -1405,7 +1407,7 @@ public:
         logger.log_message("DataWriters created:", Verbosity::DEBUG);
         for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("    dws[%d]=%p\n",i,(void*)dws[i]);
+                printf("    dws(%d)=%p\n",i,(void*)dws[i]);
             }
         }
 
@@ -1664,7 +1666,7 @@ public:
         logger.log_message("DataReaders created:", Verbosity::DEBUG);
         for (unsigned int i = 0; i < options->num_topics; ++i) {
             if (logger.verbosity() == Verbosity::DEBUG) {
-                printf("    drs[%d]=%p\n",i,(void*)drs[i]);
+                printf("    drs(%d)=%p\n",i,(void*)drs[i]);
             }
         }
 
@@ -1732,6 +1734,7 @@ public:
             DataSeq samples;
 #endif
 
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             if (options->coherent_set_enabled) {
                 printf("Reading coherent sets, iteration %d\n",n);
             }
@@ -1739,10 +1742,9 @@ public:
                 printf("Reading with ordered access, iteration %d\n",n);
             }
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
-#if !defined(RTI_CONNEXT_MICRO)
                 sub->begin_access();
-#endif
             }
+#endif
             for (unsigned int i = 0; i < options->num_topics; ++i) {
                 previous_handles[i] = HANDLE_NIL;
                 do {
@@ -1836,8 +1838,7 @@ public:
 #if defined(EPROSIMA_FAST_DDS)
                                 instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
 #elif defined(RTI_CONNEXT_MICRO)
-                                instance_handle_color[sample_info->instance_handle] =
-                                        std::string(sample->color FIELD_ACCESSOR STRING_IN);
+                                instance_handle_color[sample_info->instance_handle] = std::string(sample->color);
 #endif
                             } else {
                                 ShapeType shape_key;
@@ -1873,11 +1874,11 @@ public:
                 } while (retval == RETCODE_OK);
             }
 
+#if   defined(RTI_CONNEXT_DDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
-#if !defined(RTI_CONNEXT_MICRO)
                 sub->end_access();
-#endif
             }
+#endif
 
             // increasing number of iterations
             n++;
