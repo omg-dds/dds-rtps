@@ -51,7 +51,15 @@ jobs:
       run: pip install --requirement requirements.txt
     - name: Run Interoperability script
       timeout-minutes: 60
-      run: python3 interoperability_report.py --publisher executables/${{ matrix.publisher }}*shape_main_linux --subscriber executables/${{ matrix.subscriber }}*shape_main_linux --output-name junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
+      run: |
+        publisher_exe=executables/${{ matrix.publisher }}*shape_main_linux \
+        subscriber_exe=executables/${{ matrix.subscriber }}*shape_main_linux \
+        output_file=junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml \
+        extra_args="" \
+        if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext* ]]; then \
+            extra_args="--periodic-announcement 5000" \
+        fi; \
+        python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
     - name: Download timestamp
       uses: actions/download-artifact@v4
       with:
