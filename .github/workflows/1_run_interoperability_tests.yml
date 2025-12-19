@@ -56,8 +56,8 @@ jobs:
         subscriber_exe=executables/${{ matrix.subscriber }}*shape_main_linux \
         output_file=junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml \
         extra_args="" \
-        if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext* ]]; then \
-            extra_args="--periodic-announcement 5000" \
+        if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext_dds* ]]; then \
+            extra_args="--periodic-announcement 5000"; \
         fi; \
         python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
     - name: Download timestamp
