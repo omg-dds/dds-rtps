@@ -1,8 +1,8 @@
 ######################################################################
 # To compile, type:
-# 	make -f makefile_rti_connext_dds_linux
+# 	make -f makefile_rti_connext_micro_linux
 # To compile with the Debug option, use:
-#   make -f makefile_rti_connext_dds_linux DEBUG=1
+#   make -f makefile_rti_connext_micro_linux DEBUG=1
 #
 # This makefile assumes that your build environment is already correctly
 # configured. (For example, the correct version of your compiler and
@@ -21,9 +21,10 @@ endif
 COMPILER_FLAGS = -m64
 LINKER_FLAGS = -m64 -static-libgcc
 
-split_path_name = $(subst /rti_, , $(RTIMEHOME))
+product_name = $(notdir $(RTIMEHOME))
+product_name := $(subst _dds,,$(product_name))
 
-version_name = $(lastword $(split_path_name))
+version_name = $(lastword $(product_name))
 common_name = "_shape_main_linux"
 executable_name = $(version_name)$(common_name)
 
@@ -44,7 +45,7 @@ COMPILER_FLAGS += -g -O0
 LINKER_FLAGS += -g
 LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
         -lrti_me_cppzd -lrti_me_netiosdmzd \
-        -lrti_me_discdpdez -lrti_me_ddsfilterzd -lrti_me_rhsmzd \
+        -lrti_me_discdpdezd -lrti_me_ddsfilterzd -lrti_me_rhsmzd \
         -lrti_me_whsmzd -lrti_mezd -lrti_me_ddsxtypeszd $(SYSLIBS)
 else
 # This option strips the executable symbols
@@ -73,7 +74,7 @@ $(OBJDIR)/$(EXEC) : $(AUTOGENSOURCES) $(AUTOGENOBJS) $(OBJDIR)/shape_main.o
 $(OBJDIR)/%.o : %.cxx
 	$(COMPILER) $(COMPILER_FLAGS) -o $@ $(DEFINES) $(INCLUDES) -c  $<
 
-shape_main.cxx : shape_configurator_rti_connext_dds.h
+shape_main.cxx : shape_configurator_rti_connext_micro.h
 
 # Generate type-specific sources
 $(AUTOGENSOURCES) : $(CDRSOURCES)
