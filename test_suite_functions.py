@@ -376,9 +376,23 @@ def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeo
     sub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
             child_sub.before + child_sub.after)
 
+    # If the sample is not found in the buffer, wait for it
+    if sub_string is None:
+        index = child_sub.expect(
+            [
+                '[0-9]+ [0-9]+ \[[0-9]+\]',
+                pexpect.TIMEOUT
+            ],
+            timeout
+        )
+        if index == 0:
+            sub_string = child_sub.match
+        else:
+            return ReturnCode.DATA_NOT_RECEIVED
+
     # This makes sure that at least one sample has been received
-    if sub_string.group(0) is None:
-        produced_code = ReturnCode.DATA_NOT_RECEIVED
+    if sub_string is None or sub_string.group(0) is None:
+        return ReturnCode.DATA_NOT_RECEIVED
 
     # Get the sample sent by the DataWriter that matches the first sample
     # received
@@ -409,7 +423,7 @@ def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeo
                 # a pub_sample so we don't need to get it from the queue
                 first_execution = False
             else:
-                pub_sample = samples_sent[0].get(block=False)
+                pub_sample = samples_sent[0].get(block=True, timeout=timeout)
 
             if pub_sample != sub_string.group(0):
                 produced_code = ReturnCode.DATA_NOT_CORRECT
