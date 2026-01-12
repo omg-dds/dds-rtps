@@ -21,7 +21,9 @@ endif
 COMPILER_FLAGS = -m64
 LINKER_FLAGS = -m64 -static-libgcc
 
-product_name = $(notdir $(RTIMEHOME))
+split_path_name = $(subst /rti_, , $(RTIMEHOME))
+# from connext_dds_micro-x.y.z remove _dds to get connext_micro-x.y.z
+product_name = $(notdir $(split_path_name))
 product_name := $(subst _dds,,$(product_name))
 
 version_name = $(lastword $(product_name))
