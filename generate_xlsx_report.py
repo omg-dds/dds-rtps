@@ -125,6 +125,9 @@ class JunitAggregatedData:
     def get_unsupported_tests(self):
         return self.data[2]
 
+    def get_supported_tests(self):
+        return self.data[1] - self.data[2]
+
     def __str__(self) -> str:
         return f'({self.data[0]}, {self.data[1]}, {self.data[2]})'
 
@@ -749,13 +752,13 @@ class XlsxReport:
             'Product', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 2,
-            'Test Passed', self.__formats['bold_w_border'])
+            'Tests Passed', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 3,
-            'Unsupported Test', self.__formats['bold_w_border'])
+            'Supported Tests', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 4,
-            'Supported Test Passed', self.__formats['bold_w_border'])
+            'Supported Tests Passed', self.__formats['bold_w_border'])
 
         current_row += 1
 
@@ -778,10 +781,10 @@ class XlsxReport:
                     str(value.get_total_tests()),
                 self.get_format_color(value.get_passed_tests(),
                                       value.get_total_tests()))
-            # unsupported tests
+            # supported tests
             worksheet.write(
                 current_row, current_column + 3,
-                str(value.get_unsupported_tests()) + ' / ' +
+                str(value.get_supported_tests()) + ' / ' +
                     str(value.get_total_tests()),
                 self.__formats['result_yellow'] if value.get_unsupported_tests() > 0
                     else self.__formats['result_green'])
@@ -789,16 +792,16 @@ class XlsxReport:
             worksheet.write(
                 current_row, current_column + 4,
                 str(value.get_passed_tests()) + ' / ' +
-                    str(value.get_total_tests() - value.get_unsupported_tests()),
+                    str(value.get_supported_tests()),
                 self.get_format_color(value.get_passed_tests(),
-                                      value.get_total_tests() - value.get_unsupported_tests()))
+                                      value.get_supported_tests()))
             current_row += 1
 
         # Add 2 rows of gap for the next table
         current_row += 2
         worksheet.write(
             current_row, current_column,
-            'Test Result: passed / total / unsupported', self.__formats['bold_w_border'])
+            'Test Result: passed / supported / total', self.__formats['bold_w_border'])
         current_row += 1
         worksheet.write(
             current_row, current_column,
@@ -846,10 +849,10 @@ class XlsxReport:
                 process_column = column_dict[subscriber_name]
 
             worksheet.write(process_row, process_column,
-                            str(value.get_passed_tests()) + ' / ' +
-                                str(value.get_total_tests()) + ' / ' +
-                                str(value.get_unsupported_tests()),
-                            self.get_format_color(value.get_passed_tests(), value.get_total_tests()))
+                    str(value.get_passed_tests()) + ' / ' +
+                        str(value.get_supported_tests()) + ' / ' +
+                        str(value.get_total_tests()),
+                    self.get_format_color(value.get_passed_tests(), value.get_supported_tests()))
 
     def add_static_data_summary_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
