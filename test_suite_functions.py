@@ -32,7 +32,6 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     """
     sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
-    print(f'First sample found: {sub_string}')
     if sub_string is None:
         return ReturnCode.DATA_NOT_RECEIVED
 
@@ -44,7 +43,6 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     retcode = ReturnCode.RECEIVING_FROM_ONE
 
     while sub_string is not None and samples_read < max_samples_received:
-        print(f'Samples read {samples_read}, current size: {sub_string.group(1)}')
         current_sample_size = int(sub_string.group(1))
 
         if current_sample_size != first_sample_size:
