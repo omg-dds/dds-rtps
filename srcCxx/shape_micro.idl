@@ -5,5 +5,5 @@ struct ShapeType {
   long x;
   long y;
   long shapesize;
-  sequence<uint8> additional_payload_size;
+  sequence<uint8, 100000> additional_payload_size;
 };
