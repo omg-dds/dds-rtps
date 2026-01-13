@@ -296,17 +296,17 @@ rtps_test_suite_1 = {
     # The DataReader should only receive samples from the DataWriter with higher
     # ownership. There may be the situation that the DataReader starts receiving
     # samples from one DataWriter until another DataWriter with higher ownership
-    # strength is created. This should be handled by test_ownership_receivers().
+    # strength is created. This should be handled by test_size_receivers().
     'Test_Ownership_3': {
         'apps' : [
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
+            '-P -t Square -s 3 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s 4 -r -k 0 -c BLUE -z 30',
             '-S -t Square -s 1 -r -k 0'],
         'expected_codes' :[
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_ONE],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers of the same instance',
         'description' : 'Verifies an exclusive ownership subscriber receives samples only from '
                             'the highest ownership strength publisher of the same instance\n\n'
@@ -332,14 +332,14 @@ rtps_test_suite_1 = {
     # publish different instances and the ownership is applied per instance.
     'Test_Ownership_4': {
         'apps' :[
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
+            '-P -t Square -s 3 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s 4 -r -k 0 -c RED -z 30',
             '-S -t Square -s 1 -r -k 0'],
         'expected_codes' : [
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers with different instances',
         'description' : 'Verifies an exclusive ownership subscriber receives samples from different '
                             'publishers that publish different instances (ShapeType with different color)\n\n'
@@ -361,14 +361,14 @@ rtps_test_suite_1 = {
     # shared ownership.
     'Test_Ownership_5': {
         'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 30',
             '-S -t Square -s -1 -r -k 0'],
         'expected_codes' :[
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with publishers with the same instance',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
                             'shared ownership publishers of the different instances\n\n'
@@ -390,14 +390,14 @@ rtps_test_suite_1 = {
     # shared ownership.
     'Test_Ownership_6': {
         'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s -1 -r -k 0 -c RED -z 30',
             '-S -t Square -s -1 -r -k 0'],
         'expected_codes' : [
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with different instances',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
                             'shared ownership publishers of different instances\n\n'

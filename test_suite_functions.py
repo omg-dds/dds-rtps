@@ -18,166 +18,73 @@ import time
 # is received in order, or that OWNERSHIP works properly, etc...
 MAX_SAMPLES_READ = 500
 
-def test_ownership_receivers(child_sub, samples_sent, last_sample_saved, timeout):
+def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
     """
-    This function is used by test cases that have two publishers and one subscriber.
-    This tests that the Ownership QoS works correctly. In order to do that the
-    function checks if the subscriber has received samples from one publisher or
-    from both. A subscriber has received from both publishers if there is a sample
-    from each publisher interleaved. This is done to make sure the subscriber did
-    not started receiving samples from the publisher that was run before, and then
-    change to the publisher with the greatest ownership.
+    This function is used by test cases that have two publishers and one
+    subscriber. This tests check how many samples are received by the
+    subscriber application with different sizes.
 
     child_sub: child program generated with pexpect
-    samples_sent: list of multiprocessing Queues with the samples
-                the publishers send. Element 1 of the list is for
-                publisher 1, etc.
-    last_sample_saved: list of multiprocessing Queues with the last
-            sample saved on samples_sent for each Publisher. Element 1 of
-            the list is for Publisher 1, etc.
+    samples_sent: not used
+    last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
-
-    This functions assumes that the subscriber has already received samples
-    from, at least, one publisher.
     """
-    first_sample_received_publisher = 0
-    ignore_first_samples = True
-    first_received = False
-    second_received = False
-    list_data_received_second = []
-    list_data_received_first = []
+    sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+        child_sub.before + child_sub.after)
+    print(f'First sample found: {sub_string}')
+    if sub_string is None:
+        return ReturnCode.DATA_NOT_RECEIVED
+
+    first_sample_size = int(sub_string.group(1))
+
     max_samples_received = MAX_SAMPLES_READ
     samples_read = 0
-    list_samples_processed = []
-    last_first_sample = ''
-    last_second_sample = ''
+    ignore_first_samples = True
+    retcode = ReturnCode.RECEIVING_FROM_ONE
 
-    while(samples_read < max_samples_received):
-        # take the topic, color, position and size of the ShapeType.
-        # child_sub.before contains x and y, and child_sub.after contains
-        # [shapesize]
-        # Example: child_sub.before contains 'Square     BLUE       191 152'
-        #          child_sub.after contains '[30]'
-        sub_string = re.search('[0-9]+ [0-9]+ \[[0-9]+\]',
-            child_sub.before + child_sub.after)
-        # sub_string contains 'x y [shapesize]', example: '191 152 [30]'
+    while sub_string is not None and samples_read < max_samples_received:
+        print(f'Samples read {samples_read}, current size: {sub_string.group(1)}')
+        current_sample_size = int(sub_string.group(1))
 
-        # takes samples written from both publishers stored in their queues
-        # ('samples_sent[i]') and save them in different lists.
-        # Try to get all available samples to avoid a race condition that
-        # happens when the samples are not in the list but the reader has
-        # already read them.
-        # waits until <max_wait_time> to stop the execution of the loop and
-        # returns the code "RECEIVING_FROM_ONE".
-        # list_data_received_[first|second] is a list with the samples sent from
-        # its corresponding publisher
-        try:
-            while True:
-                list_data_received_first.append(samples_sent[0].get(
-                        block=False))
-        except queue.Empty:
-            pass
-
-        try:
-            while True:
-                list_data_received_second.append(samples_sent[1].get(
-                        block=False))
-        except queue.Empty:
-            pass
-
-        # Take the last sample published by each publisher from their queues
-        # ('last_sample_saved[i]') and save them local variables.
-        try:
-            last_first_sample = last_sample_saved[0].get(block=False)
-        except queue.Empty:
-            pass
-
-        try:
-            last_second_sample = last_sample_saved[1].get(block=False)
-        except queue.Empty:
-            pass
-
-        # Determine to which publisher the current sample belong to
-        if sub_string.group(0) in list_data_received_second:
-            current_sample_from_publisher = 2
-        elif sub_string.group(0) in list_data_received_first:
-            current_sample_from_publisher = 1
-        else:
-            # If the sample is not in any queue, break the loop if the
-            # the last sample for any publisher has already been processed.
-            if last_first_sample in list_samples_processed:
+        if current_sample_size != first_sample_size:
+            if ignore_first_samples:
+                # the first time we receive a different size, ignore it
+                # For example, if we receive samples of size 20, then only
+                # samples of size 30, we have to return RECEIVING_FROM_ONE.
+                # If after receiving samples of size 30, we receive samples of
+                # size 20 again, then we return RECEIVING_FROM_BOTH.
+                ignore_first_samples = False
+                first_sample_size = current_sample_size
+            else:
+                retcode = ReturnCode.RECEIVING_FROM_BOTH
                 break
-            if last_second_sample in list_samples_processed:
-                break
-            print(f'Last samples: {last_first_sample}, {last_second_sample}')
-            # Otherwise, wait a bit and continue
-            time.sleep(0.1)
-            continue
 
-        # Keep all samples processed in a single list, so we can check whether
-        # the last sample published by any publisher has already been processed
-        list_samples_processed.append(sub_string.group(0))
-
-        # If the app hit this point, it is because the previous subscriber
-        # sample has been already read. Then, we can process the next sample
-        # read by the subscriber.
-        # Get the next samples the subscriber is receiving
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT, # index = 1
+                pexpect.TIMEOUT # index = 1
             ],
             timeout
         )
+
         if index == 1:
             break
 
         samples_read += 1
 
-        # A potential case is that the reader gets data from one writer and
-        # then start receiving from a different writer with a higher
-        # ownership. This avoids returning RECEIVING_FROM_BOTH if this is
-        # the case.
-        # This if is only run once we process the first sample received by the
-        # subscriber application
-        if first_sample_received_publisher == 0:
-            if current_sample_from_publisher == 1:
-                first_sample_received_publisher = 1
-            elif current_sample_from_publisher == 2:
-                first_sample_received_publisher = 2
-
-        # Check if the app still needs to ignore samples
-        if ignore_first_samples == True:
-            if (first_sample_received_publisher == 1 \
-                    and current_sample_from_publisher == 2) \
-                or (first_sample_received_publisher == 2 \
-                    and current_sample_from_publisher == 1):
-                # if receiving samples from a different publisher, then stop
-                # ignoring samples
-                ignore_first_samples = False
-            else:
-                # in case that the app only receives samples from one publisher
-                # this loop always continues and will return RECEIVING_FROM_ONE
-                continue
-
-        if current_sample_from_publisher == 1:
-            first_received = True
-        else:
-            second_received = True
-        if second_received == True and first_received == True:
-            return ReturnCode.RECEIVING_FROM_BOTH
+        sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+            child_sub.before + child_sub.after)
 
     print(f'Samples read: {samples_read}')
-    return ReturnCode.RECEIVING_FROM_ONE
+    return retcode
 
 def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
     """
     This function is used by test cases that have two publishers and one
-    subscriber. This tests that only one of the color is received by the
-    subscriber application because it contains a filter that only allows to
-    receive data from one color.
+    subscriber. This tests how many samples are received by the
+    subscriber application with different colors.
 
     child_sub: child program generated with pexpect
     samples_sent: not used
