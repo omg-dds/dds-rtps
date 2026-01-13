@@ -113,6 +113,8 @@ static void config_micro()
       return;
   }
 
+  udp_property->max_message_size = 131072; //128KB
+
   if (!registry->register_component(
       NETIO_DEFAULT_UDP_NAME,
       UDPInterfaceFactory::get_interface(),
@@ -182,6 +184,8 @@ void config_dr_qos(DDS::DataReaderQos &dr_qos) {
     dr_qos.resource_limits.max_samples_per_instance = 500;
     dr_qos.reader_resource_limits.max_remote_writers = 16;
     dr_qos.reader_resource_limits.max_samples_per_remote_writer = 500;
+    dr_qos.reader_resource_limits.max_fragmented_samples = 64;
+    dr_qos.reader_resource_limits.max_fragmented_samples_per_remote_writer = 32;
 }
 
 uint64_t DDS_UInt8Seq_get_length(DDS_OctetSeq * seq)
