@@ -55,4 +55,16 @@ def remove_ansi_colors(text):
     return cleaned_str
 
 def no_check(child_sub, samples_sent, last_sample_saved, timeout):
+    """ Only checks that the data is well formed and size is not zero."""
+    sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+        child_sub.before + child_sub.after)
+
+    if sub_string is None:
+        return ReturnCode.DATA_NOT_RECEIVED
+
+    sample_size = int(sub_string.group(1))
+
+    if sample_size == 0:
+        return ReturnCode.DATA_NOT_CORRECT
+
     return ReturnCode.OK
