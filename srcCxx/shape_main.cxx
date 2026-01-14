@@ -1369,16 +1369,8 @@ public:
 #endif
 
 #if   defined(RTI_CONNEXT_DDS)
-        // usage of large data
-        if (PropertyQosPolicyHelper::assert_property(
-                dw_qos.property,
-                "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
-                "65536",
-                DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
-            logger.log_message("failed to set property pool_buffer_max_size", Verbosity::ERROR);
-        }
         if (options->additional_payload_size > 64000) {
-            dw_qos.publish_mode.kind = ASYNCHRONOUS_PUBLISH_MODE_QOS;
+            configure_large_data(dw_qos);
         }
         logger.log_message("    Publish Mode kind = "
                 + std::string(dw_qos.publish_mode.kind == ASYNCHRONOUS_PUBLISH_MODE_QOS
@@ -1718,7 +1710,7 @@ public:
         // TODO: Remove when Fast DDS supports `get_key_value()`
         std::map<InstanceHandle_t, std::string> instance_handle_color;
 #elif defined(RTI_CONNEXT_MICRO)
-        std::map<InstanceHandle_t, std::string, InstanceHandle_t_less_op> instance_handle_color;
+        std::vector<std::pair<InstanceHandle_t, std::string>> instance_handle_color;
 #endif
 
         while ( ! all_done ) {
@@ -1838,7 +1830,7 @@ public:
 #if defined(EPROSIMA_FAST_DDS)
                                 instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
 #elif defined(RTI_CONNEXT_MICRO)
-                                instance_handle_color[sample_info->instance_handle] = std::string(sample->color);
+                                set_instance_color(instance_handle_color, sample_info->instance_handle, sample->color);
 #endif
                             } else {
                                 ShapeType shape_key;
@@ -1847,7 +1839,7 @@ public:
                                 shape_key.color FIELD_ACCESSOR = instance_handle_color[sample_info->instance_handle] NAME_ACCESSOR;
 #elif defined(RTI_CONNEXT_MICRO)
                                 // 128 is the max length of the color string
-                                strncpy(shape_key.color, instance_handle_color[sample_info->instance_handle].c_str(), 128);
+                                strncpy(shape_key.color, get_instance_color(instance_handle_color, sample_info->instance_handle).c_str(), 128);
 #else
                                 drs[i]->get_key_value(shape_key, sample_info->instance_handle);
 #endif

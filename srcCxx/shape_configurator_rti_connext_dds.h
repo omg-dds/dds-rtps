@@ -26,3 +26,14 @@ void configure_participant_announcements_period(
     dp_qos.discovery_config.participant_liveliness_assert_period.nanosec =
             (announcement_period_us % 1000000) * 1000;
 }
+
+void configure_large_data(DDS::DataWriterQos &dw_qos) {
+    if (DDS::PropertyQosPolicyHelper::assert_property(
+            dw_qos.property,
+            "dds.data_writer.history.memory_manager.fast_pool.pool_buffer_max_size",
+            "65536",
+            DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+        printf("failed to set property pool_buffer_max_size\n");
+    }
+    dw_qos.publish_mode.kind = DDS::ASYNCHRONOUS_PUBLISH_MODE_QOS;
+}

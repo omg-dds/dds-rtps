@@ -208,8 +208,27 @@ const unsigned char* DDS_UInt8Seq_get_reference(const DDS_OctetSeq * seq, uint64
   return DDS_OctetSeq_get_reference(seq, index);
 }
 
-struct InstanceHandle_t_less_op {
-    bool operator()(const DDS::InstanceHandle_t& a, const DDS::InstanceHandle_t& b) const {
-        return std::memcmp(a.octet, b.octet, 16);
+void set_instance_color(
+        std::vector<std::pair<DDS::InstanceHandle_t, std::string>>& vec,
+        const DDS::InstanceHandle_t handle,
+        const std::string& color) {
+    // Check if the handle already exists
+    for (auto& p : vec) {
+        if (DDS_InstanceHandle_equals(&p.first, &handle)) {
+            return;
+        }
     }
-};
+    // If it doesn't exist, add it
+    vec.push_back(std::make_pair(handle, color));
+}
+
+std::string get_instance_color(
+        const std::vector<std::pair<DDS::InstanceHandle_t, std::string>>& vec,
+        const DDS::InstanceHandle_t handle) {
+    for (const auto& p : vec) {
+        if (DDS_InstanceHandle_equals(&p.first, &handle)) {
+            return p.second;
+        }
+    }
+    return "";
+}
