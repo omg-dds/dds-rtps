@@ -7,7 +7,7 @@
 #
 #################################################################
 
-from rtps_test_utilities import ReturnCode
+from rtps_test_utilities import ReturnCode, basic_check
 import re
 import pexpect
 import queue
@@ -30,6 +30,11 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
     """
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
     if sub_string is None:
@@ -89,6 +94,11 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
     """
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
         child_sub.before + child_sub.after)
     first_sample_color = sub_string.group(1)
@@ -132,6 +142,11 @@ def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
     last_sample_saved: not used
     timeout: not used
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 
@@ -185,6 +200,11 @@ def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeo
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern.
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
     processed_samples = 0
@@ -268,6 +288,11 @@ def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_
     timeout: time pexpect waits until it matches a pattern.
     """
 
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     produced_code = ReturnCode.OK
 
     instance_color = []
@@ -335,6 +360,11 @@ def test_durability_volatile(child_sub, samples_sent, last_sample_saved, timeout
     timeout: not used
     """
 
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     # Read the first sample, if it has the size > 5, it is using volatile
     # durability correctly
     sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
@@ -367,6 +397,11 @@ def test_durability_transient_local(child_sub, samples_sent, last_sample_saved, 
     timeout: not used
     """
 
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     # Read the first sample, if it has the size == 1, it is using transient
     # local durability correctly
     sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
@@ -395,6 +430,11 @@ def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     # At this point, the subscriber app has already received one sample
     # Check deadline requested missed
@@ -426,6 +466,11 @@ def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sampl
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 
@@ -492,6 +537,11 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
     timeout: time pexpect waits until it matches a pattern
     """
 
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     produced_code = ReturnCode.OK
 
     instance_color = []
@@ -543,6 +593,11 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 
@@ -596,6 +651,11 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
     timeout: time pexpect waits until it matches a pattern
     """
 
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
     produced_code = ReturnCode.DATA_NOT_CORRECT
     # As the interoperability_test is just looking for the size [<size>],
     # this does not count the data after it, we need to read one more full
@@ -633,6 +693,11 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 
@@ -718,6 +783,11 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 
@@ -821,6 +891,11 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
     """
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     produced_code = ReturnCode.OK
 

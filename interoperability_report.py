@@ -24,7 +24,7 @@ import platform
 if __name__ == "__main__" and platform.system() == "Darwin":
     multiprocessing.set_start_method('fork')
 
-from rtps_test_utilities import ReturnCode, log_message, no_check, remove_ansi_colors
+from rtps_test_utilities import ReturnCode, log_message, basic_check, remove_ansi_colors
 
 # This parameter is used to save the samples the Publisher sends.
 # MAX_SAMPLES_SAVED is the maximum number of samples saved.
@@ -764,7 +764,7 @@ def main():
                             raise RuntimeError('Cannot process function of '
                                 f'test case: {test_case_name}')
                     else:
-                        check_function = no_check
+                        check_function = basic_check
 
                     assert(len(parameters) == len(expected_codes))
 
