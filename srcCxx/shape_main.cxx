@@ -19,6 +19,8 @@
 #include <getopt.h>
 #include <sys/types.h>
 
+#include <vector>
+
 #if defined(RTI_CONNEXT_DDS)
 #include "shape_configurator_rti_connext_dds.h"
 #elif defined(RTI_CONNEXT_MICRO)

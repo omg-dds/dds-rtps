@@ -58,7 +58,7 @@ LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
 		-lrti_me_whsmz -lrti_mez -lrti_me_ddsxtypesz $(SYSLIBS)
 endif
 
-DEFINES = -DRTI_UNIX -DRTI_DARWIN -DRTI_CONNEXT_MICRO -DOSAPI_CC_DEF_H=osapi/osapi_cc_gcc.h
+DEFINES = -DRTI_UNIX -DRTI_DARWIN -DRTI_CONNEXT_MICRO
 
 INCLUDES = -I. -I$(RTIMEHOME)/include -I$(RTIMEHOME)/include/rti_me
 
