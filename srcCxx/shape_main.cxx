@@ -276,6 +276,10 @@ public:
 
     useconds_t          periodic_announcement_period_us;
 
+    char*               cft_expression;
+
+    int                 size_modulo;
+
 public:
     //-------------------------------------------------------------
     ShapeOptions()
@@ -330,6 +334,10 @@ public:
         take_read_next_instance = true;
 
         periodic_announcement_period_us = 0;
+
+        cft_expression = NULL;
+
+        size_modulo = 0; // 0 means disabled
     }
 
     //-------------------------------------------------------------
@@ -338,6 +346,7 @@ public:
         STRING_FREE(topic_name);
         STRING_FREE(color);
         STRING_FREE(partition);
+        STRING_FREE(cft_expression);
     }
 
     //-------------------------------------------------------------
@@ -403,6 +412,13 @@ public:
         printf("                           read_next_instance()\n");
         printf("   --periodic-announcement <ms> : indicates the periodic participant\n");
         printf("                                  announcement period in ms. Default 0 (off)\n");
+        printf("   --cft <expression> : ContentFilteredTopic filter expression (use quotes\n");
+        printf("                       if it contains whitespaces). Cannot be used with -c on\n");
+        printf("                       subscriber applications\n");
+        printf("   --size-modulo <int> : If set, the modulo operation is applied to the\n");
+        printf("                         shapesize. This will make that shapesize is in the\n");
+        printf("                         range [1,N]. This only applies if shapesize is\n");
+        printf("                         increased (-z 0)\n");
     }
 
     //-------------------------------------------------------------
@@ -415,7 +431,7 @@ public:
             logger.log_message("please specify publish [-P] or subscribe [-S]", Verbosity::ERROR);
             return false;
         }
-        if ( publish && subscribe ) {
+        if (publish && subscribe) {
             logger.log_message("please specify only one of: publish [-P] or subscribe [-S]", Verbosity::ERROR);
             return false;
         }
@@ -456,6 +472,13 @@ public:
         if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_access_scope_set) {
             logger.log_message("warning: --access-scope ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
         }
+        if (size_modulo > 0 && shapesize != 0) {
+            logger.log_message("warning: --size-modulo has no effect unless shapesize (-z) is set to 0", Verbosity::ERROR);
+        }
+        if (subscribe && color != NULL && cft_expression != NULL) {
+            logger.log_message("error: cannot specify both --cft and -c/--color for subscriber applications", Verbosity::ERROR);
+            return false;
+        }
 
         return true;
     }
@@ -483,6 +506,8 @@ public:
             {"take-read", no_argument, NULL, 'K'},
             {"time-filter", required_argument, NULL, 'i'},
             {"periodic-announcement", required_argument, NULL, 'N'},
+            {"cft", required_argument, NULL, 'F'},
+            {"size-modulo", required_argument, NULL, 'Q'},
             {NULL, 0, NULL, 0 }
         };
 
@@ -865,6 +890,19 @@ public:
                     parse_ok = false;
                 }
                 periodic_announcement_period_us = (useconds_t) converted_param * 1000;
+                break;
+            }
+            case 'F':
+                cft_expression = strdup(optarg);
+                break;
+            case 'Q': {
+                int converted_param = 0;
+                if (sscanf(optarg, "%d", &converted_param) == 0 || converted_param < 1) {
+                    logger.log_message("incorrect value for size-modulo, must be >=1", Verbosity::ERROR);
+                    parse_ok = false;
+                } else {
+                    size_modulo = converted_param;
+                }
                 break;
             }
             case '?':
@@ -1500,50 +1538,58 @@ public:
             logger.log_message("    HistoryDepth = " + std::to_string(dr_qos.history FIELD_ACCESSOR.depth), Verbosity::DEBUG);
         }
 
-        if ( options->color != NULL ) {
-            /*  filter on specified color */
+        if ( options->cft_expression != NULL || options->color != NULL) {
             ContentFilteredTopic *cft = NULL;
-            StringSeq             cf_params;
+            StringSeq cf_params;
 
-        for (unsigned int i = 0; i < options->num_topics; ++i) {
-            const std::string filtered_topic_name_str =
-                    std::string(options->topic_name) +
-                    (i > 0 ? std::to_string(i) : "") +
-                    "_filtered";
-            const char* filtered_topic_name = filtered_topic_name_str.c_str();
+            for (unsigned int i = 0; i < options->num_topics; ++i) {
+                const std::string filtered_topic_name_str =
+                        std::string(options->topic_name) +
+                        (i > 0 ? std::to_string(i) : "") +
+                        "_filtered";
+                const char* filtered_topic_name = filtered_topic_name_str.c_str();
+                const char* filter_expr = nullptr;
+
+                if (options->cft_expression != NULL) {
+                    filter_expr = options->cft_expression;
+                    cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], filter_expr, cf_params);
+                    logger.log_message("    ContentFilterTopic = \"" + std::string(filter_expr) + "\"", Verbosity::DEBUG);
+                } else if (options->color != NULL) {
 #if defined(RTI_CONNEXT_DDS)
-                char parameter[64];
-                snprintf(parameter, 64, "'%s'",  options->color);
-                StringSeq_push(cf_params, parameter);
+                    char parameter[64];
+                    snprintf(parameter, 64, "'%s'",  options->color);
+                    StringSeq_push(cf_params, parameter);
 
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color MATCH %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color MATCH "
-                    + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
+                    cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color MATCH %0", cf_params);
+                    logger.log_message("    ContentFilterTopic = \"color MATCH "
+                        + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif  defined(INTERCOM_DDS)
-                char parameter[64];
-                snprintf(parameter, 64, "'%s'",  options->color);
-                StringSeq_push(cf_params, parameter);
+                    char parameter[64];
+                    snprintf(parameter, 64, "'%s'",  options->color);
+                    StringSeq_push(cf_params, parameter);
 
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color = "
-                    + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
+                    cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
+                    logger.log_message("    ContentFilterTopic = \"color = "
+                        + std::string(parameter) + std::string("\""), Verbosity::DEBUG);
 #elif defined(TWINOAKS_COREDX) || defined(OPENDDS)
-                StringSeq_push(cf_params, options->color);
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color = "
-                    + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
+                    StringSeq_push(cf_params, options->color);
+                    cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
+                    logger.log_message("    ContentFilterTopic = \"color = "
+                        + std::string(options->color) + std::string("\""), Verbosity::DEBUG);
 #elif defined(EPROSIMA_FAST_DDS)
-                cf_params.push_back(std::string("'") + options->color + std::string("'"));
-                cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
-                logger.log_message("    ContentFilterTopic = \"color = "
-                    + cf_params[0] + std::string("\""), Verbosity::DEBUG);
+                    cf_params.push_back(std::string("'") + options->color + std::string("'"));
+                    cft = dp->create_contentfilteredtopic(filtered_topic_name, topics[i], "color = %0", cf_params);
+                    logger.log_message("    ContentFilterTopic = \"color = "
+                        + cf_params[0] + std::string("\""), Verbosity::DEBUG);
 #endif
+                }
+
                 if (cft == NULL) {
                     logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
                     return false;
                 }
 
-                printf("Create reader for topic: %s color: %s\n", cft->get_name() NAME_ACCESSOR, options->color );
+                printf("Create reader for topic: %s\n", cft->get_name() NAME_ACCESSOR);
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
                     logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
@@ -1728,6 +1774,7 @@ public:
                             } else {
                                 ShapeType shape_key;
                                 shape_initialize_w_color(shape_key, NULL);
+
 #if defined(EPROSIMA_FAST_DDS)
                                 shape_key.color FIELD_ACCESSOR = instance_handle_color[sample_info->instance_handle] NAME_ACCESSOR;
 #else
@@ -1831,7 +1878,13 @@ public:
             moveShape(&shape);
 
             if (options->shapesize == 0) {
-                shape.shapesize FIELD_ACCESSOR += 1;
+                if (options->size_modulo > 0) {
+                    // Size cannot be 0, so increase it after modulo operation
+                    shape.shapesize FIELD_ACCESSOR =
+                            (shape.shapesize FIELD_ACCESSOR % options->size_modulo) + 1;
+                } else {
+                    shape.shapesize FIELD_ACCESSOR += 1;
+                }
             }
 
             if (options->coherent_set_enabled || options->ordered_access_enabled) {
