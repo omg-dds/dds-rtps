@@ -62,13 +62,16 @@ def no_check(child_sub, samples_sent, last_sample_saved, timeout):
     return ReturnCode.OK
 
 def basic_check(child_sub, samples_sent, last_sample_saved, timeout):
-    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
+    """ Only checks that the data is well formed and size is not zero."""
+    sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
 
-    # check the sample contains some info, just checking the size is different
-    # than zero is enough
-    if sub_string is not None:
-        if int(sub_string.group(1)) != 0:
-            return ReturnCode.OK
+    if sub_string is None:
+        return ReturnCode.DATA_NOT_RECEIVED
 
-    return ReturnCode.DATA_NOT_CORRECT
+    sample_size = int(sub_string.group(1))
+
+    if sample_size == 0:
+        return ReturnCode.DATA_NOT_CORRECT
+
+    return ReturnCode.OK
