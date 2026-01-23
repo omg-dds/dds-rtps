@@ -519,6 +519,7 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     instance_color = []
     disposed_instance_color = []
     max_samples_received = MAX_SAMPLES_READ
+    samples_read = 0
 
     while samples_read < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
