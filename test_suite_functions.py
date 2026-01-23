@@ -455,8 +455,10 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
 
     instance_color = []
     unregistered_instance_color = []
+    max_samples_received = MAX_SAMPLES_READ
+    samples_read = 0
 
-    while True:
+    while samples_read < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -483,9 +485,13 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
         if index == 1:
             # no more data to process
             break
+        if index == 0:
+            samples_read += 1
 
-    # compare that arrays contain the same elements
-    if set(instance_color) == set(unregistered_instance_color):
+    # compare that arrays contain the same elements and are not empty
+    if len(instance_color) == 0:
+        produced_code = ReturnCode.DATA_NOT_RECEIVED
+    elif set(instance_color) == set(unregistered_instance_color):
         produced_code = ReturnCode.OK
     else:
         produced_code = ReturnCode.DATA_NOT_CORRECT
@@ -512,8 +518,9 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
 
     instance_color = []
     disposed_instance_color = []
+    max_samples_received = MAX_SAMPLES_READ
 
-    while True:
+    while samples_read < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -540,9 +547,13 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         if index == 1:
             # no more data to process
             break
+        if index == 0:
+            samples_read += 1
 
-    # compare that arrays contain the same elements
-    if set(instance_color) == set(disposed_instance_color):
+    # compare that arrays contain the same elements and are not empty
+    if len(instance_color) == 0:
+        produced_code = ReturnCode.DATA_NOT_RECEIVED
+    elif set(instance_color) == set(disposed_instance_color):
         produced_code = ReturnCode.OK
     else:
         produced_code = ReturnCode.DATA_NOT_CORRECT
