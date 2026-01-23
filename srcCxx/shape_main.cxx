@@ -1762,10 +1762,6 @@ public:
                                     ANY_SAMPLE_STATE,
                                     ANY_VIEW_STATE,
                                     ANY_INSTANCE_STATE );
-                            if (retval == DDS_RETCODE_OK) {
-                                logger.log_message("Taken " + std::to_string(samples.length())
-                                        + " sample(s)", Verbosity::DEBUG);
-                            }
                         }
                     } else { /* Use read_next_instance*/
                         if (options->take_read_next_instance) {
