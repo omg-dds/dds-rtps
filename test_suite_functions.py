@@ -618,6 +618,7 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     first_iteration = []
     samples_read = 0
     consecutive_samples = []
+    ignore_first_sample = []
 
     while samples_read < max_samples_lifespan:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
@@ -630,6 +631,7 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                 previous_seq_num.append(int(sub_string.group(2)))
                 first_iteration.append(True)
                 consecutive_samples.append(1) # take into account the first sample
+                ignore_first_sample.append(True)
 
             # if the instance exists
             if sub_string.group(1) in instance_color:
@@ -643,6 +645,8 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                     # if the sequence number is consecutive, increase the counter
                     if previous_seq_num[index] + 1 == int(sub_string.group(2)):
                         consecutive_samples[index] += 1
+                        # if found consecutive samples, do not ignore the first sample
+                        ignore_first_sample[index] = False
                     else:
                         # if the sequence number is not consecutive, check that we
                         # receive only 3 or 2 samples
@@ -651,10 +655,16 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                             # sample is consecutive with itself
                             consecutive_samples[index] = 1
                         else:
-                            # if the amount of samples received is different than 3 or 2
-                            # this is an error
-                            produced_code = ReturnCode.DATA_NOT_CORRECT
-                            break
+                            if ignore_first_sample[index]:
+                                # there may be a case in which we receive a sample
+                                # and the next one is not consecutive, if that is the
+                                # case, ignore it
+                                ignore_first_sample[index] = False
+                            else:
+                                # if the amount of samples received is different than 3 or 2
+                                # this is an error
+                                produced_code = ReturnCode.DATA_NOT_CORRECT
+                                break
                     previous_seq_num[index] = int(sub_string.group(2))
 
             else:
