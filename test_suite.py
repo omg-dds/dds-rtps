@@ -437,6 +437,7 @@ rtps_test_suite_1 = {
                         ' * Configures a second publisher to publish samples with "color" equal to "RED"\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to ensure any samples that are not '
                             'received are due to filtering\n'
+                        ' * Configures the publishers / subscriber with history KEEP_ALL\n'
                         ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
                         ' * Note that this test does not check whether the filtering happens in the publisher side or '
                             'the subscriber side. It only checks the middleware filters the samples somewhere.\n\n'
@@ -450,6 +451,9 @@ rtps_test_suite_1 = {
         'title' : 'Use of Content filter to avoid receiving undesired data (non-key)',
         'description': 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not '
                        'pass the filter. The filter is applied to the non-key member "shapesize".\n\n'
+                       ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                       ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                       ' * The publisher application sends samples with increasing value of the "size" member\n'
                        ' * Publisher sends samples with size cycling from 1 to 50 (using --size-modulo 50 and -z 0)\n'
                        ' * Subscriber uses --cft "shapesize <= 20"\n'
                        ' * The test passes if all received samples have size < 20\n'
