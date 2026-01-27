@@ -66,13 +66,16 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
 
         if index == 1:
             break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
         samples_read += 1
 
@@ -116,13 +119,16 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
 
         if index == 1:
             break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
         samples_read += 1
 
@@ -170,13 +176,16 @@ def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
         if index == 1:
             # no more data to process
             break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
         samples_read += 1
 
@@ -238,15 +247,18 @@ def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            # no more data to process
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     print(f'Samples read: {samples_read}, instances: {instance_color}')
     return produced_code
@@ -349,15 +361,19 @@ def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
     # Check deadline requested missed
     index = child_sub.expect([
             'on_requested_deadline_missed()', # index = 0
-            pexpect.TIMEOUT # index = 1
+            pexpect.TIMEOUT, # index = 1
+            pexpect.EOF # index = 2
         ],
         timeout)
     if index == 0:
         return ReturnCode.DEADLINE_MISSED
+    elif index == 1:
+        return ReturnCode.DATA_NOT_RECEIVED
     else:
         index = child_sub.expect([
             '\[[0-9]+\]', # index = 0
-            pexpect.TIMEOUT # index = 1
+            pexpect.TIMEOUT, # index = 1
+            pexpect.EOF # index = 2
         ],
         timeout)
         if index == 0:
@@ -424,15 +440,18 @@ def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sampl
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            # no more data to process
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     print(f'Samples read: {samples_read}, instances: {instance_color}')
     return produced_code
@@ -478,15 +497,18 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
         index = child_sub.expect(
             [
                 r'\w+\s+\w+\s+.*?\n', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            # no more data to process
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     # compare that arrays contain the same elements and are not empty
     if len(instance_color) == 0:
@@ -541,15 +563,18 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         index = child_sub.expect(
             [
                 r'\w+\s+\w+\s+.*?\n', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            # no more data to process
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     # compare that arrays contain the same elements and are not empty
     if len(instance_color) == 0:
@@ -584,7 +609,8 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
     index = child_sub.expect(
         [
             r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{[0-9]+\}', # index = 0
-            pexpect.TIMEOUT # index = 1
+            pexpect.TIMEOUT, # index = 1
+            pexpect.EOF # index = 2
         ],
         timeout
     )
@@ -601,6 +627,8 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
                 produced_code = ReturnCode.OK
             else:
                 produced_code = ReturnCode.DATA_NOT_CORRECT
+    elif index == 2:
+        produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     return produced_code
 
@@ -687,15 +715,18 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         index = child_sub.expect(
             [
                 '\[[0-9]+\]', # index = 0
-                pexpect.TIMEOUT # index = 1
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            # no more data to process
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     print(f'Samples read: {samples_read}, instances: {instance_color}')
     return produced_code
@@ -703,7 +734,7 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
 def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests that ordered access works correctly. This counts the
-    samples received in order and detects wether they are from the same instance
+    samples received in order and detects whether they are from the same instance
     as the previously received sample or not.
     If the number of consecutive samples from the same instance is greater than
     the number of consecutive samples form different instances, this means that
@@ -795,16 +826,20 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         # 'Reading with ordered access message'
         index = child_sub.expect(
             [
-                r'(Reading with ordered access.*?\n|[\[[0-9]+\])', # index = 0
-                pexpect.TIMEOUT # index = 1
+                '\[[0-9]+\]', # index = 0
+                r'Reading with ordered access.*?\n', # index = 1
+                pexpect.TIMEOUT, # index = 2
+                pexpect.EOF # index = 3
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 2:
+            # no more data to process
+            break
+        elif index == 3:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     print(f'Samples read: {samples_read}, instances: {instance_color}')
     return produced_code
@@ -902,16 +937,20 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         # 'Reading with ordered access message'
         index = child_sub.expect(
             [
-                r'(Reading coherent sets.*?\n|[\[[0-9]+\])', # index = 0
-                pexpect.TIMEOUT # index = 1
+                '\[[0-9]+\]', # index = 0
+                r'Reading coherent sets.*?\n', # index = 1
+                pexpect.TIMEOUT, # index = 2
+                pexpect.EOF # index = 3
             ],
             timeout
         )
-        if index == 1:
-            # no more data to process
-            break
         if index == 0:
             samples_read += 1
+        elif index == 2:
+            # no more data to process
+            break
+        elif index == 3:
+            return ReturnCode.DATA_NOT_RECEIVED
 
     print(f'Samples read: {samples_read}')
     print("Instances:")
