@@ -603,32 +603,42 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
         return basic_check_retcode
 
     produced_code = ReturnCode.DATA_NOT_CORRECT
-    # As the interoperability_test is just looking for the size [<size>],
-    # this does not count the data after it, we need to read one more full
-    # sample
-    index = child_sub.expect(
-        [
-            r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{[0-9]+\}', # index = 0
-            pexpect.TIMEOUT, # index = 1
-            pexpect.EOF # index = 2
-        ],
-        timeout
-    )
+    samples_read = 0
 
-    if index == 0:
-        # Read the sample received, if it prints the additional_bytes == 255,
-        # it is sending large data correctly
-        sub_string = re.search(r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{([0-9]+)\}',
-            child_sub.before + child_sub.after)
-        # Check if the last element of the additional_bytes field element is
-        # received correctly
-        if sub_string is not None:
-            if int(sub_string.group(1)) == 255:
-                produced_code = ReturnCode.OK
+    while samples_read < MAX_SAMPLES_READ:
+        # As the interoperability_report is just looking for the size [<size>],
+        # this does not count the data after it, we need to read a full sample
+        index = child_sub.expect(
+            [
+                r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{[0-9]+\}', # index = 0
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
+            ],
+            timeout
+        )
+
+        if index == 0:
+            # Read the sample received, if it prints the additional_bytes == 255,
+            # it is sending large data correctly
+            sub_string = re.search(r'\w+\s+\w+\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]\s+\{([0-9]+)\}',
+                child_sub.before + child_sub.after)
+            # Check if the last element of the additional_bytes field element is
+            # received correctly
+            if sub_string is not None:
+                if int(sub_string.group(1)) == 255:
+                    produced_code = ReturnCode.OK
+                else:
+                    produced_code = ReturnCode.DATA_NOT_CORRECT
+                    break
+                samples_read += 1
             else:
                 produced_code = ReturnCode.DATA_NOT_CORRECT
-    elif index == 2:
-        produced_code = ReturnCode.DATA_NOT_RECEIVED
+                break
+        elif index == 1 or index == 2:
+            produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
+
+    print(f'Samples read: {samples_read}')
 
     return produced_code
 
@@ -850,7 +860,7 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     consecutive samples received from the same instance. The value should be 3
     as this is the coherent set count that the test is setting.
     Note: when using GROUP_PRESENTATION, the first iteration may print more
-    samples (more coherent sets), the test check that the samples received per
+    samples (more coherent sets), the test checks that the samples received per
     instance is a multiple of 3, so the coherent sets are received complete.
     child_sub: child program generated with pexpect
     samples_sent: not used
@@ -863,7 +873,7 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.OK
+    produced_code = ReturnCode.DATA_NOT_CORRECT
 
     topics = {}
     samples_read = 0
@@ -911,6 +921,8 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                         for color in topics[topic]:
                             topics[topic][color] = 1
                 elif new_coherent_set_read:
+                    # the test is only ok if it has received coherent sets
+                    produced_code = ReturnCode.OK
                     for topic in topics:
                         for color in topics[topic]:
                             if first_time_reading:

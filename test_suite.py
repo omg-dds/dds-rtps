@@ -851,8 +851,8 @@ rtps_test_suite_1 = {
     },
 
     'Test_LargeData_0' : {
-        'apps' : ['-P -t Square --additional-payload-size 100000',
-                  '-S -t Square'],
+        'apps' : ['-P -t Square -r -k 0 --additional-payload-size 100000',
+                  '-S -t Square -r -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.test_large_data,
         'title' : 'Test large data',
@@ -1223,7 +1223,7 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber application receives all samples of a coherent '
                             'set at the same. This coherent set is created with 36 samples: 3 samples per '
-                            'instance, 4 instances and 3 topics. This test check that the consecutive samples received '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
                             'per instance and topic is 3 each time we receive a new coherent set of samples\n'
                         f'Max amount of samples read is {tsf.MAX_SAMPLES_READ}\n'
     },
@@ -1249,7 +1249,7 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber application receives all samples of a coherent '
                             'set at the same. This coherent set is created with 36 samples: 3 samples per '
-                            'instance, 4 instances and 3 topics. This test check that the consecutive samples received '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
                             'per instance and topic is 3 each time we receive a new coherent set of samples\n'
                         f'Max amount of samples read is {tsf.MAX_SAMPLES_READ}\n'
     },
@@ -1275,7 +1275,7 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber application receives all samples of a coherent '
                             'set at the same. This coherent set is created with 36 samples: 3 samples per '
-                            'instance, 4 instances and 3 topics. This test check that the consecutive samples received '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
                             'per instance and topic is 3 each time we receive a new coherent set of samples\n'
                         f'Max amount of samples read is {tsf.MAX_SAMPLES_READ}\n'
     },
