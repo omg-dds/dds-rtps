@@ -412,9 +412,9 @@ public:
         printf("                           read_next_instance()\n");
         printf("   --periodic-announcement <ms> : indicates the periodic participant\n");
         printf("                                  announcement period in ms. Default 0 (off)\n");
-        printf("   --cft <expression> : ContentFilteredTopic filter expression (use quotes\n");
-        printf("                       if it contains whitespaces). Cannot be used with -c on\n");
-        printf("                       subscriber applications\n");
+        printf("   --cft <expression> : ContentFilteredTopic filter expression (quotes\n");
+        printf("                       required around the expression). Cannot be used with\n");
+        printf("                        -c on subscriber applications\n");
         printf("   --size-modulo <int> : If set, the modulo operation is applied to the\n");
         printf("                         shapesize. This will make that shapesize is in the\n");
         printf("                         range [1,N]. This only applies if shapesize is\n");
@@ -447,6 +447,9 @@ public:
         }
         if (publish && take_read_next_instance == false ) {
             logger.log_message("warning: --take-read ignored on publisher applications", Verbosity::ERROR);
+        }
+        if (publish && cft_expression != NULL) {
+            logger.log_message("warning: --cft ignored on publisher applications", Verbosity::ERROR);
         }
         if (subscribe && shapesize != 20) {
             logger.log_message("warning: shapesize [-z] ignored on subscriber applications", Verbosity::ERROR);
