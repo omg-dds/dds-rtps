@@ -769,6 +769,7 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     color_different_count = 0
     color_equal_count = 0
     samples_printed = False
+    ordered_access_group_count = 0
 
     while samples_read < MAX_SAMPLES_READ:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
@@ -845,11 +846,21 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         )
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            ordered_access_group_count += 1
         elif index == 2:
             # no more data to process
             break
         elif index == 3:
-            return ReturnCode.DATA_NOT_RECEIVED
+            produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
+
+        # Exit condition in case there are no samples being printed
+        if ordered_access_group_count > MAX_SAMPLES_READ:
+            # If we have not read enough samples, we consider it a failure
+            if samples_read <= MAX_SAMPLES_READ:
+                produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
 
     print(f'Samples read: {samples_read}, instances: {instance_color}')
     return produced_code
@@ -881,6 +892,7 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     new_coherent_set_read = False
     first_time_reading = True
     ignore_firsts_coherent_set = 2
+    coherent_sets_count = 0
 
     while samples_read < MAX_SAMPLES_READ:
         sub_string = re.search(r'(\w+)\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
@@ -958,11 +970,21 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         )
         if index == 0:
             samples_read += 1
+        elif index == 1:
+            coherent_sets_count += 1
         elif index == 2:
             # no more data to process
             break
         elif index == 3:
-            return ReturnCode.DATA_NOT_RECEIVED
+            produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
+
+        # Exit condition in case there are no samples being printed
+        if coherent_sets_count > MAX_SAMPLES_READ:
+            # If we have not read enough samples, we consider it a failure
+            if samples_read <= MAX_SAMPLES_READ:
+                produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
 
     print(f'Samples read: {samples_read}')
     print("Instances:")
