@@ -1157,20 +1157,34 @@ public:
         CONFIGURE_PARTICIPANT_FACTORY
 #endif
 
+#ifdef RTI_CONNEXT_MICRO
+        if (!config_micro()) {
+            logger.log_message("Error configuring Connext Micro", Verbosity::ERROR);
+            return false;
+        }
+#endif
+
         DDS::DomainParticipantQos dp_qos;
         dpf->get_default_participant_qos(dp_qos);
 
         if (options->datafrag_size > 0) {
+            bool result = false;
 #if defined(RTI_CONNEXT_DDS)
-            configure_datafrag_size(dp_qos, options->datafrag_size);
+            result = configure_datafrag_size(dp_qos, options->datafrag_size);
 #elif defined(RTI_CONNEXT_MICRO)
-            configure_datafrag_size(options->datafrag_size);
+            result = configure_datafrag_size(options->datafrag_size);
 #else
-            configure_datafrag_size();
+            result = configure_datafrag_size();
 #endif
 
-            logger.log_message("Data Fragmentation Size = "
+            if (!result) {
+                logger.log_message("Error configuring Data Fragmentation Size = "
+                    + std::to_string(options->datafrag_size), Verbosity::ERROR);
+                return false;
+            } else {
+                logger.log_message("Data Fragmentation Size = "
                     + std::to_string(options->datafrag_size), Verbosity::DEBUG);
+            }
         }
 
 #ifdef RTI_CONNEXT_MICRO

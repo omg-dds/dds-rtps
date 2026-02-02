@@ -7,7 +7,6 @@
 #include <map>
 #include <cstring>
 
-#define CONFIGURE_PARTICIPANT_FACTORY config_micro();
 #define LISTENER_STATUS_MASK_ALL (DDS_STATUS_MASK_ALL)
 
 #ifndef XCDR_DATA_REPRESENTATION
@@ -77,9 +76,12 @@ const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
   else { return "Unknown"; }
 }
 
-static void config_micro()
+static bool config_micro()
 {
+  bool ok = false;
   RT::Registry *registry = NULL;
+  DPDE::DiscoveryPluginProperty *discovery_plugin_properties = NULL;
+  UDP_InterfaceFactoryProperty *udp_property = NULL;
 
   OSAPI_Log_set_verbosity(OSAPI_LOG_VERBOSITY_SILENT);
 
@@ -89,43 +91,42 @@ static void config_micro()
   if (!registry->register_component("wh", WHSMHistoryFactory::get_interface(), NULL, NULL))
   {
       printf("ERROR: unable to register writer history\n");
-      return;
+      goto done;
   }
 
   /* Register Reader History */
   if (!registry->register_component("rh", RHSMHistoryFactory::get_interface(), NULL, NULL))
   {
-    printf("ERROR: unable to register reader history\n");
-    return;
+      printf("ERROR: unable to register reader history\n");
+      goto done;
   }
 
   /* Configure UDP transport's allowed interfaces */
   if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL))
   {
       printf("ERROR: unable to unregister udp\n");
-      return;
+      goto done;
   }
 
-  UDP_InterfaceFactoryProperty *udp_property = new UDP_InterfaceFactoryProperty();
+  udp_property = new UDP_InterfaceFactoryProperty();
   if (udp_property == NULL)
   {
       printf("ERROR: unable to allocate udp properties\n");
-      return;
+      goto done;
   }
 
   udp_property->max_message_size = 64 * 1024; //64KB
 
   if (!registry->register_component(
-      NETIO_DEFAULT_UDP_NAME,
-      UDPInterfaceFactory::get_interface(),
-      &udp_property->_parent._parent,
-      NULL))
-  {
+        NETIO_DEFAULT_UDP_NAME,
+        UDPInterfaceFactory::get_interface(),
+        &udp_property->_parent._parent,
+        NULL)) {
       printf("ERROR: unable to register udp\n");
-      return;
+      goto done;
   }
 
-  DPDE::DiscoveryPluginProperty *discovery_plugin_properties = new DPDE::DiscoveryPluginProperty();
+  discovery_plugin_properties = new DPDE::DiscoveryPluginProperty();
 
   /* Configure properties */
   discovery_plugin_properties->participant_liveliness_assert_period.sec = 5;
@@ -135,31 +136,44 @@ static void config_micro()
 
 
   if (!registry->register_component(
-      "dpde",
-      DPDEDiscoveryFactory::get_interface(),
-      &discovery_plugin_properties->_parent,
-      NULL))
-  {
+        "dpde",
+        DPDEDiscoveryFactory::get_interface(),
+        &discovery_plugin_properties->_parent,
+        NULL)) {
       printf("ERROR: unable to register dpde\n");
-      return;
+      goto done;
   }
+
+  ok = true;
+done:
+  if (!ok) {
+      if (udp_property != NULL) {
+          delete udp_property;
+      }
+      if (discovery_plugin_properties != NULL) {
+          delete discovery_plugin_properties;
+      }
+  }
+  return ok;
 }
 
-static void configure_datafrag_size(unsigned int datafrag_size) {
+static bool configure_datafrag_size(unsigned int datafrag_size) {
 
+    bool ok = false;
     RT::Registry *registry = NULL;
+    UDP_InterfaceFactoryProperty *udp_property = NULL;
 
     registry = DDSTheParticipantFactory->get_registry();
 
     if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
         printf("ERROR: unable to unregister udp\n");
-        return;
+        goto done;
     }
 
-    UDP_InterfaceFactoryProperty *udp_property = new UDP_InterfaceFactoryProperty();
+    udp_property = new UDP_InterfaceFactoryProperty();
     if (udp_property == NULL) {
         printf("ERROR: unable to allocate udp properties\n");
-        return;
+        goto done;
     }
 
     udp_property->max_message_size = datafrag_size;
@@ -170,8 +184,16 @@ static void configure_datafrag_size(unsigned int datafrag_size) {
             &udp_property->_parent._parent,
             NULL)) {
         printf("ERROR: unable to register udp\n");
-        return;
+        goto done;
     }
+    ok = true;
+done:
+    if (!ok) {
+        if (udp_property != NULL) {
+            delete udp_property;
+        }
+    }
+    return ok;
 }
 
 static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos)

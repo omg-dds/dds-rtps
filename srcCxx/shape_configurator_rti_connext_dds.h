@@ -17,18 +17,21 @@ const char *get_qos_policy_name(DDS_QosPolicyId_t policy_id)
     return DDS_QosPolicyId_to_string(policy_id); // not standard...
 }
 
-void configure_datafrag_size(
+bool configure_datafrag_size(
         DDS::DomainParticipantQos &dp_qos,
         size_t datafrag_size) {
+    bool ok = false;
     if (datafrag_size == 0) {
-        return;
+        ok = false;
     } else {
         DDS_PropertyQosPolicyHelper_add_property(
                 &dp_qos.property,
                 "dds.transport.UDPv4.builtin.parent.message_size_max",
                 std::to_string(datafrag_size).c_str(),
                 DDS_BOOLEAN_FALSE);
+        ok = true;
     }
+    return ok;
 }
 
 void configure_participant_announcements_period(
