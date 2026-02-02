@@ -280,6 +280,8 @@ public:
 
     useconds_t          periodic_announcement_period_us;
 
+    unsigned int        datafrag_size;
+
 public:
     //-------------------------------------------------------------
     ShapeOptions()
@@ -334,6 +336,8 @@ public:
         take_read_next_instance = true;
 
         periodic_announcement_period_us = 0;
+
+        datafrag_size = 0; // Default: 0 (means not set)
     }
 
     //-------------------------------------------------------------
@@ -407,6 +411,8 @@ public:
         printf("                           read_next_instance()\n");
         printf("   --periodic-announcement <ms> : indicates the periodic participant\n");
         printf("                                  announcement period in ms. Default 0 (off)\n");
+        printf("   --datafrag-size <bytes> : set the data fragment size (default: 0, means\n");
+        printf("                           not set)\n");
     }
 
     //-------------------------------------------------------------
@@ -498,6 +504,7 @@ public:
             {"take-read", no_argument, NULL, 'K'},
             {"time-filter", required_argument, NULL, 'i'},
             {"periodic-announcement", required_argument, NULL, 'N'},
+            {"datafrag-size", required_argument, NULL, 'F'},
             {NULL, 0, NULL, 0 }
         };
 
@@ -882,6 +889,26 @@ public:
                 periodic_announcement_period_us = (useconds_t) converted_param * 1000;
                 break;
             }
+            case 'F': {
+                unsigned int converted_param = 0;
+                if (sscanf(optarg, "%u", &converted_param) == 0) {
+                    logger.log_message("unrecognized value for datafrag-size "
+                                + std::string(1, optarg[0]),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                // the spec mentions that the fragment size must satisfy:
+                // fragment size <= 65536 bytes.
+                if (converted_param > 65536) {
+                    logger.log_message("incorrect value for datafrag-size, "
+                            "it must be <= 65536 bytes"
+                                + std::to_string(converted_param),
+                            Verbosity::ERROR);
+                    parse_ok = false;
+                }
+                datafrag_size = converted_param;
+                break;
+            }
             case '?':
                 parse_ok = false;
                 break;
@@ -924,7 +951,8 @@ public:
                     "\n    Final Instance State = "
                             + (unregister ? "Unregister" : (dispose ? "Dispose" : "not specified")) +
                     "\n    Periodic Announcement Period = "
-                            + std::to_string(periodic_announcement_period_us / 1000) + "ms",
+                            + std::to_string(periodic_announcement_period_us / 1000) + "ms" +
+                    "\n    Data Fragmentation Size = " + std::to_string(datafrag_size) + "ms",
                     Verbosity::DEBUG);
             if (topic_name != NULL){
                 logger.log_message("    Topic = " + std::string(topic_name),
@@ -1131,6 +1159,19 @@ public:
 
         DDS::DomainParticipantQos dp_qos;
         dpf->get_default_participant_qos(dp_qos);
+
+        if (options->datafrag_size > 0) {
+#if defined(RTI_CONNEXT_DDS)
+            configure_datafrag_size(dp_qos, options->datafrag_size);
+#elif defined(RTI_CONNEXT_MICRO)
+            configure_datafrag_size(options->datafrag_size);
+#else
+            configure_datafrag_size();
+#endif
+
+            logger.log_message("Data Fragmentation Size = "
+                    + std::to_string(options->datafrag_size), Verbosity::DEBUG);
+        }
 
 #ifdef RTI_CONNEXT_MICRO
         if (!configure_dp_qos(dp_qos)) {

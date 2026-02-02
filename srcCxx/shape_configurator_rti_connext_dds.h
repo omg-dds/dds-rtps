@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include "shape.h"
 #include "shapeSupport.h"
 #include "ndds/ndds_namespace_cpp.h"
@@ -15,12 +17,27 @@ const char *get_qos_policy_name(DDS_QosPolicyId_t policy_id)
     return DDS_QosPolicyId_to_string(policy_id); // not standard...
 }
 
+void configure_datafrag_size(
+        DDS::DomainParticipantQos &dp_qos,
+        size_t datafrag_size) {
+    if (datafrag_size == 0) {
+        return;
+    } else {
+        DDS_PropertyQosPolicyHelper_add_property(
+                &dp_qos.property,
+                "dds.transport.UDPv4.builtin.parent.message_size_max",
+                std::to_string(datafrag_size).c_str(),
+                DDS_BOOLEAN_FALSE);
+    }
+}
+
 void configure_participant_announcements_period(
         DDS::DomainParticipantQos &dp_qos,
         useconds_t announcement_period_us) {
     if (announcement_period_us == 0) {
         return;
     }
+
     dp_qos.discovery_config.participant_liveliness_assert_period.sec =
             announcement_period_us / 1000000;
     dp_qos.discovery_config.participant_liveliness_assert_period.nanosec =

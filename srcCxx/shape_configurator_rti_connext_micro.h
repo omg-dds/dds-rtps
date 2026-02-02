@@ -145,6 +145,35 @@ static void config_micro()
   }
 }
 
+static void configure_datafrag_size(unsigned int datafrag_size) {
+
+    RT::Registry *registry = NULL;
+
+    registry = DDSTheParticipantFactory->get_registry();
+
+    if (!registry->unregister(NETIO_DEFAULT_UDP_NAME, NULL, NULL)) {
+        printf("ERROR: unable to unregister udp\n");
+        return;
+    }
+
+    UDP_InterfaceFactoryProperty *udp_property = new UDP_InterfaceFactoryProperty();
+    if (udp_property == NULL) {
+        printf("ERROR: unable to allocate udp properties\n");
+        return;
+    }
+
+    udp_property->max_message_size = datafrag_size;
+
+    if (!registry->register_component(
+            NETIO_DEFAULT_UDP_NAME,
+            UDPInterfaceFactory::get_interface(),
+            &udp_property->_parent._parent,
+            NULL)) {
+        printf("ERROR: unable to register udp\n");
+        return;
+    }
+}
+
 static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos)
 {
     if (!dp_qos.discovery.discovery.name.set_name("dpde"))
