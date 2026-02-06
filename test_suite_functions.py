@@ -756,7 +756,6 @@ def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, l
             if sub_string.group(1) == instance_color[0]:
                 # increase samples_read_per_instance only for the first instance
                 samples_read_per_instance += 1
-            print(f'{child_sub.before + child_sub.after}')
         elif index == 1:
             # no more data to process
             break
