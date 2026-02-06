@@ -1169,13 +1169,11 @@ public:
 
         if (options->datafrag_size > 0) {
             bool result = false;
-#if defined(RTI_CONNEXT_DDS)
+  #if defined(RTI_CONNEXT_DDS)
             result = configure_datafrag_size(dp_qos, options->datafrag_size);
-#elif defined(RTI_CONNEXT_MICRO)
+  #elif defined(RTI_CONNEXT_MICRO)
             result = configure_datafrag_size(options->datafrag_size);
-#else
-            result = configure_datafrag_size();
-#endif
+  #endif
 
             if (!result) {
                 logger.log_message("Error configuring Data Fragmentation Size = "
