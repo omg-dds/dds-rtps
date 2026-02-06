@@ -1,0 +1,89 @@
+######################################################################
+# To compile, type:
+# 	make -f makefile_rti_connext_micro_linux
+# To compile with the Debug option, use:
+#   make -f makefile_rti_connext_micro_linux DEBUG=1
+#
+# This makefile assumes that your build environment is already correctly
+# configured. (For example, the correct version of your compiler and
+# linker should be on your PATH.)
+#
+# You should set the environemnt variable RTIMEHOME to point to where
+# RTI Connext Micro is installed.
+#
+######################################################################
+
+# If undefined in the environment default RTIMEHOME to install dir
+ifndef RTIMEHOME
+$(error RTIMEHOME not defined)
+endif
+
+COMPILER_FLAGS = -std=c++11
+LINKER_FLAGS =
+
+split_path_name = $(subst /rti_, , $(RTIMEHOME))
+# from connext_dds_micro-x.y.z remove _dds to get connext_micro-x.y.z
+product_name = $(notdir $(split_path_name))
+product_name := $(subst _dds,,$(product_name))
+
+version_name = $(lastword $(product_name))
+common_name = "_shape_main_macos"
+executable_name = $(version_name)$(common_name)
+
+RTIMEARCH = arm64Darwin23clang15.0
+
+ifndef COMPILER
+COMPILER = clang++
+endif
+
+ifndef LINKER
+LINKER = clang++
+endif
+
+#SYSLIBS = 
+
+ifeq ($(DEBUG),1)
+COMPILER_FLAGS += -g -O0
+LINKER_FLAGS += -g
+LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
+        -lrti_me_cppzd -lrti_me_netiosdmzd \
+        -lrti_me_discdpdezd -lrti_me_ddsfilterzd -lrti_me_rhsmzd \
+        -lrti_me_whsmzd -lrti_mezd -lrti_me_ddsxtypeszd $(SYSLIBS)
+else
+# This option strips the executable symbols
+#LINKER_FLAGS += -s
+LIBS = -L$(RTIMEHOME)/lib/$(RTIMEARCH) \
+        -lrti_me_cppz -lrti_me_netiosdmz \
+		-lrti_me_discdpdez -lrti_me_ddsfilterz -lrti_me_rhsmz \
+		-lrti_me_whsmz -lrti_mez -lrti_me_ddsxtypesz $(SYSLIBS)
+endif
+
+DEFINES = -DRTI_UNIX -DRTI_DARWIN -DRTI_CONNEXT_MICRO
+
+INCLUDES = -I. -I$(RTIMEHOME)/include -I$(RTIMEHOME)/include/rti_me
+
+OBJDIR := objs/$(RTIMEARCH)_micro
+
+CDRSOURCES     := shape_bounded.idl
+AUTOGENSOURCES := shape_boundedSupport.cxx shape_boundedPlugin.cxx shape_bounded.cxx
+
+EXEC          := $(executable_name)
+AUTOGENOBJS   := $(addprefix $(OBJDIR)/, $(AUTOGENSOURCES:%.cxx=%.o))
+
+$(OBJDIR)/$(EXEC) : $(AUTOGENSOURCES) $(AUTOGENOBJS) $(OBJDIR)/shape_main.o
+	$(LINKER) $(LINKER_FLAGS)   -o $@ $(OBJDIR)/shape_main.o  $(AUTOGENOBJS) $(LIBS)
+
+$(OBJDIR)/%.o : %.cxx
+	$(COMPILER) $(COMPILER_FLAGS) -o $@ $(DEFINES) $(INCLUDES) -c  $<
+
+shape_main.cxx : shape_configurator_rti_connext_micro.h
+
+# Generate type-specific sources
+$(AUTOGENSOURCES) : $(CDRSOURCES)
+	$(RTIMEHOME)/rtiddsgen/scripts/rtiddsgen $(CDRSOURCES) -replace -micro -language C++
+
+$(AUTOGENOBJS): |  objs/$(RTIMEARCH)_micro
+
+objs/$(RTIMEARCH)_micro:
+	echo "Making directory objs/$(RTIMEARCH)_micro";
+	mkdir -p objs/$(RTIMEARCH)_micro

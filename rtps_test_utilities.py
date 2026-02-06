@@ -28,6 +28,8 @@ class ReturnCode(Enum):
     DEADLINE_MISSED      : Publisher/Subscriber missed the deadline period
     ORDERED_ACCESS_INSTANCE : Subscriber reading with ordered access and access scope INSTANCE
     ORDERED_ACCESS_TOPIC : Subscriber reading with ordered access and access scope TOPIC
+    PUB_UNSUPPORTED_FEATURE  : The test requires a feature not supported by the publisher implementation
+    SUB_UNSUPPORTED_FEATURE  : The test requires a feature not supported by the subscriber implementation
     """
     OK = 0
     TOPIC_NOT_CREATED = 1
@@ -44,6 +46,8 @@ class ReturnCode(Enum):
     DEADLINE_MISSED = 14
     ORDERED_ACCESS_INSTANCE = 15
     ORDERED_ACCESS_TOPIC = 16
+    PUB_UNSUPPORTED_FEATURE = 17
+    SUB_UNSUPPORTED_FEATURE = 18
 
 def log_message(message, verbosity):
     if verbosity:
@@ -55,4 +59,19 @@ def remove_ansi_colors(text):
     return cleaned_str
 
 def no_check(child_sub, samples_sent, last_sample_saved, timeout):
+    return ReturnCode.OK
+
+def basic_check(child_sub, samples_sent, last_sample_saved, timeout):
+    """ Only checks that the data is well formed and size is not zero."""
+    sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+        child_sub.before + child_sub.after)
+
+    if sub_string is None:
+        return ReturnCode.DATA_NOT_RECEIVED
+
+    sample_size = int(sub_string.group(1))
+
+    if sample_size == 0:
+        return ReturnCode.DATA_NOT_CORRECT
+
     return ReturnCode.OK

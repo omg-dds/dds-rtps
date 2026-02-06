@@ -48,8 +48,15 @@ GeneratedCode
 
 # Generated files
 srcCxx/shape.*
+!srcCxx/shape.idl
 srcCxx/shapePlugin.*
 srcCxx/shapeSupport.*
+
+# Generated files Connext Micro
+srcCxx/shape_bounded.*
+!srcCxx/shape_bounded.idl
+srcCxx/shape_boundedPlugin.*
+srcCxx/shape_boundedSupport.*
 
 # VSCode default folders
 .vscode/
