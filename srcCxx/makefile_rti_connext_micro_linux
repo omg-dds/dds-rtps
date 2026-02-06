@@ -64,8 +64,8 @@ INCLUDES = -I. -I$(RTIMEHOME)/include -I$(RTIMEHOME)/include/rti_me
 
 OBJDIR := objs/$(RTIMEARCH)_micro
 
-CDRSOURCES     := shape_micro.idl
-AUTOGENSOURCES := shape_microSupport.cxx shape_microPlugin.cxx shape_micro.cxx
+CDRSOURCES     := shape_bounded.idl
+AUTOGENSOURCES := shape_boundedSupport.cxx shape_boundedPlugin.cxx shape_bounded.cxx
 
 EXEC          := $(executable_name)
 AUTOGENOBJS   := $(addprefix $(OBJDIR)/, $(AUTOGENSOURCES:%.cxx=%.o))

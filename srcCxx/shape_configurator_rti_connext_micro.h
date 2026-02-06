@@ -1,5 +1,5 @@
-#include "shape_micro.h"
-#include "shape_microSupport.h"
+#include "shape_bounded.h"
+#include "shape_boundedSupport.h"
 
 #include "rti_me_cpp.hxx"
 #include "dds_cpp/dds_cpp_netio.hxx"
