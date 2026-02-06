@@ -305,6 +305,45 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
+def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
+    """
+    Checks that all received samples have size between 1 and 20 (inclusive).
+    Returns ReturnCode.OK if all samples are in range, otherwise ReturnCode.DATA_NOT_CORRECT.
+    """
+    import re
+    from rtps_test_utilities import ReturnCode
+
+    max_samples_received = MAX_SAMPLES_READ / 2
+    samples_read = 0
+    return_code = ReturnCode.OK
+
+    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+
+    while sub_string is not None and samples_read < max_samples_received:
+        size = int(sub_string.group(1))
+        if size < 1 or size > 20:
+            return_code = ReturnCode.DATA_NOT_CORRECT
+            break
+
+        index = child_sub.expect(
+            [
+                '\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
+            ],
+            timeout
+        )
+        if index == 1 or index == 2:
+            return_code = ReturnCode.DATA_NOT_RECEIVED
+            break
+
+        samples_read += 1
+        sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+
+    print(f'Samples read: {samples_read}')
+    return return_code
+
+
 def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests reliability, it checks whether the subscriber receives
