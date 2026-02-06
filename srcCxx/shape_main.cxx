@@ -1883,7 +1883,9 @@ public:
 #elif defined(RTI_CONNEXT_MICRO)
                                 set_instance_color(instance_handle_color, sample_info->instance_handle, sample->color);
 #endif
-                            } else {
+                            }
+
+                            if (sample_info->instance_state != ALIVE_INSTANCE_STATE) {
                                 ShapeType shape_key;
                                 shape_initialize_w_color(shape_key, NULL);
 #if defined(EPROSIMA_FAST_DDS)
