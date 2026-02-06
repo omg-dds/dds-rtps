@@ -769,9 +769,10 @@ rtps_test_suite_1 = {
     },
 
     'Test_TimeBasedFilter_0' : {
-        'apps' : ['-P -t Square -z 0 -r -k 0 --write-period 100', '-S -t Square -r -k 0 --time-filter 1000'],
+        'apps' : ['-P -t Square -z 0 -r -k 0 --write-period 100',
+                  '-S -t Square -r -k 0 --time-filter 1000'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_reading_each_10_samples_w_instances,
+        'check_function' : tsf.test_reading_1_sample_every_10_samples_w_instances,
         'title' : 'Test the behavior of the TIME_BASED_FILTER QoS',
         'description' : 'Verifies a subscriber with TIME_BASED_FILTER work as expected\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -789,7 +790,7 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -z 0 -r -k 0 --write-period 100 --num-instances 4',
                   '-S -t Square -r -k 0 --time-filter 1000'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_reading_each_10_samples_w_instances,
+        'check_function' : tsf.test_reading_1_sample_every_10_samples_w_instances,
         'title' : 'Test the behavior of the TIME_BASED_FILTER QoS with several instances',
         'description' : 'Verifies a subscriber with TIME_BASED_FILTER work as expected when the publisher '
                             'publishes several instances\n\n'
@@ -867,16 +868,15 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --lifespan 250',
                   '-S -t Square -r -k 0 --read-period 500'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_lifespan_w_instances,
-        'title' : 'Test the behavior of lifespan',
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fractions of seconds, reliable',
         'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
-                            ' lifespan\n\n'
+                            ' lifespan with fractions of seconds\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                         ' * Configures the publisher with a lifespan of 250ms\n'
                         ' * Configures the publisher with a writing period of 100ms\n'
                         ' * Configures the subscriber with a reading period of 500ms\n'
-                        ' * Configures the subscriber TIME_BASED_FILTER to 1 second\n'
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber application receives 2 or 3 consecutive samples '
@@ -891,17 +891,157 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --lifespan 250 --num-instances 4',
                   '-S -t Square -r -k 0 --read-period 500'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_lifespan_w_instances,
-        'title' : 'Test the behavior of lifespan with several instances',
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fraction of seconds with several instances, reliable',
         'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
-                            ' lifespan and different instances\n\n'
+                            ' lifespan with fraction of seconds and different instances\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                         ' * Configures the publisher with a lifespan of 250ms\n'
                         ' * Configures the publisher with a writing period of 100ms\n'
                         ' * Configures the subscriber with a reading period of 500ms\n'
                         ' * The publisher publishes 4 different instances (using the same data value)\n'
-                        ' * Configures the subscriber TIME_BASED_FILTER to 1 second\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_2' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 400 --lifespan 1000',
+                  '-S -t Square -r -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_3' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 400 --lifespan 1000 --num-instances 4',
+                  '-S -t Square -r -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds with several instances, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds, and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_4' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 100 --lifespan 250',
+                  '-S -t Square -b -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fractions of seconds, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fractions of seconds\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_5' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 100 --lifespan 250 --num-instances 4',
+                  '-S -t Square -b -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fraction of seconds with several instances, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fraction of seconds and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_6' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 400 --lifespan 1000',
+                  '-S -t Square -b -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time\n'
+                        f'Max amount of samples read is {tsf.MAX_SAMPLES_READ/10}\n'
+    },
+
+    'Test_Lifespan_7' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 400 --lifespan 1000 --num-instances 4',
+                  '-S -t Square -b -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds with several instances, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds, and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber application receives 2 or 3 consecutive samples '

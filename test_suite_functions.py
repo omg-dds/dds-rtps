@@ -154,7 +154,7 @@ def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.OK
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     # Read the first sample printed by the subscriber
     sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
@@ -185,13 +185,17 @@ def test_reliability_order(child_sub, samples_sent, last_sample_saved, timeout):
             # no more data to process
             break
         elif index == 2:
-            return ReturnCode.DATA_NOT_RECEIVED
+            produced_code = ReturnCode.DATA_NOT_RECEIVED
+            break
 
         samples_read += 1
 
         # search the next received sample by the subscriber app
         sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
             child_sub.before + child_sub.after)
+
+    if samples_read == max_samples_received:
+        produced_code = ReturnCode.OK
 
     print(f'Samples read: {samples_read}')
     return produced_code
@@ -211,14 +215,15 @@ def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.OK
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     instance_color = []
     instance_seq_num = []
     first_iteration = []
-    samples_read = 0
+    samples_read_per_instance = 0
+    max_samples_received = MAX_SAMPLES_READ
 
-    while samples_read < MAX_SAMPLES_READ:
+    while samples_read_per_instance < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -253,14 +258,18 @@ def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(1) in instance_color:
+                samples_read_per_instance += 1
         elif index == 1:
             # no more data to process
             break
         elif index == 2:
             return ReturnCode.DATA_NOT_RECEIVED
 
-    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    if max_samples_received == samples_read_per_instance:
+        produced_code = ReturnCode.OK
+
+    print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
 
@@ -381,11 +390,11 @@ def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
         else:
             return ReturnCode.DATA_NOT_RECEIVED
 
-def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+def test_reading_1_sample_every_10_samples_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests whether the subscriber application receives one sample
     out of 10 (for each instance). For example, first sample received with size
-    5, the next one should have size 15, then 25...
+    5, the next one should have size [15,24], then [25,34], etc.
     child_sub: child program generated with pexpect
     samples_sent: not used
     last_sample_saved: not used
@@ -397,16 +406,16 @@ def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sampl
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.OK
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     instance_color = []
     instance_seq_num = []
     first_iteration = []
     ignore_first_sample = []
     max_samples_received = MAX_SAMPLES_READ / 20 # 25
-    samples_read = 0
+    samples_read_per_instance = 0
 
-    while samples_read < max_samples_received:
+    while samples_read_per_instance < max_samples_received:
 
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
@@ -424,14 +433,18 @@ def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sampl
                 if first_iteration[index]:
                     first_iteration[index] = False
                 else:
+                    current_seq_num = int(sub_string.group(2))
                     if ignore_first_sample[index]:
                         ignore_first_sample[index] = False
-                    # check that the received sample has the sequence number
-                    # previous + 10
-                    elif instance_seq_num[index] + 10 != int(sub_string.group(2)):
-                        produced_code = ReturnCode.DATA_NOT_CORRECT
-                        break
-                    instance_seq_num[index] = int(sub_string.group(2))
+                    else:
+                        # check that the received sample reads only one sample in
+                        # in the period of 10 samples. For example, if the previous
+                        # sample received has size 5, the next one should be
+                        # between [15-24], both included
+                        if current_seq_num <= (instance_seq_num[index] + 9) or current_seq_num > instance_seq_num[index] + 19:
+                            produced_code = ReturnCode.DATA_NOT_CORRECT
+                            break
+                    instance_seq_num[index] = current_seq_num
             else:
                 produced_code = ReturnCode.DATA_NOT_CORRECT
                 break
@@ -446,14 +459,19 @@ def test_reading_each_10_samples_w_instances(child_sub, samples_sent, last_sampl
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(1) == instance_color[0]:
+                # increase samples_read_per_instance only for the first instance
+                samples_read_per_instance += 1
         elif index == 1:
             # no more data to process
             break
         elif index == 2:
             return ReturnCode.DATA_NOT_RECEIVED
 
-    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    if max_samples_received == samples_read_per_instance:
+        produced_code = ReturnCode.OK
+
+    print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
 def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
@@ -475,9 +493,9 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
     instance_color = []
     unregistered_instance_color = []
     max_samples_received = MAX_SAMPLES_READ
-    samples_read = 0
+    samples_read_per_instance = 0
 
-    while samples_read < max_samples_received:
+    while samples_read_per_instance < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -489,7 +507,7 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
             # if no sample is received, it might be a UNREGISTER message
             sub_string = re.search(r'\w+\s+(\w+)\s+NOT_ALIVE_NO_WRITERS_INSTANCE_STATE',
                 child_sub.before + child_sub.after)
-            if sub_string is not None:
+            if sub_string is not None and sub_string.group(1) not in unregistered_instance_color:
                 unregistered_instance_color.append(sub_string.group(1))
                 if len(instance_color) == len(unregistered_instance_color):
                     break
@@ -503,7 +521,8 @@ def test_unregistering_w_instances(child_sub, samples_sent, last_sample_saved, t
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(1) == instance_color[0]:
+                samples_read_per_instance += 1
         elif index == 1:
             # no more data to process
             break
@@ -541,9 +560,9 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     instance_color = []
     disposed_instance_color = []
     max_samples_received = MAX_SAMPLES_READ
-    samples_read = 0
+    samples_read_per_instance = 0
 
-    while samples_read < max_samples_received:
+    while samples_read_per_instance < max_samples_received:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -555,7 +574,7 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
             # if no sample is received, it might be a DISPOSED message
             sub_string = re.search(r'\w+\s+(\w+)\s+NOT_ALIVE_DISPOSED_INSTANCE_STATE',
                 child_sub.before + child_sub.after)
-            if sub_string is not None:
+            if sub_string is not None and sub_string.group(1) not in disposed_instance_color:
                 disposed_instance_color.append(sub_string.group(1))
                 if len(instance_color) == len(disposed_instance_color):
                     break
@@ -569,7 +588,8 @@ def test_disposing_w_instances(child_sub, samples_sent, last_sample_saved, timeo
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(1) == instance_color[0]:
+                samples_read_per_instance += 1
         elif index == 1:
             # no more data to process
             break
@@ -602,7 +622,7 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.DATA_NOT_CORRECT
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
     samples_read = 0
 
     while samples_read < MAX_SAMPLES_READ:
@@ -625,9 +645,7 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
             # Check if the last element of the additional_bytes field element is
             # received correctly
             if sub_string is not None:
-                if int(sub_string.group(1)) == 255:
-                    produced_code = ReturnCode.OK
-                else:
+                if int(sub_string.group(1)) != 255:
                     produced_code = ReturnCode.DATA_NOT_CORRECT
                     break
                 samples_read += 1
@@ -638,11 +656,14 @@ def test_large_data(child_sub, samples_sent, last_sample_saved, timeout):
             produced_code = ReturnCode.DATA_NOT_RECEIVED
             break
 
+    if samples_read == MAX_SAMPLES_READ:
+        produced_code = ReturnCode.OK
+
     print(f'Samples read: {samples_read}')
 
     return produced_code
 
-def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
     """
     This function tests that lifespan works correctly. In the test situation,
     only 2 or 3 consecutive samples should be received each time the reader
@@ -658,7 +679,7 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.OK
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     # as the test is reading in a slower rate, reduce the number of samples read
     max_samples_lifespan = MAX_SAMPLES_READ / 10 # 50
@@ -666,11 +687,11 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     instance_color = []
     previous_seq_num = []
     first_iteration = []
-    samples_read = 0
+    samples_read_per_instance = 0
     consecutive_samples = []
     ignore_first_sample = []
 
-    while samples_read < max_samples_lifespan:
+    while samples_read_per_instance < max_samples_lifespan:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
@@ -704,6 +725,7 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                             # reset value to 1, as this test consider that the first
                             # sample is consecutive with itself
                             consecutive_samples[index] = 1
+                            produced_code = ReturnCode.OK
                         else:
                             if ignore_first_sample[index]:
                                 # there may be a case in which we receive a sample
@@ -731,14 +753,20 @@ def test_lifespan_w_instances(child_sub, samples_sent, last_sample_saved, timeou
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string.group(1) == instance_color[0]:
+                # increase samples_read_per_instance only for the first instance
+                samples_read_per_instance += 1
+            print(f'{child_sub.before + child_sub.after}')
         elif index == 1:
             # no more data to process
             break
         elif index == 2:
             return ReturnCode.DATA_NOT_RECEIVED
 
-    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    if max_samples_lifespan == samples_read_per_instance:
+        produced_code = ReturnCode.OK
+
+    print(f'Samples read: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
 def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
@@ -764,14 +792,14 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     produced_code = ReturnCode.OK
 
     instance_color = []
-    samples_read = 0
+    samples_read_per_instance = 0
     previous_sample_color = None
     color_different_count = 0
     color_equal_count = 0
     samples_printed = False
     ordered_access_group_count = 0
 
-    while samples_read < MAX_SAMPLES_READ:
+    while samples_read_per_instance < MAX_SAMPLES_READ:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
             child_sub.before + child_sub.after)
 
@@ -845,7 +873,8 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(1) in instance_color:
+                samples_read_per_instance += 1
         elif index == 1:
             ordered_access_group_count += 1
         elif index == 2:
@@ -858,11 +887,11 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         # Exit condition in case there are no samples being printed
         if ordered_access_group_count > MAX_SAMPLES_READ:
             # If we have not read enough samples, we consider it a failure
-            if samples_read <= MAX_SAMPLES_READ:
+            if samples_read_per_instance <= MAX_SAMPLES_READ:
                 produced_code = ReturnCode.DATA_NOT_RECEIVED
             break
 
-    print(f'Samples read: {samples_read}, instances: {instance_color}')
+    print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
 def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
@@ -884,17 +913,17 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    produced_code = ReturnCode.DATA_NOT_CORRECT
+    produced_code = ReturnCode.DATA_NOT_RECEIVED
 
     topics = {}
-    samples_read = 0
+    samples_read_per_instance = 0
     previous_sample_color = None
     new_coherent_set_read = False
     first_time_reading = True
     ignore_firsts_coherent_set = 2
     coherent_sets_count = 0
 
-    while samples_read < MAX_SAMPLES_READ:
+    while samples_read_per_instance < MAX_SAMPLES_READ:
         sub_string = re.search(r'(\w+)\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
             child_sub.before + child_sub.after)
 
@@ -969,7 +998,8 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
             timeout
         )
         if index == 0:
-            samples_read += 1
+            if sub_string is not None and sub_string.group(2) in topics[sub_string.group(1)]:
+                samples_read_per_instance += 1
         elif index == 1:
             coherent_sets_count += 1
         elif index == 2:
@@ -982,11 +1012,11 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         # Exit condition in case there are no samples being printed
         if coherent_sets_count > MAX_SAMPLES_READ:
             # If we have not read enough samples, we consider it a failure
-            if samples_read <= MAX_SAMPLES_READ:
+            if samples_read_per_instance <= MAX_SAMPLES_READ:
                 produced_code = ReturnCode.DATA_NOT_RECEIVED
             break
 
-    print(f'Samples read: {samples_read}')
+    print(f'Samples read per instance: {samples_read_per_instance}')
     print("Instances:")
     for topic in topics:
         print(f"Topic {topic}: {', '.join(topics[topic].keys())}")
