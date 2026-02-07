@@ -927,10 +927,13 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     first_time_reading = True
     ignore_firsts_coherent_set = 2
     coherent_sets_count = 0
+    coherent_sets_max_count = MAX_SAMPLES_READ / 5 # 100
 
-    while samples_read_per_instance < MAX_SAMPLES_READ:
+    while samples_read_per_instance < coherent_sets_max_count:
         sub_string = re.search(r'(\w+)\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[[0-9]+\]',
             child_sub.before + child_sub.after)
+        topic_name = None
+        instance_color = None
 
         # if a sample is read
         if sub_string is not None:
@@ -1003,7 +1006,10 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
             timeout
         )
         if index == 0:
-            if sub_string is not None and sub_string.group(2) in topics[sub_string.group(1)]:
+            # increase samples_read_per_instance only for the first topic and instance
+            if (topic_name is not None and instance_color is not None
+                    and topic_name == list(topics.keys())[0]
+                    and instance_color == list(topics[topic_name].keys())[0]):
                 samples_read_per_instance += 1
         elif index == 1:
             coherent_sets_count += 1
