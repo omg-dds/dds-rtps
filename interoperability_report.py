@@ -335,8 +335,18 @@ def run_publisher_shape_main(
 
     log_message(f'Publisher {publisher_index}: Waiting for Subscribers to finish',
             verbosity)
-    for element in subscribers_finished:
-        element.wait() # wait for all subscribers to finish
+    # Check if all subscribers finished
+    while True:
+        if all(e.is_set() for e in subscribers_finished):
+            break
+
+        # Drain publisher output
+        try:
+            child_pub.read_nonblocking(1024, timeout=0.1)
+        except pexpect.TIMEOUT:
+            pass
+        except pexpect.EOF:
+            break
     publisher_finished.set()   # set publisher as finished
     # Send SIGINT to nicely close the application
     if child_pub.isalive():
