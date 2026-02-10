@@ -878,7 +878,7 @@ void on_publication_matched (dds_entity_t writer, const dds_publication_matched_
         exit(-1);
     }
 
-    printf("%s() topic: '%s'  type: '%s' : matched readers %d (change = %d)\n", "on_publication_matched",
+    printf("%s() topic: '%s'  type: '%s' : matched readers %d (change = %d)\n", __FUNCTION__,
             topic_name, type_name, status.current_count, status.current_count_change);
 }
 
