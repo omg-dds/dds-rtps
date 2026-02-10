@@ -878,7 +878,7 @@ void on_publication_matched (dds_entity_t writer, const dds_publication_matched_
         exit(-1);
     }
 
-    printf("%s() topic: '%s'  type: '%s' : matched readers %d (change = %d)\n", __FUNCTION__,
+    printf("%s() topic: '%s'  type: '%s' : matched readers %d (change = %d)\n", "on_publication_matched",
             topic_name, type_name, status.current_count, status.current_count_change);
 }
 
@@ -1619,6 +1619,7 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
                     char temp;
                     dds_return_t name_len = dds_get_name(writer_topic, &temp, 1);
                     char* name = calloc(name_len + 1, sizeof(char));
+		    dds_get_name(writer_topic, name, name_len + 1);
                     printf("%-10s %-10s %03d %03d [%d]", name,
                         shape.color,
                         shape.x,
