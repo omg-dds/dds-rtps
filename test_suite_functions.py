@@ -409,7 +409,7 @@ def test_reliability_no_losses(child_sub, samples_sent, last_sample_saved, timeo
                 # a pub_sample so we don't need to get it from the queue
                 first_execution = False
             else:
-                pub_sample = samples_sent[0].get(block=False)
+                pub_sample = samples_sent[0].get(block=True, timeout=0.1)
 
             if pub_sample != sub_string.group(0):
                 produced_code = ReturnCode.DATA_NOT_CORRECT
