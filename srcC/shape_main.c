@@ -1098,10 +1098,13 @@ void set_deadline_interval(dds_qos_t* qos, dds_time_t deadline_interval, Logger*
 void set_history_depth(dds_qos_t* qos, int history_depth, Logger* logger){
     if (history_depth < 0) {
         dds_qset_history(qos, DDS_HISTORY_KEEP_LAST, 1);
+	dds_qset_durability_service(qos, 0, DDS_HISTORY_KEEP_LAST, 1, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
     } else if (history_depth > 0) {
         dds_qset_history(qos, DDS_HISTORY_KEEP_LAST, history_depth);
+	dds_qset_durability_service(qos, 0, DDS_HISTORY_KEEP_LAST, history_depth, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
     } else {
         dds_qset_history(qos, DDS_HISTORY_KEEP_ALL, 0);
+	dds_qset_durability_service(qos, 0, DDS_HISTORY_KEEP_ALL, 0, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED, DDS_LENGTH_UNLIMITED);
     }
 
     dds_history_kind_t history;
