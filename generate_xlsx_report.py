@@ -404,7 +404,7 @@ class XlsxReport:
         # rows.
         # The tables leave the first column (value 0) as gap
         self.add_data_summary_worksheet(
-            starting_row=11,
+            starting_row=13,
             starting_column=1,
             worksheet=summary_worksheet)
         # After having all data that may have an unknown length, we call
@@ -752,10 +752,10 @@ class XlsxReport:
             'Product', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 2,
-            'Product Coverage', self.__formats['bold_w_border'])
+            'Single-Product Tests', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 3,
-            'Total Tests', self.__formats['bold_w_border'])
+            'Cross Product Tests', self.__formats['bold_w_border'])
 
         current_row += 1
 
@@ -920,18 +920,24 @@ class XlsxReport:
         worksheet.write(current_row, starting_column + 2, test_count)
 
         # add legend
+        current_row += 2
+        worksheet.write(current_row, starting_column + 1,
+                'Single-Product Tests',
+                self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Results where each product is tested only with itself')
         current_row += 1
         worksheet.write(current_row, starting_column + 1,
-                'Test results expressed in: test passed / supported / total',
+                'Cross-Product Tests',
                 self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Results where each product is tested against all others (including itself)')
         current_row += 1
         worksheet.write(current_row, starting_column + 1,
-                '"Product Coverage" contains information about unique tests supported by product',
+                'Format X / Y / Z',
                 self.__formats['bold'])
-        current_row += 1
-        worksheet.write(current_row, starting_column + 1,
-                '"Total Tests" contains all test performed between products as publisher and subscriber',
-                self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Represents test passed / supported / total')
 
     def add_static_data_description_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
