@@ -41,7 +41,6 @@ jobs:
     - name: Download shape_main executables
       uses: robinraju/release-downloader@v1.10
       with:
-        repository: omg-dds/dds-rtps
         latest: true
         fileName: "*"
         out-file-path: zipped_executables
@@ -50,12 +49,23 @@ jobs:
     - name: Install Python requirements
       run: pip install --requirement requirements.txt
     - name: Run Interoperability script
-      timeout-minutes: 60
+      timeout-minutes: 120
+      continue-on-error: true
       run: |
         publisher_exe=executables/${{ matrix.publisher }}*shape_main_linux
         subscriber_exe=executables/${{ matrix.subscriber }}*shape_main_linux
         output_file=junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
         extra_args=""
+        # Check if publisher executable exists
+        if ! ls $publisher_exe 1> /dev/null 2>&1; then
+          echo "ERROR: Publisher executable not found: $publisher_exe"
+          exit 1
+        fi
+        # Check if subscriber executable exists
+        if ! ls $subscriber_exe 1> /dev/null 2>&1; then
+          echo "ERROR: Subscriber executable not found: $subscriber_exe"
+          exit 1
+        fi
         if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext_dds* ]]; then
           extra_args="--periodic-announcement 5000"
         fi

@@ -404,7 +404,7 @@ class XlsxReport:
         # rows.
         # The tables leave the first column (value 0) as gap
         self.add_data_summary_worksheet(
-            starting_row=9,
+            starting_row=13,
             starting_column=1,
             worksheet=summary_worksheet)
         # After having all data that may have an unknown length, we call
@@ -752,13 +752,10 @@ class XlsxReport:
             'Product', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 2,
-            'Tests Passed', self.__formats['bold_w_border'])
+            'Single-Product Tests', self.__formats['bold_w_border'])
         worksheet.write(
             current_row, current_column + 3,
-            'Supported Tests', self.__formats['bold_w_border'])
-        worksheet.write(
-            current_row, current_column + 4,
-            'Supported Tests Passed', self.__formats['bold_w_border'])
+            'Cross Product Tests', self.__formats['bold_w_border'])
 
         current_row += 1
 
@@ -774,35 +771,42 @@ class XlsxReport:
                 current_row, current_column + 1,
                 product_name,
                 self.__formats['bold_w_border'])
-            # test passed
-            worksheet.write(
-                current_row, current_column + 2,
-                str(value.get_passed_tests()) + ' / ' +
-                    str(value.get_total_tests()),
-                self.get_format_color(value.get_passed_tests(),
-                                      value.get_total_tests()))
-            # supported tests
+
+            # vendor coverage
+
+            # for the vendor coverage, we need to find the right data in the
+            # product_summary_dict, which is the one with the same product as
+            # publisher and subscriber
+            for product_key, product_value in self.__data.product_summary_dict.items():
+                if product_name == product_key[0] and product_name == product_key[1]:
+                    product_coverage_supported_tests = product_value.get_supported_tests()
+                    product_coverage_total_tests = product_value.get_total_tests()
+                    product_coverage_passed_tests = product_value.get_passed_tests()
+
+                    # vendor coverage
+                    worksheet.write(
+                        current_row, current_column + 2,
+                        str(product_coverage_passed_tests) + ' / ' +
+                                str(product_coverage_supported_tests) + ' / ' +
+                                str(product_coverage_total_tests),
+                        self.get_format_color(
+                                product_coverage_supported_tests,
+                                product_coverage_total_tests))
+
+            # total tests
             worksheet.write(
                 current_row, current_column + 3,
-                str(value.get_supported_tests()) + ' / ' +
-                    str(value.get_total_tests()),
-                self.__formats['result_yellow'] if value.get_unsupported_tests() > 0
-                    else self.__formats['result_green'])
-            # supported tests passed
-            worksheet.write(
-                current_row, current_column + 4,
                 str(value.get_passed_tests()) + ' / ' +
-                    str(value.get_supported_tests()),
-                self.get_format_color(value.get_passed_tests(),
-                                      value.get_supported_tests()))
+                    str(value.get_supported_tests()) + ' / ' +
+                    str(value.get_total_tests()),
+                self.get_format_color(
+                        value.get_passed_tests(), value.get_supported_tests()))
+
             current_row += 1
+
 
         # Add 2 rows of gap for the next table
         current_row += 2
-        worksheet.write(
-            current_row, current_column,
-            'Test Result: passed / supported / total', self.__formats['bold_w_border'])
-        current_row += 1
         worksheet.write(
             current_row, current_column,
             'Publisher (row)/Subscriber (column)', self.__formats['bold_w_border'])
@@ -819,7 +823,7 @@ class XlsxReport:
 
         # Add the table passed_tests/total_tests with all combinations of product
         # as publishers and as subscribers
-        for (publisher_name, subscriber_name), value in self.__data.product_summary_dict.items():
+        for (publisher_name, subscriber_name), product_value in self.__data.product_summary_dict.items():
             # if the publisher hasn't been already processed yet, determine
             # what is the process_row by selecting the next free row
             # (current_row+1)
@@ -849,10 +853,10 @@ class XlsxReport:
                 process_column = column_dict[subscriber_name]
 
             worksheet.write(process_row, process_column,
-                    str(value.get_passed_tests()) + ' / ' +
-                        str(value.get_supported_tests()) + ' / ' +
-                        str(value.get_total_tests()),
-                    self.get_format_color(value.get_passed_tests(), value.get_supported_tests()))
+                    str(product_value.get_passed_tests()) + ' / ' +
+                        str(product_value.get_supported_tests()) + ' / ' +
+                        str(product_value.get_total_tests()),
+                    self.get_format_color(product_value.get_passed_tests(), product_value.get_supported_tests()))
 
     def add_static_data_summary_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
@@ -885,10 +889,9 @@ class XlsxReport:
         worksheet.insert_image(
             row=current_row, col=starting_column,
             filename=dds_logo_path,
-            options={'x_scale': 0.4, 'y_scale': 0.4, 'decorative': True, 'object_position': 2})
+            options={'x_scale': 0.6, 'y_scale': 0.6, 'decorative': True, 'object_position': 2})
 
         # Add date
-        current_row += 1
         worksheet.write(current_row, starting_column + 1, 'Date')
         date_time = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         worksheet.write(current_row, starting_column + 2, date_time)
@@ -902,6 +905,39 @@ class XlsxReport:
         current_row += 1
         worksheet.write(current_row, starting_column + 1,'Documentation')
         worksheet.write(current_row, starting_column + 2, self.REPO_DOC)
+
+        # Add number of tests
+
+        # Find the total number of unique tests by looking for a
+        # (publisher, subscriber) pair where both are the same
+        test_count = 0
+        for key, value in self.__data.product_summary_dict.items():
+            if key[0] == key[1]:
+                test_count = value.get_total_tests()
+                break
+        current_row += 1
+        worksheet.write(current_row, starting_column + 1,'Unique tests count')
+        worksheet.write(current_row, starting_column + 2, test_count)
+
+        # add legend
+        current_row += 2
+        worksheet.write(current_row, starting_column + 1,
+                'Single-Product Tests',
+                self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Results where each product is tested only with itself')
+        current_row += 1
+        worksheet.write(current_row, starting_column + 1,
+                'Cross-Product Tests',
+                self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Results where each product is tested against all others (including itself)')
+        current_row += 1
+        worksheet.write(current_row, starting_column + 1,
+                'Format X / Y / Z',
+                self.__formats['bold'])
+        worksheet.write(current_row, starting_column + 2,
+                'Represents test passed / supported / total')
 
     def add_static_data_description_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,

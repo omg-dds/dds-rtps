@@ -124,7 +124,7 @@ rtps_test_suite_1 = {
     'Test_Reliability_0' : {
         'apps' : ['-P -t Square -b -z 0', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_reliability_order,
+        'check_function' : tsf.test_order_w_instances,
         'title' : 'Communication between BEST_EFFORT publisher and subscriber',
         'description' : 'Verifies a best effort publisher communicates with a best effort subscriber with no out-of-order '
                             'or duplicate samples\n\n'
@@ -133,7 +133,7 @@ rtps_test_suite_1 = {
                         ' * The publisher application sends samples with increasing value of the "size" member\n'
                         ' * Verifies the subscriber application receives samples and the value of the "size" member is always increasing\n\n'
                         'The test passes if the value of the "size" is always increasing in '
-                            f'{tsf.MAX_SAMPLES_READ} samples, even if there are missed samples (since reliability '
+                            f'{tsf.MAX_SAMPLES_READ} samples read, even if there are missed samples (since reliability '
                             'is BEST_EFFORT) as long as there are no out-of-order or duplicated samples\n'
     },
 
@@ -173,9 +173,9 @@ rtps_test_suite_1 = {
 
     # This test checks that data is received in the right order
     'Test_Reliability_4' : {
-        'apps' : ['-P -t Square -r -k 0 -w', '-S -t Square -r -k 0'],
+        'apps' : ['-P -t Square -r -k 0 -z 0', '-S -t Square -r -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_reliability_no_losses,
+        'check_function' : tsf.test_reliability_no_losses_w_instances,
         'title' : 'Behavior of RELIABLE reliability',
         'description' : 'Verifies a RELIABLE publisher communicates with a RELIABLE subscriber and samples are received '
                             'in order without any losses or duplicates\n\n'
@@ -183,8 +183,72 @@ rtps_test_suite_1 = {
                         ' * Configures the publisher and subscriber with history KEEP_ALL\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber, after receiving a (first) sample from the publisher, it '
-                            f'receives the next {tsf.MAX_SAMPLES_READ} subsequent samples, without losses or duplicates, in '
-                            'the same order as sent\n'
+                            f'receives the next {tsf.MAX_SAMPLES_READ} subsequent samples read, without '
+                            'losses or duplicates, in the same order as sent\n'
+        },
+
+    'Test_Reliability_5' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --num-instances 4',
+                  '-S -t Square -r -k 0'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_reliability_no_losses_w_instances,
+        'title' : 'Behavior of RELIABLE reliability with several instances',
+        'description' : 'Verifies a RELIABLE publisher using 4 instances communicates with a '
+                            'RELIABLE subscriber and samples are received '
+                            'in order without any losses or duplicates\n\n'
+                        ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and subscriber with history KEEP_ALL\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber, after receiving a (first) sample from the '
+                            f'publisher, it receives {tsf.MAX_SAMPLES_READ} subsequent samples per '
+                            'instance, without losses or duplicates, in the same order as sent\n'
+        },
+
+    'Test_History_0' : {
+        'apps' : ['-P -t Square -r -k 5 -z 0 --write-period 50',
+                  '-S -t Square -r -k 5 --read-period 200'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_reliability_no_losses_w_instances,
+        'title' : 'Behavior of KEEP_LAST history',
+        'description' : 'Verifies a RELIABLE, KEEP_LAST 5 publisher using communicates with a '
+                            'RELIABLE, KEEP_LAST 5 subscriber and samples are received in order without '
+                            'any losses or duplicates. The subscriber reads data 4 time slower than'
+                            'the publisher publishes it, but the KEEP_LAST 5 history should be'
+                            'enough to avoid losses.\n\n'
+                        ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and subscriber with history KEEP_LAST 5\n'
+                        ' * Configures the publisher with a writing period of 50ms\n'
+                        ' * Configures the subscriber with a reading period of 200ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber, after receiving a (first) sample from the '
+                            f'publisher, it receives the next {tsf.MAX_SAMPLES_READ} subsequent samples, '
+                            'without losses or duplicates, in the same order as sent.\n'
+        },
+
+    'Test_History_1' : {
+        'apps' : ['-P -t Square -r -k 5 -z 0 --write-period 50 --num-instances 4',
+                  '-S -t Square -r -k 5 --read-period 200'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_reliability_no_losses_w_instances,
+        'title' : 'Behavior of KEEP_LAST history with several instances',
+        'description' : 'Verifies a RELIABLE, KEEP_LAST 5 publisher using 4 instances communicates with a '
+                            'RELIABLE, KEEP_LAST 5 subscriber and samples are received in order without '
+                            'any losses or duplicates. The subscriber reads data 4 time slower than'
+                            'the publisher publishes it, but the KEEP_LAST 5 history should be'
+                            'enough to avoid losses.\n\n'
+                        ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and subscriber with history KEEP_LAST 5\n'
+                        ' * Configures the publisher with a writing period of 50ms\n'
+                        ' * Configures the subscriber with a reading period of 200ms\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber, after receiving a (first) sample from the '
+                            f'publisher, it receives {tsf.MAX_SAMPLES_READ} subsequent samples per '
+                            'instance, without losses or duplicates, in the same order as sent\n'
         },
 
     # OWNERSHIP
@@ -230,17 +294,17 @@ rtps_test_suite_1 = {
     # The DataReader should only receive samples from the DataWriter with higher
     # ownership. There may be the situation that the DataReader starts receiving
     # samples from one DataWriter until another DataWriter with higher ownership
-    # strength is created. This should be handled by test_ownership_receivers().
+    # strength is created. This should be handled by test_size_receivers().
     'Test_Ownership_3': {
         'apps' : [
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c BLUE -w -z 30',
+            '-P -t Square -s 3 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s 4 -r -k 0 -c BLUE -z 30',
             '-S -t Square -s 1 -r -k 0'],
         'expected_codes' :[
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_ONE],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers of the same instance',
         'description' : 'Verifies an exclusive ownership subscriber receives samples only from '
                             'the highest ownership strength publisher of the same instance\n\n'
@@ -266,14 +330,14 @@ rtps_test_suite_1 = {
     # publish different instances and the ownership is applied per instance.
     'Test_Ownership_4': {
         'apps' :[
-            '-P -t Square -s 3 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s 4 -r -k 0 -c RED -w -z 30',
+            '-P -t Square -s 3 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s 4 -r -k 0 -c RED -z 30',
             '-S -t Square -s 1 -r -k 0'],
         'expected_codes' : [
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of EXCLUSIVE OWNERSHIP QoS with publishers with different instances',
         'description' : 'Verifies an exclusive ownership subscriber receives samples from different '
                             'publishers that publish different instances (ShapeType with different color)\n\n'
@@ -295,14 +359,14 @@ rtps_test_suite_1 = {
     # shared ownership.
     'Test_Ownership_5': {
         'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 30',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 30',
             '-S -t Square -s -1 -r -k 0'],
         'expected_codes' :[
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with publishers with the same instance',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
                             'shared ownership publishers of the different instances\n\n'
@@ -324,14 +388,14 @@ rtps_test_suite_1 = {
     # shared ownership.
     'Test_Ownership_6': {
         'apps' : [
-            '-P -t Square -s -1 -r -k 0 -c BLUE -w -z 20',
-            '-P -t Square -s -1 -r -k 0 -c RED -w -z 30',
+            '-P -t Square -s -1 -r -k 0 -c BLUE -z 20',
+            '-P -t Square -s -1 -r -k 0 -c RED -z 30',
             '-S -t Square -s -1 -r -k 0'],
         'expected_codes' : [
             ReturnCode.OK,
             ReturnCode.OK,
             ReturnCode.RECEIVING_FROM_BOTH],
-        'check_function' : tsf.test_ownership_receivers,
+        'check_function' : tsf.test_size_receivers,
         'title' : 'Behavior of SHARED OWNERSHIP QoS with different instances',
         'description' : 'Verifies a shared ownership subscriber receives samples from all '
                             'shared ownership publishers of different instances\n\n'
@@ -425,7 +489,7 @@ rtps_test_suite_1 = {
 
     # Content Filtered Topic
     'Test_Cft_0' : {
-        'apps' : ['-P -t Square -r -k 0 -c BLUE', '-P -t Square -r -k 0 -c RED', '-S -t Square -r -k 0 --cft "color = \'RED\'"'],
+        'apps' : ['-P -t Square -r -k 0 -c BLUE', '-P -t Square -r -k 0 -c RED', '-S -t Square -r -k 0 -c RED'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : tsf.test_color_receivers,
         'title' : 'Use of Content filter to avoid receiving undesired data (key)',
@@ -455,8 +519,8 @@ rtps_test_suite_1 = {
                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                        ' * The publisher application sends samples with increasing value of the "size" member\n'
                        ' * Publisher sends samples with size cycling from 1 to 50 (using --size-modulo 50 and -z 0)\n'
-                       ' * Subscriber uses --cft "shapesize <= 20"\n'
-                       ' * The test passes if all received samples have size < 20\n'
+                       ' * Subscriber uses --cft "shapesize <= 20"\n\n'
+                       f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ/2} samples with size < 20\n'
     },
 
     # PARTITION
@@ -494,7 +558,8 @@ rtps_test_suite_1 = {
                         ' * Configures a second publisher to use PARTITION "x1" and "color" equal to "RED"\n'
                         ' * Verifies that only the first publisher (PARTITION "p1") discovers and matches subscriber\n'
                         ' * Verifies that the second publisher (PARTITION "x1") does not match the subscriber\n\n'
-                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color (first publisher)\n'
+                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color '
+                        '(first publisher)\n'
     },
 
     # DURABILITY
@@ -717,5 +782,727 @@ rtps_test_suite_1 = {
                         ' * Note that there is at least 1 second delay between the creation of each entity\n\n'
                         'The test passes if the first sample the subscriber receives is the first sample '
                             'that the publisher sent (by checking the "size" value is equal to 1).\n'
+    },
+
+    'Test_TimeBasedFilter_0' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100',
+                  '-S -t Square -r -k 0 --time-filter 1000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_reading_1_sample_every_10_samples_w_instances,
+        'title' : 'Test the behavior of the TIME_BASED_FILTER QoS',
+        'description' : 'Verifies a subscriber with TIME_BASED_FILTER work as expected\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber TIME_BASED_FILTER to 1 second\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives a sample every 10 samples '
+                            'the publisher application has sent. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/20} samples\n'
+    },
+
+    'Test_TimeBasedFilter_1' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --num-instances 4',
+                  '-S -t Square -r -k 0 --time-filter 1000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_reading_1_sample_every_10_samples_w_instances,
+        'title' : 'Test the behavior of the TIME_BASED_FILTER QoS with several instances',
+        'description' : 'Verifies a subscriber with TIME_BASED_FILTER work as expected when the publisher '
+                            'publishes several instances\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * Configures the subscriber TIME_BASED_FILTER to 1 second\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives a sample every 10 samples '
+                            'the publisher application has sent per instance. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/20} samples per instance\n'
+    },
+
+    'Test_FinalInstanceState_0' : {
+        'apps' : ['-P -t Square --num-iterations 200 --num-instances 4 --final-instance-state u',
+                  '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_unregistering_w_instances,
+        'title' : 'Test the behavior of unregistering instances',
+        'description' : 'Verifies a subscriber receives NOT_ALIVE_NO_WRITERS when the publisher unregisters instances\n\n'
+                        ' * Configures the publisher to unregister instances upon finalization\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher finishes after running 200 iterations\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives some samples and then '
+                            'a NOT_ALIVE_NO_WRITERS per instance\n'
+    },
+
+    'Test_FinalInstanceState_1' : {
+        'apps' : ['-P -t Square --num-iterations 200 --num-instances 4 --final-instance-state d',
+                  '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_disposing_w_instances,
+        'title' : 'Test the behavior of disposing instances',
+        'description' : 'Verifies a subscriber receives NOT_ALIVE_DISPOSED when the publisher disposes instances\n\n'
+                        ' * Configures the publisher to dispose instances upon finalization\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher finishes after running 200 iterations\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives some samples and then '
+                            'a NOT_ALIVE_DISPOSED per instance\n'
+    },
+
+    'Test_FinalInstanceState_2' : {
+        'apps' : ['-P -t Square --num-iterations 200 --num-instances 4',
+                  '-S -t Square'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_unregistering_w_instances,
+        'title' : 'Test the instance state when finalizing the application',
+        'description' : 'Verifies a subscriber receives NOT_ALIVE_NO_WRITERS when the publisher finishes '
+                            'without unregistering or disposing instances explicitly\n\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher finishes after running 200 iterations\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives some samples and then '
+                            'a NOT_ALIVE_NO_WRITERS per instance\n'
+    },
+
+    'Test_LargeData_0' : {
+        'apps' : ['-P -t Square -r -k 0 --additional-payload-size 100000',
+                  '-S -t Square -r -k 0'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_large_data,
+        'title' : 'Test large data',
+        'description' : 'This test covers the interoperability scenario with large data:\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher to use 100000 additional payload size (to represent large data samples)\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The tests passes if the subscriber receives samples from the publisher and '
+                            'the last byte sent in additional_payload_size is correctly set.\n'
+    },
+
+    'Test_Lifespan_0' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --lifespan 250',
+                  '-S -t Square -r -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fractions of seconds, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fractions of seconds\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/10} samples\n'
+    },
+
+    'Test_Lifespan_1' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --lifespan 250 --num-instances 4',
+                  '-S -t Square -r -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fraction of seconds with several instances, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fraction of seconds and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance. The subscriber has '
+                            f'to read {tsf.MAX_SAMPLES_READ/10} samples per instance\n'
+    },
+
+    'Test_Lifespan_2' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 400 --lifespan 1000',
+                  '-S -t Square -r -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/10} samples per instance\n'
+    },
+
+    'Test_Lifespan_3' : {
+        'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 400 --lifespan 1000 --num-instances 4',
+                  '-S -t Square -r -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds with several instances, reliable',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds, and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance. The subscriber has '
+                            f'to read {tsf.MAX_SAMPLES_READ/10} samples per instance\n'
+    },
+
+    'Test_Lifespan_4' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 100 --lifespan 250',
+                  '-S -t Square -b -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fractions of seconds, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fractions of seconds\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/10} samples\n'
+    },
+
+    'Test_Lifespan_5' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 100 --lifespan 250 --num-instances 4',
+                  '-S -t Square -b -k 0 --read-period 500'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan with fraction of seconds with several instances, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan with fraction of seconds and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the publisher with a lifespan of 250ms\n'
+                        ' * Configures the subscriber with a reading period of 500ms\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance. The subscriber has '
+                            f'to read {tsf.MAX_SAMPLES_READ/10} samples per instance\n'
+    },
+
+    'Test_Lifespan_6' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 400 --lifespan 1000',
+                  '-S -t Square -b -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time. The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ/10} samples\n'
+    },
+
+    'Test_Lifespan_7' : {
+        'apps' : ['-P -t Square -b -z 0 --write-period 400 --lifespan 1000 --num-instances 4',
+                  '-S -t Square -b -k 0 --read-period 2000'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_lifespan_2_3_consecutive_samples_w_instances,
+        'title' : 'Test the behavior of lifespan expressed in seconds with several instances, best effort',
+        'description' : 'Verifies a subscriber receives the expected samples when the publisher uses '
+                            ' lifespan in seconds, and different instances\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher with a writing period of 400ms\n'
+                        ' * Configures the publisher with a lifespan of 1s\n'
+                        ' * Configures the subscriber with a reading period of 2s\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives 2 or 3 consecutive samples '
+                            'each time it reads.\n'
+                        'As the publisher sets the lifespan, it expires in some samples before the '
+                            'subscriber reads data. The amount of consecutive samples read by the '
+                            'subscriber application is 2 or 3 each time per instance. The subscriber has '
+                            f'to read {tsf.MAX_SAMPLES_READ/10} samples per instance\n'
+    },
+
+
+    'Test_OrderedAccess_0' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope i',
+                  '-S -t Square -r -k 0 --ordered --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher is compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_OrderedAccess_1' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope i',
+                  '-S -t Square -r -k 0 --ordered --access-scope t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
+                            'TOPIC_PRESENTATION subscriber when using ordered access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_OrderedAccess_2' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope i',
+                  '-S -t Square -r -k 0 --ordered --access-scope g'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
+                            'GROUP_PRESENTATION subscriber when using ordered access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_OrderedAccess_3' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope t',
+                  '-S -t Square -r -k 0 --ordered --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between TOPIC_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies a TOPIC_PRESENTATION publisher compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_OrderedAccess_4' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope t',
+                  '-S -t Square -r -k 0 --ordered --access-scope t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between TOPIC_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies a TOPIC_PRESENTATION publisher compatible with a '
+                            'TOPIC_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_OrderedAccess_5' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope t',
+                  '-S -t Square -r -k 0 --ordered --access-scope g'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for ordered access between TOPIC_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies an TOPIC_PRESENTATION publisher does not match with a '
+                            'GROUP_PRESENTATION subscriber when using ordered access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_OrderedAccess_6' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope g',
+                  '-S -t Square -r -k 0 --ordered --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_OrderedAccess_7' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope g',
+                  '-S -t Square -r -k 0 --ordered --access-scope t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with a '
+                            'TOPIC_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_OrderedAccess_8' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope g',
+                  '-S -t Square -r -k 0 --ordered --access-scope g'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with an '
+                            'GROUP_PRESENTATION subscriber when using ordered access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with ordered access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+
+    'Test_OrderedAccess_9' : {
+        'apps' : ['-P -t Square -r -k 0 --access-scope t',
+                  '-S -t Square -r -k 0 --ordered --access-scope t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for no ordered access publisher and ordered access subscriber',
+        'description' : 'Verifies that publisher without ordered access does not match with a '
+                            'subscriber with ordered access\n\n'
+                        ' * Configures the publisher and the subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher and the subscriber with access scope TOPIC_PRESENTATION\n'
+                        ' * Configures the subscriber with ordered access\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+
+    'Test_OrderedAccess_10' : {
+        'apps' : ['-P -t Square -r -k 0 --ordered --access-scope t -z 0 --num-instances 4 --write-period 100',
+                  '-S -t Square -r -k 0 --ordered --access-scope i --take-read --read-period 400',
+                  '-S -t Square -r -k 0 --ordered --access-scope t --take-read --read-period 400'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.ORDERED_ACCESS_INSTANCE, ReturnCode.ORDERED_ACCESS_TOPIC],
+        'check_function' : tsf.ordered_access_w_instances,
+        'title' : 'Test the behavior of ordered access',
+        'description' : 'Verifies subscribers receives data correctly depending on the ordered '
+                            'access: TOPIC_PRESENTATION and INSTANCE_PRESENTATION.\n\n'
+                        ' * Configures the publisher and all subscribers with a RELIABLE reliability\n'
+                        ' * Configures the publisher and all subscribers with history KEEP_ALL\n'
+                        ' * Configures the publisher and all subscribers with ordered access\n'
+                        ' * Configures the publisher with access scope TOPIC_PRESENTATION\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the first subscriber with access scope INSTANCE_PRESENTATION\n'
+                        ' * Configures the second subscriber with access scope TOPIC_PRESENTATION\n'
+                        ' * Configures all subscribers to use take() instead of take_next_instance()\n'
+                        ' * Configures all subscribers with a reading period of 400ms\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber applications are receiving the instances '
+                            'with the specified ordered access / access scope. For INSTANCE_PRESENTATION, '
+                            'all the samples for one instance is presented sequentially. For '
+                            'TOPIC_PRESENTATION, the subscriber reads the samples in the same '
+                            'order they have been published, independently of the instance they'
+                            'belong to (one sample of one instance each time). The subscriber has to read '
+                            f'{tsf.MAX_SAMPLES_READ} samples per instance\n'
+    },
+
+    'Test_CoherentSets_0' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope i',
+                  '-S -t Square -r -k 0 --coherent --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher is compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_1' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope i',
+                  '-S -t Square -r -k 0 --coherent --access-scope t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
+                            'TOPIC_PRESENTATION subscriber when using coherent access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_CoherentSets_2' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope i',
+                  '-S -t Square -r -k 0 --coherent --access-scope g'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
+                            'GROUP_PRESENTATION subscriber when using coherent access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_CoherentSets_3' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope t',
+                  '-S -t Square -r -k 0 --coherent --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between TOPIC_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies an TOPIC_PRESENTATION publisher is compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_4' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope t',
+                  '-S -t Square -r -k 0 --coherent --access-scope t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between TOPIC_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies an TOPIC_PRESENTATION publisher is compatible with an '
+                            'TOPIC_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_5' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope t',
+                  '-S -t Square -r -k 0 --coherent --access-scope g'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for coherent access between TOPIC_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies an TOPIC_PRESENTATION publisher does not match with a '
+                            'GROUP_PRESENTATION subscriber when using coherent access and '
+                            'report an IncompatibleQos notification\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+    'Test_CoherentSets_6' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope g',
+                  '-S -t Square -r -k 0 --coherent --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber',
+        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_7' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope g',
+                  '-S -t Square -r -k 0 --coherent --access-scope t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber',
+        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
+                            'TOPIC_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_8' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope g',
+                  '-S -t Square -r -k 0 --coherent --access-scope g'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
+                    'GROUP_PRESENTATION subscriber',
+        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
+                            'GROUP_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+
+    'Test_CoherentSets_9' : {
+        'apps' : ['-P -t Square -r -k 0 --access-scope t',
+                  '-S -t Square -r -k 0 --coherent --access-scope t'],
+        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
+        'title' : 'No compatibility for no coherent access publisher and coherent access subscriber',
+        'description' : 'Verifies that publisher without coherent access does not match with a '
+                            'subscriber with coherent access\n\n'
+                        ' * Configures the publisher and the subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and the subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher and the subscriber with access scope TOPIC_PRESENTATION\n'
+                        ' * Configures the subscriber with coherent access\n'
+                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
+                            'and the subscriber\n'
+    },
+
+    'Test_CoherentSets_10' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope i --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
+                  '-S -t Square -r -k 0 --coherent --access-scope i --num-topics 3 --take-read --read-period 100'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.coherent_sets_w_instances,
+        'title' : 'Test the behavior of coherent access with INSTANCE_PRESENTATION with several instances',
+        'description' : 'Verifies subscribers receives data correctly when using coherent '
+                            'access INSTANCE_PRESENTATION.\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher / subscriber with access scope INSTANCE_PRESENTATION\n'
+                        ' * Configures the publisher / subscriber to use 3 topics\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher creates coherent sets of 3 consecutive samples each instance\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber to use take() instead of take_next_instance()\n'
+                        ' * Configures the subscriber with a reading period of 100ms\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives all samples of a coherent '
+                            'set at the same. This coherent set is created with 36 samples: 3 samples per '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
+                            'per instance and topic is 3 each time we receive a new coherent set of samples. '
+                            f'The subscriber has to read {tsf.MAX_SAMPLES_READ} samples per instance\n'
+    },
+    'Test_CoherentSets_11' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope t --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
+                  '-S -t Square -r -k 0 --coherent --access-scope t --num-topics 3 --take-read --read-period 100'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.coherent_sets_w_instances,
+        'title' : 'Test the behavior of coherent access with TOPIC_PRESENTATION with several instances',
+        'description' : 'Verifies subscribers receives data correctly when using coherent '
+                            'access TOPIC_PRESENTATION.\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher / subscriber with access scope TOPIC_PRESENTATION\n'
+                        ' * Configures the publisher / subscriber to use 3 topics\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher creates coherent sets of 3 consecutive samples each instance\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber to use take() instead of take_next_instance()\n'
+                        ' * Configures the subscriber with a reading period of 100ms\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives all samples of a coherent '
+                            'set at the same. This coherent set is created with 36 samples: 3 samples per '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
+                            'per instance and topic is 3 each time we receive a new coherent set of samples. '
+                            f'The subscriber has to read {tsf.MAX_SAMPLES_READ} samples per instance\n'
+    },
+    'Test_CoherentSets_12' : {
+        'apps' : ['-P -t Square -r -k 0 --coherent --access-scope g --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
+                  '-S -t Square -r -k 0 --coherent --access-scope g --num-topics 3 --take-read --read-period 100'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.coherent_sets_w_instances,
+        'title' : 'Test the behavior of coherent access with GROUP_PRESENTATION with several instances',
+        'description' : 'Verifies subscribers receives data correctly when using coherent '
+                            'access GROUP_PRESENTATION.\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher / subscriber with access scope GROUP_PRESENTATION\n'
+                        ' * Configures the publisher / subscriber to use 3 topics\n'
+                        ' * The publisher publishes 4 different instances (using the same data value)\n'
+                        ' * The publisher creates coherent sets of 3 consecutive samples each instance\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Configures the publisher with a writing period of 100ms\n'
+                        ' * Configures the subscriber to use take() instead of take_next_instance()\n'
+                        ' * Configures the subscriber with a reading period of 100ms\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber application receives all samples of a coherent '
+                            'set at the same. This coherent set is created with 36 samples: 3 samples per '
+                            'instance, 4 instances and 3 topics. This test checks that the consecutive samples received '
+                            'per instance and topic is 3 each time we receive a new coherent set of samples. '
+                            f'The subscriber has to read {tsf.MAX_SAMPLES_READ} samples per instance\n'
     },
 }
