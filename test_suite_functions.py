@@ -34,7 +34,7 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+    sub_string = re.search(r'\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
     if sub_string is None:
         return ReturnCode.DATA_NOT_RECEIVED
@@ -64,7 +64,7 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -78,7 +78,7 @@ def test_size_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
         samples_read += 1
 
-        sub_string = re.search('\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
+        sub_string = re.search(r'\w\s+\w+\s+[0-9]+ [0-9]+ \[([0-9]+)\]',
             child_sub.before + child_sub.after)
 
     print(f'Samples read: {samples_read}')
@@ -101,7 +101,7 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     if basic_check_retcode != ReturnCode.OK:
         return basic_check_retcode
 
-    sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+    sub_string = re.search(r'\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
         child_sub.before + child_sub.after)
     first_sample_color = sub_string.group(1)
 
@@ -117,7 +117,7 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -131,7 +131,7 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
 
         samples_read += 1
 
-        sub_string = re.search('\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+        sub_string = re.search(r'\w\s+(\w+)\s+[0-9]+ [0-9]+ \[[0-9]+\]',
             child_sub.before + child_sub.after)
 
     print(f'Samples read: {samples_read}')
@@ -149,7 +149,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
     samples_read = 0
     return_code = ReturnCode.OK
 
-    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+    sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
 
     while sub_string is not None and samples_read < max_samples_received:
         size = int(sub_string.group(1))
@@ -159,7 +159,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
 
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -170,7 +170,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
             break
 
         samples_read += 1
-        sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+        sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
 
     print(f'Samples read: {samples_read}')
     return return_code
@@ -228,7 +228,7 @@ def test_order_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
         # Get the next sample the subscriber is receiving
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 r'Reading with ordered access.*?\n', # index = 1
                 pexpect.TIMEOUT, # index = 2
                 pexpect.EOF # index = 3
@@ -301,7 +301,7 @@ def test_reliability_no_losses_w_instances(child_sub, samples_sent, last_sample_
         # Get the next sample the subscriber is receiving
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -347,7 +347,7 @@ def test_durability_volatile(child_sub, samples_sent, last_sample_saved, timeout
 
     # Read the first sample, if it has the size > 5, it is using volatile
     # durability correctly
-    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
+    sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
 
     # Check if the element received is not the first 5 samples (aka size >= 5)
@@ -384,7 +384,7 @@ def test_durability_transient_local(child_sub, samples_sent, last_sample_saved, 
 
     # Read the first sample, if it has the size == 1, it is using transient
     # local durability correctly
-    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]',
+    sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]',
         child_sub.before + child_sub.after)
 
     # Check if the element is the first one sent (aka size == 1), which should
@@ -430,7 +430,7 @@ def test_deadline_missed(child_sub, samples_sent, last_sample_saved, timeout):
         return ReturnCode.DATA_NOT_RECEIVED
     else:
         index = child_sub.expect([
-            '\[[0-9]+\]', # index = 0
+            r'\[[0-9]+\]', # index = 0
             pexpect.TIMEOUT, # index = 1
             pexpect.EOF # index = 2
         ],
@@ -506,7 +506,7 @@ def test_reading_1_sample_every_10_samples_w_instances(child_sub, samples_sent, 
         # Get the next sample the subscriber is receiving
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -800,7 +800,7 @@ def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, l
         # Get the next sample the subscriber is receiving
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -920,7 +920,7 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
         # 'Reading with ordered access message'
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 r'Reading with ordered access.*?\n', # index = 1
                 pexpect.TIMEOUT, # index = 2
                 pexpect.EOF # index = 3
@@ -1063,7 +1063,7 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         # 'Reading with ordered access message'
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 r'Reading coherent sets.*?\n', # index = 1
                 pexpect.TIMEOUT, # index = 2
                 pexpect.EOF # index = 3
