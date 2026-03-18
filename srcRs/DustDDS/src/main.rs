@@ -227,6 +227,16 @@ struct Options {
     /// uses take()/read() instead of take_next_instance() read_next_instance()
     #[clap(short = 'K', long = "take-read")]
     take_read: bool,
+
+    /// ContentFilteredTopic filter expression (quotes required around the expression). Cannot be used with -c on
+    /// subscriber applications
+    #[clap(short = 'F', long = "cft")]
+    cft_expression: Option<String>,
+
+    /// If set, the modulo operation is applied to the shapesize. This will make that shapesize is in the range [1,N].
+    /// This only applies if shapesize is increased (-z 0)
+    #[clap(short = 'Q', long = "size-modulo")]
+    size_modulo: Option<i32>,
 }
 
 impl Options {
@@ -240,7 +250,7 @@ impl Options {
         Ok(())
     }
 
-    fn color_for_publisher(&self) -> String {
+    fn interpret_color(&self) -> String {
         match self.color.clone() {
             Some(color) => color,
             None => {
@@ -510,7 +520,7 @@ fn init_publisher(
     println!(
         "Create writer for topic: {} color: {}",
         options.topic_name,
-        options.color_for_publisher()
+        options.interpret_color()
     );
 
     let mut data_writer_qos = DataWriterQos {
@@ -550,7 +560,7 @@ fn run_publisher(
     let da_width = 240;
     let da_height = 270;
     let mut shape = ShapeType {
-        color: options.color_for_publisher(),
+        color: options.interpret_color(),
         x: random::<i32>() % da_width,
         y: random::<i32>() % da_height,
         shapesize: options.shapesize,
@@ -621,18 +631,16 @@ fn init_subscriber(
         );
     }
 
-    let data_reader = match options.color {
-        // filter on specified color
-        Some(color) => {
+    let data_reader = match options.cft_expression {
+        Some(cft_expression) => {
             let filtered_topic_name = options.topic_name + "_filtered";
-            println!(
-                "Create reader for topic: {} color: {}",
-                filtered_topic_name, &color
-            );
+            println!("ContentFilterTopic = \"{cft_expression}\"");
+            println!("Create reader for topic: {} ", filtered_topic_name);
+            let color = cft_expression.split("=").nth(1).unwrap().trim_matches(&[' ', '\'']).to_string();
             let content_filtered_topic = participant.create_contentfilteredtopic(
                 &filtered_topic_name,
                 &topic,
-                String::from("color = %0"),
+                cft_expression,
                 vec![color],
             )?;
 
@@ -643,7 +651,6 @@ fn init_subscriber(
                 NO_STATUS,
             )?
         }
-        // No filter on specified color
         None => {
             println!("Create reader for topic: {} ", options.topic_name);
             subscriber.create_datareader::<ShapeType>(
