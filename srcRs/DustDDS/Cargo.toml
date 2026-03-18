@@ -17,7 +17,7 @@ publish = false
 clap = { version = "4.5.47", features = ["derive", "string"] }
 rand = "0.8.5"
 ctrlc = "3.4"
-dust_dds = version="0.15.0"
+dust_dds = { version = "0.15.0" }
 
 [build-dependencies]
 dust_dds_gen = "0.15.0"
