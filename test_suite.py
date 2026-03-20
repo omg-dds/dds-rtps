@@ -173,7 +173,7 @@ rtps_test_suite_1 = {
 
     # This test checks that data is received in the right order
     'Test_Reliability_4' : {
-        'apps' : ['-P -t Square -r -k 0 -w', '-S -t Square -r -k 0'],
+        'apps' : ['-P -t Square -r -k 0 -z 0 -w', '-S -t Square -r -k 0'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.test_reliability_no_losses,
         'title' : 'Behavior of RELIABLE reliability',
