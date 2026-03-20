@@ -45,6 +45,7 @@ jobs:
         latest: true
         fileName: "*"
         out-file-path: zipped_executables
+        preRelease: true
     - name: Unzip executables
       run: unzip 'zipped_executables/*.zip' -d executables
     - name: Install Python requirements
