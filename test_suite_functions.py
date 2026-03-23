@@ -141,9 +141,16 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
     """
     Checks that all received samples have size between 1 and 20 (inclusive).
     Returns ReturnCode.OK if all samples are in range, otherwise ReturnCode.DATA_NOT_CORRECT.
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern.
     """
-    import re
-    from rtps_test_utilities import ReturnCode
+
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
 
     max_samples_received = MAX_SAMPLES_READ / 2
     samples_read = 0
