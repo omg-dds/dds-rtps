@@ -800,7 +800,7 @@ class XlsxReport:
                     str(value.get_supported_tests()) + ' / ' +
                     str(value.get_total_tests()),
                 self.get_format_color(
-                        value.get_passed_tests(), value.get_supported_tests()))
+                        value.get_passed_tests(), value.get_passed_tests()))
 
             current_row += 1
 
