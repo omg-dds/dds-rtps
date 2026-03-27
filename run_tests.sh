@@ -81,7 +81,7 @@ for i in $publisher; do
         subscriber_name=$(basename "$j" _shape_main_linux)
         echo "Testing Publisher $publisher_name --- Subscriber $subscriber_name"
         extra_args=""
-        if [[ "${subscriber,,}" == *opendds* && "${publisher,,}" == *connext* ]]; then
+        if [[ "${subscriber_name,,}" == *opendds* && "${publisher_name,,}" == *connext_dds* ]]; then
             extra_args="--periodic-announcement 5000"
         fi;
         if [[ -n $output ]]; then

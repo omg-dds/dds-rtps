@@ -122,7 +122,7 @@ rtps_test_suite_1 = {
 
     # RELIABILITY
     'Test_Reliability_0' : {
-        'apps' : ['-P -t Square -b -z 0', '-S -t Square -b -z 0'],
+        'apps' : ['-P -t Square -b -z 0', '-S -t Square -b'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.test_reliability_order,
         'title' : 'Communication between BEST_EFFORT publisher and subscriber',
@@ -425,22 +425,39 @@ rtps_test_suite_1 = {
 
     # Content Filtered Topic
     'Test_Cft_0' : {
-        'apps' : ['-P -t Square -r -c BLUE', '-P -t Square -r -c RED', '-S -t Square -r -c RED'],
+        'apps' : ['-P -t Square -r -k 0 -c BLUE', '-P -t Square -r -k 0 -c RED', '-S -t Square -r -k 0 --cft "color = \'RED\'"'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function' : tsf.test_color_receivers,
-        'title' : 'Use of Content filter to avoid receiving undesired data',
-        'description' : 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not pass the filter\n\n'
+        'title' : 'Use of Content filter to avoid receiving undesired data (key)',
+        'description' : 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not '
+                        'pass the filter. The filter is applied to the key "color"\n\n'
                         ' * Configures a subscriber with a ContentFilteredTopic that selects only the shapes that '
                             'have "color" equal to "RED"\n'
                         ' * Configures a first publisher to publish samples with "color" equal to "BLUE"\n'
                         ' * Configures a second publisher to publish samples with "color" equal to "RED"\n'
                         ' * Use RELIABLE Qos in all publishers and subscriber to ensure any samples that are not '
                             'received are due to filtering\n'
+                        ' * Configures the publishers / subscriber with history KEEP_ALL\n'
                         ' * Verifies that both publishers discover and match the subscriber and vice-versa\n'
                         ' * Note that this test does not check whether the filtering happens in the publisher side or '
                             'the subscriber side. It only checks the middleware filters the samples somewhere.\n\n'
                         f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color\n'
-        },
+    },
+
+    'Test_Cft_1': {
+        'apps': ['-P -t Square -r -k 0 -z 0 --size-modulo 50', '-S -t Square -r -k 0 --cft "shapesize <= 20"'],
+        'expected_codes': [ReturnCode.OK, ReturnCode.OK],
+        'check_function': tsf.test_size_less_than_20,
+        'title' : 'Use of Content filter to avoid receiving undesired data (non-key)',
+        'description': 'Verifies a subscription using a ContentFilteredTopic does not receive data that does not '
+                       'pass the filter. The filter is applied to the non-key member "shapesize".\n\n'
+                       ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                       ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                       ' * The publisher application sends samples with increasing value of the "size" member\n'
+                       ' * Publisher sends samples with size cycling from 1 to 50 (using --size-modulo 50 and -z 0)\n'
+                       ' * Subscriber uses --cft "shapesize <= 20"\n'
+                       ' * The test passes if all received samples have size < 20\n'
+    },
 
     # PARTITION
     'Test_Partition_0' : {
