@@ -1498,13 +1498,22 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
 bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
     // This is the number of iterations performed
     unsigned int n = 0;
+    dds_instance_handle_t *previous_handles = NULL;
 
     log_message(app.logger, DEBUG, "Running run_subscriber() function");
     bool printed_message = false;
+
+    previous_handles = (dds_instance_handle_t*) malloc(sizeof(dds_instance_handle_t) * opts.num_topics);
+    if (previous_handles == NULL) {
+        log_message(app.logger, ERROR, "Error allocating memory for previous_handles");
+        return false;
+    }
+    for (int i = 0; i < opts.num_topics; ++i) {
+        previous_handles[i] = 0;
+    }
     
     while(!all_done) {
         dds_return_t retval;
-        dds_instance_handle_t previous_handle;
         dds_sample_info_t sample_infos[MAX_SAMPLES];
         void* samples[MAX_SAMPLES];
 
@@ -1520,6 +1529,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
         }
 
         for (unsigned int i = 0; i < opts.num_topics; ++i) {
+            previous_handles[i] = 0;
             do {
                 if(!opts.use_read) {
                     if(opts.take_read_next_instance) {
@@ -1527,7 +1537,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                             printed_message = true;
                             log_message(app.logger, DEBUG, "Calling take_next_instance() function"); 
                         }
-                        retval = dds_take_next(app.readers[i], samples,sample_infos);
+                        retval = dds_take_next_instance(app.readers[i], samples,sample_infos, MAX_SAMPLES, MAX_SAMPLES, previous_handles[i]);
                     } else {
                         if (!printed_message) {
                             printed_message = true;
@@ -1541,7 +1551,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                             printed_message = true;
                             log_message(app.logger, DEBUG, "Calling read_next_instance() function"); 
                         }
-                        retval = dds_read_next(app.readers[i], samples,sample_infos);
+                        retval = dds_read_next_instance(app.readers[i], samples,sample_infos, MAX_SAMPLES, MAX_SAMPLES, previous_handles[i]);
                     } else {
                         if (!printed_message) {
                             printed_message = true;
@@ -1594,12 +1604,12 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                                 free(name);
                             }
                         }
-    
-                        previous_handle = sample_info[0].instance_handle;
-                        dds_return_loan(app.readers[i], (void**)samples, MAX_SAMPLES);
                     }
+                    dds_return_loan(app.readers[i], (void**)samples, MAX_SAMPLES);
+                    previous_handles[i] = sample_infos[0].instance_handle;
                 } 
-            } while (retval >= DDS_RETCODE_OK);
+                log_message(app.logger, DEBUG, "retval: %d", retval);
+            } while (retval > DDS_RETCODE_OK);
         }
         if (opts.coherent_set_enabled || opts.ordered_access_enabled) {
             dds_end_coherent(app.subscriber);
@@ -1615,6 +1625,8 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
         for( size_t i = 0; i < MAX_SAMPLES; i ++) ShapeType_free(samples[i],DDS_FREE_ALL);
         usleep(opts.read_period_us);
     }
+
+    free(previous_handles);
     
     return true;
 }
