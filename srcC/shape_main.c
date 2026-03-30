@@ -778,6 +778,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
                 parse_ok = false;
             }
             shape_options->datafrag_size = converted_param;
+            break;
         }
         case 'F':
             shape_options->cft_expression = strdup(optarg);
@@ -1664,7 +1665,9 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
         shape.additional_payload_size._buffer = dds_sequence_uint8_allocbuf(size);
         shape.additional_payload_size._maximum = size;
         shape.additional_payload_size._length = size;
-        shape.additional_payload_size._buffer[size - 1] = 255;
+        for (int i = 0; i < size; ++i) {
+            shape.additional_payload_size._buffer[i] = 255;
+        }
     } else {
         shape.additional_payload_size._buffer = dds_sequence_uint8_allocbuf(0);
         shape.additional_payload_size._maximum = 0;
