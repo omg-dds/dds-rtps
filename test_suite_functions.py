@@ -317,7 +317,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
     samples_read = 0
     return_code = ReturnCode.OK
 
-    sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+    sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
 
     while sub_string is not None and samples_read < max_samples_received:
         size = int(sub_string.group(1))
@@ -327,7 +327,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
 
         index = child_sub.expect(
             [
-                '\[[0-9]+\]', # index = 0
+                r'\[[0-9]+\]', # index = 0
                 pexpect.TIMEOUT, # index = 1
                 pexpect.EOF # index = 2
             ],
@@ -338,7 +338,7 @@ def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
             break
 
         samples_read += 1
-        sub_string = re.search('[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
+        sub_string = re.search(r'[0-9]+ [0-9]+ \[([0-9]+)\]', child_sub.before + child_sub.after)
 
     print(f'Samples read: {samples_read}')
     return return_code

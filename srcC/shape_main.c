@@ -212,6 +212,10 @@ typedef struct ShapeOptions {
     bool                take_read_next_instance;
 
     useconds_t          periodic_announcement_period_us;
+
+    unsigned int        datafrag_size;
+    char*               cft_expression;
+    int                 size_modulo;
 } ShapeOptions_t;
 
 
@@ -268,6 +272,11 @@ void shape_options_init(ShapeOptions_t* shape_options)
 
     shape_options->periodic_announcement_period_us = 0;
 
+    shape_options->datafrag_size = 0; // Default: 0 (means not set)
+    shape_options->cft_expression = NULL;
+
+    shape_options->size_modulo = 0; // 0 means disabled
+
     return;
 }
 
@@ -275,6 +284,7 @@ void shape_options_free(ShapeOptions_t* shape_options){
     free(shape_options->topic_name);
     free(shape_options->color);
     free(shape_options->partition);
+    free(shape_options->cft_expression);
     return;
 }
 
@@ -340,6 +350,15 @@ void print_usage( const char *prog )
     printf("                           read_next_instance()\n");
     printf("   --periodic-announcement <ms> : indicates the periodic participant\n");
     printf("                                  announcement period in ms. Default 0 (off)\n");
+    printf("   --datafrag-size <bytes> : set the data fragment size (default: 0, means\n");
+    printf("                           not set)\n");
+    printf("   --cft <expression> : ContentFilteredTopic filter expression (quotes\n");
+    printf("                       required around the expression). Cannot be used with\n");
+    printf("                        -c on subscriber applications\n");
+    printf("   --size-modulo <int> : If set, the modulo operation is applied to the\n");
+    printf("                         shapesize. This will make that shapesize is in the\n");
+    printf("                         range [1,N]. This only applies if shapesize is\n");
+    printf("                         increased (-z 0)\n");
 }
 
 bool validate(Logger* logger, ShapeOptions_t* shape_options) {
@@ -368,6 +387,9 @@ bool validate(Logger* logger, ShapeOptions_t* shape_options) {
     if (shape_options->publish && (!shape_options->take_read_next_instance)) {
         log_message(logger, ERROR, "warning: --take-read ignored on publisher applications");
     }
+    if (shape_options->publish && shape_options->cft_expression != NULL) {
+        log_message(logger, ERROR, "warning: --cft ignored on publisher applications");
+    }
     if (shape_options->subscribe && (shape_options->shapesize != 20)){
         log_message(logger, ERROR, "warning: shapesize [-z] ignored on subscriber applications");
     }
@@ -385,6 +407,13 @@ bool validate(Logger* logger, ShapeOptions_t* shape_options) {
     }
     if (!shape_options->coherent_set_enabled && !shape_options->ordered_access_enabled && shape_options->coherent_set_access_scope_set) {
         log_message(logger, ERROR, "warning: --access-scope ignored because not coherent, or ordered access enabled");
+    }
+    if (shape_options->size_modulo > 0 && shape_options->shapesize != 0) {
+        log_message(logger, ERROR, "warning: --size-modulo has no effect unless shapesize (-z) is set to 0");
+    }
+    if (shape_options->subscribe && shape_options->color != NULL && shape_options->cft_expression != NULL) {
+        log_message(logger, ERROR, "error: cannot specify both --cft and -c for subscriber applications");
+        return false;
     }
 
     return true;
@@ -413,6 +442,9 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         {"take-read", required_argument, NULL, 'K'},
         {"time-filter", required_argument, NULL, 'i'},
         {"periodic-announcement", required_argument, NULL, 'N'},
+        {"datafrag-size", required_argument, NULL, 'Z'},
+        {"cft", required_argument, NULL, 'F'},
+        {"size-modulo", required_argument, NULL, 'Q'},
         {NULL, 0, NULL, 0 }
     };
 
@@ -732,6 +764,34 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
             shape_options->periodic_announcement_period_us = converted_param * 1000ll;
             break;
         }
+        case 'Z': {
+            unsigned int converted_param = 0;
+            if (sscanf(optarg, "%u", &converted_param) == 0) {
+                log_message(logger, ERROR, "unrecognized value for datafrag-size %c", optarg[0]);
+                parse_ok = false;
+            }
+            // the spec mentions that the fragment size must satisfy:
+            // fragment size <= 65535 bytes.
+            if (converted_param > 65535) {
+                log_message(logger, ERROR, "incorrect value for datafrag-size, "
+                        "it must be <= 65535 bytes%u", converted_param);
+                parse_ok = false;
+            }
+            shape_options->datafrag_size = converted_param;
+        }
+        case 'F':
+            shape_options->cft_expression = strdup(optarg);
+            break;
+        case 'Q': {
+            int converted_param = 0;
+            if (sscanf(optarg, "%d", &converted_param) == 0 || converted_param < 1) {
+                log_message(logger, ERROR, "incorrect value for size-modulo, must be >=1");
+                parse_ok = false;
+            } else {
+                shape_options->size_modulo = converted_param;
+            }
+            break;
+        }
         case '?':
             parse_ok = false;
             break;
@@ -758,7 +818,9 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    TimeBasedFilterInterval = %u ms\n",shape_options->timebasedfilter_interval_us / 1000ll);
         printf("    DeadlineInterval = %u ms\n", shape_options->deadline_interval_us / 1000ll);
         printf("    Shapesize = %d\n", shape_options->shapesize);
-        printf("    Reading method = %s\n", (shape_options->use_read ? "read_next_instance" : "take_next_instance"));
+        printf("    Reading method = %s\n", (shape_options->use_read 
+                     ? (shape_options->take_read_next_instance ? "read_next_instance" : "read") 
+                     : (shape_options->take_read_next_instance ? "take_next_instance" : "take")));
         printf("    Write period = %u ms\n", shape_options->write_period_us / 1000ll);
         printf("    Read period = %u ms\n", shape_options->read_period_us / 1000ll);
         printf("    Lifespan = %u ms\n", shape_options->lifespan_us / 1000ll);
@@ -773,6 +835,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    Final Instance State = %s\n", 
                      (shape_options->unregister ? "Unregister" : (shape_options->dispose ? "Dispose" : "not specified")));
         printf("    Periodic Announcement Period = %u ms\n", shape_options->periodic_announcement_period_us / 1000ll);
+        printf("    Data Fragmentation Size = %u bytes\n", shape_options->datafrag_size);
         if (shape_options->topic_name != NULL){
             printf("    Topic = %s\n", shape_options->topic_name);
         }
@@ -1092,7 +1155,7 @@ void set_deadline_interval(dds_qos_t* qos, dds_time_t deadline_interval, Logger*
 
     dds_qget_deadline(qos, &duration);
 
-    log_message(logger, DEBUG,"    DeadlinePeriod = %lldns", duration);
+    log_message(logger, DEBUG,"    DeadlinePeriod = %lld nanosecs", duration);
 }
 
 void set_history_depth(dds_qos_t* qos, int history_depth, Logger* logger){
@@ -1125,7 +1188,7 @@ void set_time_based_filter(dds_qos_t* qos, dds_duration_t timebasedfilter_interv
     }
 
     dds_qget_time_based_filter(qos, &duration );
-    log_message(logger,DEBUG, "    TimeBasedFilter = %lldns", duration);
+    log_message(logger,DEBUG, "    TimeBasedFilter = %lld nanosecs", duration);
 }
 
 void set_presentation(dds_qos_t* qos, dds_presentation_access_scope_kind_t coherent_set_access_scope, bool coherent_set_enabled, bool ordered_access_enabled, Logger* logger) {
@@ -1147,7 +1210,7 @@ void set_lifespan(dds_qos_t* qos, dds_duration_t lifespan, Logger* logger) {
     dds_duration_t lfspn;
     dds_qget_lifespan(qos, &lfspn);
 
-    log_message(logger, DEBUG, "    Lifespan = %lldns", lfspn);
+    log_message(logger, DEBUG, "    Lifespan = %lld nanosecs", lfspn);
 }
 
 void set_writer_data_lifecycle(dds_qos_t* qos, bool autodispose, Logger* logger){
@@ -1213,7 +1276,7 @@ bool init_publisher(const ShapeOptions_t* opts, ShapeApp_t* app) {
 
     log_message(app->logger, DEBUG, "DataWriters created:");
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        log_message(app->logger, DEBUG, "    dws[%u]=%d", i, app->writers[i]);
+        log_message(app->logger, DEBUG, "    dws(%u)=%d", i, app->writers[i]);
     }
 
     app->color = strdup(opts->color);
@@ -1267,21 +1330,26 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     set_deadline_interval(dr_qos, opts->deadline_interval_us * 1000ll, app->logger);
     set_history_depth(dr_qos, opts->history_depth, app->logger);
 
-    if (opts->color != NULL) {
-        app->color = opts->color;
+    if (opts->cft_expression != NULL) {
+        log_message(app->logger, ERROR, "ContectFilterTopic Not Supported");
+        return false;
+    }
 
+    if (opts->cft_expression != NULL || opts->color != NULL) {
         for (unsigned int i = 0; i < opts->num_topics; ++i) {
+            char temp;
+            size_t name_len = dds_get_name(app->topics[i], &temp, 1);
+            char* name = malloc(sizeof(char) * (name_len + 1));
+            dds_get_name(app->topics[i], name, name_len + 1);
+
             if (dds_set_topic_filter_and_arg(app->topics[i],color_filter, app->color) >= 0 ) {
                 log_message(app->logger, DEBUG, "    ContentFilterTopic = \"color = %s\"", opts->color);
             } else {
                 log_message(app->logger, ERROR, "failed to create content filtered topic");
                 return false;
             }
-            char temp;
-            size_t name_len = dds_get_name(app->topics[i], &temp, 1);
-            char* name = malloc(sizeof(char) * (name_len + 1));
-            dds_get_name(app->topics[i], name, name_len + 1);
-            printf("Create reader for topic: %s%s color: %s\n", name, "_filtered", opts->color);
+
+            printf("Create reader for topic: %s%s\n", name, "_filtered");
             app->readers[i] = dds_create_reader(app->subscriber, app->topics[i], dr_qos, NULL);
             if (app->readers[i] == 0) {
                 log_message(app->logger, ERROR, "Failed to create datareader[%u] topic: %s", i, name);
@@ -1308,7 +1376,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     }
     log_message(app->logger, DEBUG,"DataReaders created:");
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        log_message(app->logger, DEBUG, "    drs[%u]=%ld", i, app->readers[i]);
+        log_message(app->logger, DEBUG, "    drs(%u)=%ld", i, app->readers[i]);
     }
 
     return true;
@@ -1321,6 +1389,9 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
     app->publisher = 0;
     app->subscriber = 0;
     app->dp = 0;
+    app->topics = NULL;
+    app->readers = NULL;
+    app->writers = NULL;
     app->dp_listner = dds_create_listener(logger);
 
     dds_lset_inconsistent_topic(app->dp_listner, on_inconsistent_topic);
@@ -1338,6 +1409,16 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
     dds_lset_data_on_readers(app->dp_listner, on_data_on_readers);
  
     dds_qos_t* dp_qos = dds_create_qos();
+
+    if (opts->datafrag_size > 0) {
+        bool result = false;
+        if (!result) {
+            log_message(logger, ERROR, "Error configuring Data Fragmentation Size = %u", opts->datafrag_size);
+            return false;
+        } else {
+            log_message(logger, DEBUG, "Data Fragmentation Size = %u", opts->datafrag_size);
+        }
+    }
 
     app->dp = dds_create_participant(opts->domain_id, dp_qos, app->dp_listner);
 
@@ -1361,22 +1442,24 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
         app->topics[i] = 0;
     }
 
-    app->readers = (dds_entity_t*) malloc(sizeof(dds_entity_t) * opts->num_topics);
-    if (app->readers == NULL) {
-        log_message(logger, ERROR, "Error allocating memory for DataReaders");
-        return false;
-    }
-    for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        app->readers[i] = 0;
-    }
-
-    app->writers = (dds_entity_t*) malloc(sizeof(dds_entity_t) * opts->num_topics);
-    if (app->writers == NULL) {
-        log_message(logger, ERROR, "Error allocating memory for DataWriters");
-        return false;
-    }
-    for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        app->writers[i] = 0;
+    if (opts->publish) {
+        app->writers = (dds_entity_t*) malloc(sizeof(dds_entity_t) * opts->num_topics);
+        if (app->writers == NULL) {
+            log_message(logger, ERROR, "Error allocating memory for DataWriters");
+            return false;
+        }
+        for (unsigned int i = 0; i < opts->num_topics; ++i) {
+            app->writers[i] = 0;
+        }
+    } else {
+        app->readers = (dds_entity_t*) malloc(sizeof(dds_entity_t) * opts->num_topics);
+        if (app->readers == NULL) {
+            log_message(logger, ERROR, "Error allocating memory for DataReaders");
+            return false;
+        }
+        for (unsigned int i = 0; i < opts->num_topics; ++i) {
+            app->readers[i] = 0;
+        }
     }
 
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
@@ -1401,7 +1484,7 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
     }
     log_message(logger, DEBUG, "Topics created:");
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        log_message(logger, DEBUG, "    topic[%d]=%p", i, (void*)app->topics[i]);
+        log_message(logger, DEBUG, "    topic(%d)=%p", i, (void*)app->topics[i]);
     }
 
     if (opts->publish) {
@@ -1488,7 +1571,8 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                                 printf(" {%u}", sample->additional_payload_size._buffer[additional_payload_index]);
                             }
                             printf("\n");
-                        } else {
+                        }
+                        if (sample_info->instance_state != DDS_IST_ALIVE) {
                             ShapeType shape_key;
                             dds_instance_get_key(app.readers[i], sample_info->instance_handle, &shape_key);
                             if (sample_info->instance_state == DDS_IST_NOT_ALIVE_NO_WRITERS) {
@@ -1590,7 +1674,13 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
     while(! all_done) {
         moveShape(&shape, &app);
 
-        if (opts.shapesize == 0) shape.shapesize += 1;
+        if (opts.shapesize == 0) {
+            if (opts.size_modulo > 0) {
+                shape.shapesize = (shape.shapesize % opts.size_modulo) + 1;
+            } else {
+                shape.shapesize += 1;
+            }
+        }
 
         if (opts.coherent_set_enabled || opts.ordered_access_enabled) {
             // n also represents the number of samples written per publisher per instance
