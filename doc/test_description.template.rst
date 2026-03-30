@@ -63,6 +63,8 @@ product versions.
   * Content Filtered Topic uses MATCH operator for string comparisons.
   * Increased the periodic discovery announcements to 5s in the tests where
     the subscriber is OpenDDS and the publisher is Connext DDS.
+  * Configured UDP transport message size max to 65504 bytes to make it
+    compatible with other vendors.
 
 * **FastDDS**:
 

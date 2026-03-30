@@ -22,8 +22,6 @@ use dust_dds::{
     },
     listener::NO_LISTENER,
     publication::data_writer::DataWriter,
-    runtime::DdsRuntime,
-    std_runtime::StdRuntime,
     subscription::data_reader::DataReader,
 };
 use rand::{Rng, random, thread_rng};
@@ -227,6 +225,16 @@ struct Options {
     /// uses take()/read() instead of take_next_instance() read_next_instance()
     #[clap(short = 'K', long = "take-read")]
     take_read: bool,
+
+    /// ContentFilteredTopic filter expression (quotes required around the expression). Cannot be used with -c on
+    /// subscriber applications
+    #[clap(short = 'F', long = "cft")]
+    cft_expression: Option<String>,
+
+    /// If set, the modulo operation is applied to the shapesize. This will make that shapesize is in the range [1,N].
+    /// This only applies if shapesize is increased (-z 0)
+    #[clap(short = 'Q', long = "size-modulo")]
+    size_modulo: Option<i32>,
 }
 
 impl Options {
@@ -240,7 +248,7 @@ impl Options {
         Ok(())
     }
 
-    fn color_for_publisher(&self) -> String {
+    fn interpret_color(&self) -> String {
         match self.color.clone() {
             Some(color) => color,
             None => {
@@ -331,10 +339,10 @@ impl Options {
 }
 
 struct Listener;
-impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
+impl DomainParticipantListener for Listener {
     async fn on_inconsistent_topic(
         &mut self,
-        the_topic: TopicAsync<R>,
+        the_topic: TopicAsync,
         _status: InconsistentTopicStatus,
     ) {
         println!(
@@ -346,7 +354,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_offered_incompatible_qos(
         &mut self,
-        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<R, ()>,
+        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<()>,
         status: dust_dds::infrastructure::status::OfferedIncompatibleQosStatus,
     ) {
         let policy_name = qos_policy_name(status.last_policy_id);
@@ -361,7 +369,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_publication_matched(
         &mut self,
-        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<R, ()>,
+        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<()>,
         status: dust_dds::infrastructure::status::PublicationMatchedStatus,
     ) {
         if !the_writer.get_topic().get_name().starts_with("DCPS") {
@@ -377,7 +385,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_offered_deadline_missed(
         &mut self,
-        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<R, ()>,
+        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<()>,
         status: dust_dds::infrastructure::status::OfferedDeadlineMissedStatus,
     ) {
         println!(
@@ -391,7 +399,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_liveliness_lost(
         &mut self,
-        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<R, ()>,
+        the_writer: dust_dds::dds_async::data_writer::DataWriterAsync<()>,
         status: dust_dds::infrastructure::status::LivelinessLostStatus,
     ) {
         println!(
@@ -405,7 +413,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_requested_incompatible_qos(
         &mut self,
-        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<R, ()>,
+        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<()>,
         status: dust_dds::infrastructure::status::RequestedIncompatibleQosStatus,
     ) {
         let policy_name = qos_policy_name(status.last_policy_id);
@@ -420,7 +428,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_subscription_matched(
         &mut self,
-        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<R, ()>,
+        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<()>,
         status: dust_dds::infrastructure::status::SubscriptionMatchedStatus,
     ) {
         if !the_reader
@@ -440,7 +448,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_requested_deadline_missed(
         &mut self,
-        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<R, ()>,
+        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<()>,
         status: dust_dds::infrastructure::status::RequestedDeadlineMissedStatus,
     ) {
         println!(
@@ -454,7 +462,7 @@ impl<R: DdsRuntime> DomainParticipantListener<R> for Listener {
 
     async fn on_liveliness_changed(
         &mut self,
-        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<R, ()>,
+        the_reader: dust_dds::dds_async::data_reader::DataReaderAsync<()>,
         status: dust_dds::infrastructure::status::LivelinessChangedStatus,
     ) {
         println!(
@@ -495,9 +503,9 @@ fn move_shape(
 }
 
 fn init_publisher(
-    participant: &DomainParticipant<StdRuntime>,
+    participant: &DomainParticipant,
     options: Options,
-) -> Result<DataWriter<StdRuntime, ShapeType>, InitializeError> {
+) -> Result<DataWriter<ShapeType>, InitializeError> {
     let topic = participant
         .lookup_topicdescription(&options.topic_name)
         .expect("lookup_topicdescription succeeds")
@@ -510,7 +518,7 @@ fn init_publisher(
     println!(
         "Create writer for topic: {} color: {}",
         options.topic_name,
-        options.color_for_publisher()
+        options.interpret_color()
     );
 
     let mut data_writer_qos = DataWriterQos {
@@ -541,7 +549,7 @@ fn init_publisher(
 }
 
 fn run_publisher(
-    data_writer: &DataWriter<StdRuntime, ShapeType>,
+    data_writer: &DataWriter<ShapeType>,
     options: Options,
     all_done: Receiver<()>,
 ) -> Result<(), RunningError> {
@@ -550,7 +558,7 @@ fn run_publisher(
     let da_width = 240;
     let da_height = 270;
     let mut shape = ShapeType {
-        color: options.color_for_publisher(),
+        color: options.interpret_color(),
         x: random::<i32>() % da_width,
         y: random::<i32>() % da_height,
         shapesize: options.shapesize,
@@ -571,7 +579,12 @@ fn run_publisher(
 
     while all_done.try_recv().is_err() {
         if options.shapesize == 0 {
-            shape.shapesize += 1;
+            if let Some(size_modulo) = options.size_modulo {
+                // Size cannot be 0, so increase it after modulo operation
+                shape.shapesize = (shape.shapesize % size_modulo) + 1;
+            } else {
+                shape.shapesize += 1;
+            }
         }
 
         move_shape(&mut shape, &mut x_vel, &mut y_vel, da_width, da_height);
@@ -594,9 +607,9 @@ fn run_publisher(
 }
 
 fn init_subscriber(
-    participant: &DomainParticipant<StdRuntime>,
+    participant: &DomainParticipant,
     options: Options,
-) -> Result<DataReader<StdRuntime, ShapeType>, InitializeError> {
+) -> Result<DataReader<ShapeType>, InitializeError> {
     let topic = participant
         .lookup_topicdescription(&options.topic_name)
         .expect("lookup_topicdescription succeeds")
@@ -621,18 +634,21 @@ fn init_subscriber(
         );
     }
 
-    let data_reader = match options.color {
-        // filter on specified color
-        Some(color) => {
+    let data_reader = match options.cft_expression {
+        Some(cft_expression) => {
             let filtered_topic_name = options.topic_name + "_filtered";
-            println!(
-                "Create reader for topic: {} color: {}",
-                filtered_topic_name, &color
-            );
+            println!("ContentFilterTopic = \"{cft_expression}\"");
+            println!("Create reader for topic: {} ", filtered_topic_name);
+            let color = cft_expression
+                .split("=")
+                .nth(1)
+                .unwrap()
+                .trim_matches(&[' ', '\''])
+                .to_string();
             let content_filtered_topic = participant.create_contentfilteredtopic(
                 &filtered_topic_name,
                 &topic,
-                String::from("color = %0"),
+                cft_expression,
                 vec![color],
             )?;
 
@@ -643,7 +659,6 @@ fn init_subscriber(
                 NO_STATUS,
             )?
         }
-        // No filter on specified color
         None => {
             println!("Create reader for topic: {} ", options.topic_name);
             subscriber.create_datareader::<ShapeType>(
@@ -659,7 +674,7 @@ fn init_subscriber(
 }
 
 fn run_subscriber(
-    data_reader: &DataReader<StdRuntime, ShapeType>,
+    data_reader: &DataReader<ShapeType>,
     options: Options,
     all_done: Receiver<()>,
 ) -> Result<(), RunningError> {
@@ -713,7 +728,7 @@ fn run_subscriber(
     Ok(())
 }
 
-fn initialize(options: &Options) -> Result<DomainParticipant<StdRuntime>, InitializeError> {
+fn initialize(options: &Options) -> Result<DomainParticipant, InitializeError> {
     let participant_factory = DomainParticipantFactory::get_instance();
     let participant = participant_factory.create_participant(
         options.domain_id,
