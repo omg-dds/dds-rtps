@@ -1709,16 +1709,10 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
             for (unsigned int j = 0; j < opts.num_instances; ++j) {
                 //Publish different instances with the same content (except for the color)
                 if (opts.num_instances > 1) {
-                    if (strlen(opts.color) > 0) {
+                    if (strlen(opts.color) > 0 && j > 0) {
                         sscanf(shape.color, "%s%u", opts.color, j);
                     } else {
                         sscanf(shape.color, "%s", opts.color);
-                    }
-                    if (opts.unregister) {
-                        dds_unregister_instance(app.writers[i], &shape);
-                    }
-                    if (opts.dispose) {
-                        dds_dispose(app.writers[i], &shape);
                     }
                 }
                 dds_return_t rc = dds_write(app.writers[i], &shape);
@@ -1727,7 +1721,7 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
                     char temp;
                     dds_return_t name_len = dds_get_name(writer_topic, &temp, 1);
                     char* name = calloc(name_len + 1, sizeof(char));
-		    dds_get_name(writer_topic, name, name_len + 1);
+                    dds_get_name(writer_topic, name, name_len + 1);
                     printf("%-10s %-10s %03d %03d [%d]", name,
                         shape.color,
                         shape.x,
