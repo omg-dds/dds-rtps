@@ -102,4 +102,8 @@ product versions.
 
   *  Content Filtered Topic disabled
 
+* **CycloneDDS**:
+
+  *  Durability Service QoS requires explicit setting when History Depth is set
+
 |TEST_DESCRIPTION|
