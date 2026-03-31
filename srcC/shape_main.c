@@ -1143,7 +1143,7 @@ void set_ownership(dds_qos_t* qos, int ownership_strength, Logger* logger) {
     if(ownership_kind == DDS_OWNERSHIP_EXCLUSIVE) {
         dds_qget_ownership_strength(qos, &ownership_strength);
         
-        log_message(logger, DEBUG, "    OwnershptStrength = %d", ownership_strength);
+        log_message(logger, DEBUG, "    OwnershiptStrength = %d", ownership_strength);
     }
 }
 
