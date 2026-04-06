@@ -1219,6 +1219,10 @@ public:
         configure_participant_announcements_period(dp_qos, options->periodic_announcement_period_us);
 #endif
 
+#ifdef EPROSIMA_FAST_DDS
+        configure_fastdds_dp_qos(dp_qos);
+#endif
+
         if (options->datafrag_size > 0) {
             bool result = false;
   #if defined(RTI_CONNEXT_DDS)
