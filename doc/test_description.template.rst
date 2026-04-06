@@ -70,6 +70,7 @@ product versions.
 
   * Content Filtered Topic expression created with single quotes around strings
     values
+  * Type Propagation property set to "disabled"
 
 * **InterCOM DDS**:
 

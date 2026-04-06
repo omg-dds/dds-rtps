@@ -32,6 +32,13 @@
 namespace DDS = eprosima::fastdds::dds;
 #define RETCODE_OK DDS::RETCODE_OK
 
+void configure_fastdds_dp_qos(DDS::DomainParticipantQos &dp_qos)
+{
+    dp_qos.properties().properties().emplace_back(
+        "fastdds.type_propagation",
+        "disabled");
+}
+
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {
   switch (policy_id) {
