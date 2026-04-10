@@ -6,11 +6,11 @@ on:
       publishers:
         description: Publishers to use
         type: string
-        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]'
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds"]'
       subscribers:
         description: Subscribers to use
         type: string
-        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds"]'
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds"]'
 jobs:
   generate_timestamp:
     runs-on: ubuntu-latest
