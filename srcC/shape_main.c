@@ -1332,7 +1332,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     set_history_depth(dr_qos, opts->history_depth, app->logger);
 
     if (opts->cft_expression != NULL) {
-        log_message(app->logger, ERROR, "ContectFilterTopic Not Supported");
+        log_message(app->logger, ERROR, "ContentFilterTopic Not Supported");
         return false;
     }
 
