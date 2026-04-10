@@ -1,0 +1,9 @@
+@appendable
+struct ShapeType {
+  @key
+  string<128> color;
+  long x;
+  long y;
+  long shapesize;
+  sequence<uint8, 100000> additional_payload_size;
+};
