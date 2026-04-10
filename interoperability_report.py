@@ -380,7 +380,8 @@ def run_publisher_shape_main(
                                     r'\[[0-9]+\]', # index = 0
                                     'on_offered_deadline_missed()', # index = 1
                                     re.compile('not supported', re.IGNORECASE), # index = 2
-                                    pexpect.TIMEOUT # index = 3
+                                    pexpect.TIMEOUT, # index = 3
+                                    pexpect.EOF # index = 4
                                 ],
                                 timeout)
                             if index == 1:
@@ -389,7 +390,7 @@ def run_publisher_shape_main(
                             elif index == 2:
                                 produced_code[produced_code_index] = ReturnCode.PUB_UNSUPPORTED_FEATURE
                                 break
-                            elif index == 3:
+                            elif index == 3 or index == 4:
                                 produced_code[produced_code_index] = ReturnCode.DATA_NOT_SENT
                                 break
                         last_sample_saved.put(last_sample)
@@ -398,8 +399,18 @@ def run_publisher_shape_main(
 
     log_message(f'Publisher {publisher_index}: Waiting for Subscribers to finish',
             verbosity)
-    for element in subscribers_finished:
-        element.wait() # wait for all subscribers to finish
+    # Check if all subscribers finished
+    while True:
+        if all(e.is_set() for e in subscribers_finished):
+            break
+
+        # Drain publisher output
+        try:
+            child_pub.read_nonblocking(1024, timeout=0.1)
+        except pexpect.TIMEOUT:
+            pass
+        except pexpect.EOF:
+            break
     publisher_finished.set()   # set publisher as finished
     # Stop process
     if not stop_process(child_pub):
