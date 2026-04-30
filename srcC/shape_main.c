@@ -1710,9 +1710,9 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
                 //Publish different instances with the same content (except for the color)
                 if (opts.num_instances > 1) {
                     if (strlen(opts.color) > 0 && j > 0) {
-                        sscanf(shape.color, "%s%u", opts.color, j);
+                        sprintf(shape.color, "%s%u", opts.color, j);
                     } else {
-                        sscanf(shape.color, "%s", opts.color);
+                        sprintf(shape.color, "%s", opts.color);
                     }
                 }
                 dds_return_t rc = dds_write(app.writers[i], &shape);
