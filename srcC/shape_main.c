@@ -1517,7 +1517,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
         dds_sample_info_t sample_infos[MAX_SAMPLES];
         void* samples[MAX_SAMPLES];
 
-        for( size_t i = 0; i < MAX_SAMPLES; i ++) samples[i] = ShapeType__alloc();
+        for( size_t i = 0; i < MAX_SAMPLES; i ++) samples[i] = NULL;
         if(opts.coherent_set_enabled) {
             printf("Reading coherent sets, iteration %u\n", n);
         }
@@ -1606,6 +1606,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                         }
                     }
                     dds_return_loan(app.readers[i], (void**)samples, MAX_SAMPLES);
+                    samples[0] = NULL;
                     previous_handles[i] = sample_infos[0].instance_handle;
                 } 
                 log_message(app.logger, DEBUG, "retval: %d", retval);
@@ -1622,7 +1623,6 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
             all_done = 1;
         }
 
-        for( size_t i = 0; i < MAX_SAMPLES; i ++) ShapeType_free(samples[i],DDS_FREE_ALL);
         usleep(opts.read_period_us);
     }
 
