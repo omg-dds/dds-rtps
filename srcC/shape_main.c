@@ -1331,7 +1331,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     set_deadline_interval(dr_qos, opts->deadline_interval_us * 1000ll, app->logger);
     set_history_depth(dr_qos, opts->history_depth, app->logger);
 
-    if (opts->cft_expression != NULL) {
+    if (opts->cft_expression != NULL || opts->color != NULL) {
         log_message(app->logger, ERROR, "ContentFilterTopic Not Supported");
         return false;
     }
