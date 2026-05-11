@@ -1584,8 +1584,8 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                             printf("\n");
                         }
                         if (sample_info->instance_state != DDS_IST_ALIVE) {
-                            ShapeType shape_key;
-                            dds_instance_get_key(app.readers[i], sample_info->instance_handle, &shape_key);
+                            ShapeType shape_key = *sample;
+                            //dds_instance_get_key(app.readers[i], sample_info->instance_handle, &shape_key);
                             if (sample_info->instance_state == DDS_IST_NOT_ALIVE_NO_WRITERS) {
                                 dds_entity_t reader_topic = dds_get_topic(app.readers[i]);
                                 char temp;
