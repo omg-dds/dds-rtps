@@ -431,15 +431,15 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         {"read-period", required_argument, NULL, 'A'},
         {"final-instance-state", required_argument, NULL, 'M'},
         {"access-scope", required_argument, NULL, 'C'},
-        {"coherent", required_argument, NULL, 'T'},
-        {"ordered", required_argument, NULL, 'O'},
+        {"coherent", no_argument, NULL, 'T'},
+        {"ordered", no_argument, NULL, 'O'},
         {"coherent-sample-count", required_argument, NULL, 'H'},
         {"additional-payload-size", required_argument, NULL, 'B'},
         {"num-topics", required_argument, NULL, 'E'},
         {"lifespan", required_argument, NULL, 'l'},
         {"num-instances", required_argument, NULL, 'I'},
         {"num-iterations", required_argument, NULL, 'n'},
-        {"take-read", required_argument, NULL, 'K'},
+        {"take-read", no_argument, NULL, 'K'},
         {"time-filter", required_argument, NULL, 'i'},
         {"periodic-announcement", required_argument, NULL, 'N'},
         {"datafrag-size", required_argument, NULL, 'Z'},
@@ -518,7 +518,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         break;
         case 'i': {
             int64_t time_input = 0;
-            int converted_param = sscanf(optarg, "%lld", &time_input);
+            int converted_param = sscanf(optarg, "%" PRId64 , &time_input);
             if (converted_param == 0) {
                 log_message(logger, ERROR, "unrecognized value for timebasedfilter_interval %s", &optarg[0]);
                 parse_ok = false;
@@ -531,7 +531,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'f': {
             int64_t time_input = 0;
-            int converted_param = sscanf(optarg, "%lld", &time_input);
+            int converted_param = sscanf(optarg, "%" PRId64 , &time_input);
             if (converted_param == 0) {
                 log_message(logger, ERROR, "unrecognized value for deadline_interval %s", &optarg[0]);
                 parse_ok = false;
@@ -614,7 +614,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'W': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for write-period %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -626,7 +626,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'A': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for read-period %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -648,7 +648,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'l': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64, &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for lifespan %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -755,7 +755,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'N': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0){
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0){
                 log_message(logger, ERROR, "unrecognized value for periodic-announcement %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -817,15 +817,15 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    DataRepresentation = %d\n", shape_options->data_representation);
         printf("    HistoryDepth = %d\n", shape_options->history_depth);
         printf("    OwnershipStrength = %d\n",shape_options->ownership_strength);
-        printf("    TimeBasedFilterInterval = %u ms\n",shape_options->timebasedfilter_interval_us / 1000ll);
-        printf("    DeadlineInterval = %u ms\n", shape_options->deadline_interval_us / 1000ll);
+        printf("    TimeBasedFilterInterval = %" PRId64 " ms\n",shape_options->timebasedfilter_interval_us / INT64_C(1000));
+        printf("    DeadlineInterval = %" PRId64 " ms\n", shape_options->deadline_interval_us / INT64_C(1000));
         printf("    Shapesize = %d\n", shape_options->shapesize);
         printf("    Reading method = %s\n", (shape_options->use_read 
                      ? (shape_options->take_read_next_instance ? "read_next_instance" : "read") 
                      : (shape_options->take_read_next_instance ? "take_next_instance" : "take")));
-        printf("    Write period = %u ms\n", shape_options->write_period_us / 1000ll);
-        printf("    Read period = %u ms\n", shape_options->read_period_us / 1000ll);
-        printf("    Lifespan = %u ms\n", shape_options->lifespan_us / 1000ll);
+        printf("    Write period = %" PRId64 " ms\n", shape_options->write_period_us / INT64_C(1000));
+        printf("    Read period = %" PRId64 " ms\n", shape_options->read_period_us / INT64_C(1000));
+        printf("    Lifespan = %" PRId64 " ms\n", shape_options->lifespan_us / INT64_C(1000));
         printf("    Number of iterations = %u\n", shape_options->num_iterations);
         printf("    Number of instances = %u\n", shape_options->num_instances);
         printf("    Number of entities = %u\n", shape_options->num_topics);
@@ -836,7 +836,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    Additional Payload Size = %u\n", shape_options->additional_payload_size);
         printf("    Final Instance State = %s\n", 
                      (shape_options->unregister ? "Unregister" : (shape_options->dispose ? "Dispose" : "not specified")));
-        printf("    Periodic Announcement Period = %u ms\n", shape_options->periodic_announcement_period_us / 1000ll);
+        printf("    Periodic Announcement Period = %" PRId64 " ms\n", shape_options->periodic_announcement_period_us / INT64_C(1000));
         printf("    Data Fragmentation Size = %u bytes\n", shape_options->datafrag_size);
         if (shape_options->topic_name != NULL){
             printf("    Topic = %s\n", shape_options->topic_name);
@@ -1486,7 +1486,7 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
     }
     log_message(logger, DEBUG, "Topics created:");
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        log_message(logger, DEBUG, "    topic(%d)=%p", i, (void*)app->topics[i]);
+        log_message(logger, DEBUG, "    topic(%d)=%u", i, app->topics[i]);
     }
 
     if (opts->publish) {
