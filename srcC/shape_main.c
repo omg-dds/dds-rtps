@@ -667,6 +667,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
                     break;
                 case 'd':
                     shape_options->dispose = true;
+                    break;
                 default:
                     log_message(logger, ERROR, "unrecognized value for final-instance-state %s", &optarg[0]);
                     parse_ok = false;
