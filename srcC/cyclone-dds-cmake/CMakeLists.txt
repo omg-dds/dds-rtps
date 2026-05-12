@@ -4,6 +4,9 @@ project(shape LANGUAGES C)
 option(BUILD_SHARED_LIBS "Build using shared libraries by default" ON)
 
 # Find the CycloneDDS package.
+if(NOT BUILD_SHARED_LIBS)
+	find_package(OpenSSL REQUIRED)
+endif()
 find_package(CycloneDDS REQUIRED)
 set(EXECUTABLE_NAME "eclipse_cyclone-${CycloneDDS_VERSION}_shape_main_linux")
 
