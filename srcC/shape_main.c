@@ -744,7 +744,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
                 log_message(logger, ERROR, "unrecognized value for coherent-sample-count %s", &optarg[0]);
                 parse_ok = false;
             } else if (shape_options->coherent_set_sample_count < 2) {
-                log_message(logger, ERROR, "incorrecct value for coherent-sample-ount, it must be >= 2");
+                log_message(logger, ERROR, "incorrecct value for coherent-sample-count, it must be >= 2");
                 parse_ok = false;
             }
             break;
