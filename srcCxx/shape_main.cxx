@@ -481,7 +481,7 @@ public:
             logger.log_message("warning: --additional-payload-size ignored on subscriber applications", Verbosity::ERROR);
         }
         if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_access_scope_set) {
-            logger.log_message("warning: --access-scope ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
+            logger.log_message("warning: --access-scope set but not coherent, or ordered access enabled", Verbosity::ERROR);
         }
         if (size_modulo > 0 && shapesize != 0) {
             logger.log_message("warning: --size-modulo has no effect unless shapesize (-z) is set to 0", Verbosity::ERROR);
@@ -1352,8 +1352,8 @@ public:
             logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
             return false;
         }
-        if ((options->coherent_set_enabled || options->ordered_access_enabled)
-                && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
+        if (options->coherent_set_access_scope_set
+                && options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS) {
             logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
             return false;
         }
@@ -1578,7 +1578,7 @@ public:
             logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
             return false;
         }
-        if ((options->coherent_set_enabled || options->ordered_access_enabled)
+        if (options->coherent_set_access_scope_set
                 && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
             logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
             return false;
