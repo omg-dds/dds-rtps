@@ -227,6 +227,8 @@ void config_dw_qos(DDS::DataWriterQos &dw_qos) {
     dw_qos.resource_limits.max_instances = 500;
     dw_qos.resource_limits.max_samples = 500;
     dw_qos.resource_limits.max_samples_per_instance = 500;
+    dw_qos.protocol.rtps_reliable_writer.heartbeat_period.sec = 0;
+    dw_qos.protocol.rtps_reliable_writer.heartbeat_period.nanosec = 200000000;
 }
 
 void config_dr_qos(DDS::DataReaderQos &dr_qos) {
