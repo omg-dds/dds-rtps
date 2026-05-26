@@ -6,11 +6,11 @@ on:
       publishers:
         description: Publishers to use
         type: string
-        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds"]'
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone"]'
       subscribers:
         description: Subscribers to use
         type: string
-        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds"]'
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone"]'
 jobs:
   generate_timestamp:
     runs-on: ubuntu-latest
@@ -44,6 +44,7 @@ jobs:
         latest: true
         fileName: "*"
         out-file-path: zipped_executables
+        preRelease: true
     - name: Unzip executables
       run: unzip 'zipped_executables/*.zip' -d executables
     - name: Install Python requirements

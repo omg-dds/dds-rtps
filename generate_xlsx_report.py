@@ -81,6 +81,8 @@ class ProductUtils:
             return 'S2E Software Systems'
         elif 'hdds' in product.lower():
             return 'Naskel'
+        elif 'cyclone' in product.lower():
+            return 'Eclipse Foundation'
         else:
             raise RuntimeError('Impossible to get company name: ' + product)
 
@@ -104,6 +106,8 @@ class ProductUtils:
             return 'Dust DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'hdds' in product.lower():
             return 'HDDS ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'cyclone' in product.lower():
+            return 'Cyclone DDS ' + re.search(r'([\d.]+)', product).group(1)
         else:
             raise RuntimeError('Impossible to get product name: ' + product)
 

@@ -374,6 +374,9 @@ def run_publisher_shape_main(
                             # Therefore, that sample is added to samples_sent.
                             pub_string = re.search(r'[0-9]+ [0-9]+ \[[0-9]+\]',
                                     child_pub.before + child_pub.after)
+                            if not pub_string:
+                                produced_code[produced_code_index] = ReturnCode.DATA_NOT_CORRECT
+                                break
                             last_sample = pub_string.group(0)
                             samples_sent.put(last_sample)
                             index = child_pub.expect([

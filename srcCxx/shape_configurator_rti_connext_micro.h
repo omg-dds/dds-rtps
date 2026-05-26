@@ -115,7 +115,7 @@ static bool config_micro()
       goto done;
   }
 
-  udp_property->max_message_size = 64 * 1024; //64KB
+  udp_property->max_message_size = 65504;
 
   if (!registry->register_component(
         NETIO_DEFAULT_UDP_NAME,

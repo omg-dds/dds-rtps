@@ -24,13 +24,29 @@ bool configure_datafrag_size(
     if (datafrag_size == 0) {
         ok = false;
     } else {
-        DDS_PropertyQosPolicyHelper_add_property(
+        if (DDS_PropertyQosPolicyHelper_assert_property(
                 &dp_qos.property,
                 "dds.transport.UDPv4.builtin.parent.message_size_max",
                 std::to_string(datafrag_size).c_str(),
-                DDS_BOOLEAN_FALSE);
+                DDS_BOOLEAN_FALSE) != DDS_RETCODE_OK) {
+            ok = false;
+            printf("failed to set datafrag_size\n");
+        } else {
+            ok = true;
+        }
+    }
+    return ok;
+}
+
+
+static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos) {
+    bool ok = false;
+    if (!configure_datafrag_size(dp_qos, 65504)) {
+        printf("failed to configure dp qos\n");
+    } else {
         ok = true;
     }
+
     return ok;
 }
 

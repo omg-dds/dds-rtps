@@ -481,7 +481,7 @@ public:
             logger.log_message("warning: --additional-payload-size ignored on subscriber applications", Verbosity::ERROR);
         }
         if (!coherent_set_enabled && !ordered_access_enabled && coherent_set_access_scope_set) {
-            logger.log_message("warning: --access-scope ignored because not coherent, or ordered access enabled", Verbosity::ERROR);
+            logger.log_message("warning: --access-scope set but not coherent, or ordered access enabled", Verbosity::ERROR);
         }
         if (size_modulo > 0 && shapesize != 0) {
             logger.log_message("warning: --size-modulo has no effect unless shapesize (-z) is set to 0", Verbosity::ERROR);
@@ -1209,6 +1209,20 @@ public:
         DDS::DomainParticipantQos dp_qos;
         dpf->get_default_participant_qos(dp_qos);
 
+#if   defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO)
+        if (!configure_dp_qos(dp_qos)) {
+            return false;
+        }
+#endif
+
+#ifdef RTI_CONNEXT_DDS
+        configure_participant_announcements_period(dp_qos, options->periodic_announcement_period_us);
+#endif
+
+#ifdef EPROSIMA_FAST_DDS
+        configure_fastdds_dp_qos(dp_qos);
+#endif
+
         if (options->datafrag_size > 0) {
             bool result = false;
   #if defined(RTI_CONNEXT_DDS)
@@ -1226,16 +1240,6 @@ public:
                     + std::to_string(options->datafrag_size), Verbosity::DEBUG);
             }
         }
-
-#ifdef RTI_CONNEXT_MICRO
-        if (!configure_dp_qos(dp_qos)) {
-            return false;
-        }
-#endif
-
-#ifdef RTI_CONNEXT_DDS
-        configure_participant_announcements_period(dp_qos, options->periodic_announcement_period_us);
-#endif
 
         dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, LISTENER_STATUS_MASK_ALL );
         if (dp == NULL) {
@@ -1348,8 +1352,8 @@ public:
             logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
             return false;
         }
-        if ((options->coherent_set_enabled || options->ordered_access_enabled)
-                && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
+        if (options->coherent_set_access_scope_set
+                && options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS) {
             logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
             return false;
         }
@@ -1574,7 +1578,7 @@ public:
             logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
             return false;
         }
-        if ((options->coherent_set_enabled || options->ordered_access_enabled)
+        if (options->coherent_set_access_scope_set
                 && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
             logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
             return false;
