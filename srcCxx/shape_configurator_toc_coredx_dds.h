@@ -37,7 +37,13 @@ const char *get_qos_policy_name(DDS_QosPolicyId_t policy_id)
 
 static void config_type_lookup()
 {
-  /* turn off Type Lookup Service (not the focus of the test)
+  /* turn off Type Lookup Service, and don't send typeinfo_v2
+   * (not the focus of the test)
    */
-  setenv( "COREDX_DO_TLS", "0", 1 );
+  DDS::DomainParticipantQos dp_qos;
+  DDS::DomainParticipantFactory::get_instance()->get_default_participant_qos( dp_qos );
+  dp_qos.discovery.enable_typelookup_service = 0;
+  dp_qos.discovery.send_typeobj_v2 = 0;
+  DDS::DomainParticipantFactory::get_instance()->set_default_participant_qos( dp_qos );
+  
 }
