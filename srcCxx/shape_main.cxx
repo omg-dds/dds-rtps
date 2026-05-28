@@ -1368,7 +1368,7 @@ public:
         logger.log_message("Data Writer QoS:", Verbosity::DEBUG);
         pub->get_default_datawriter_qos( dw_qos );
 
-#if defined (RTI_CONNEXT_MICRO)
+#if defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO)
         config_dw_qos(dw_qos);
 #endif
 
@@ -1595,7 +1595,7 @@ public:
         logger.log_message("Data Reader QoS:", Verbosity::DEBUG);
         sub->get_default_datareader_qos( dr_qos );
 
-#if defined (RTI_CONNEXT_MICRO)
+#if defined(RTI_CONNEXT_DDS) || defined(RTI_CONNEXT_MICRO)
         config_dr_qos(dr_qos);
 #endif
 

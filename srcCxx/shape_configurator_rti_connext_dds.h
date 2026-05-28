@@ -73,3 +73,13 @@ void configure_large_data(DDS::DataWriterQos &dw_qos) {
     }
     dw_qos.publish_mode.kind = DDS::ASYNCHRONOUS_PUBLISH_MODE_QOS;
 }
+
+void config_dw_qos(DDS::DataWriterQos &dw_qos) {
+    dw_qos.protocol.rtps_reliable_writer.max_nack_response_delay.sec = 0;
+    dw_qos.protocol.rtps_reliable_writer.max_nack_response_delay.nanosec = 0;
+}
+
+void config_dr_qos(DDS::DataReaderQos &dr_qos) {
+    dr_qos.protocol.rtps_reliable_reader.max_heartbeat_response_delay.sec = 0;
+    dr_qos.protocol.rtps_reliable_reader.max_heartbeat_response_delay.nanosec = 0;
+}
