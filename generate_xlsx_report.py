@@ -808,7 +808,7 @@ class XlsxReport:
                     str(value.get_supported_tests()) + ' / ' +
                     str(value.get_total_tests()),
                 self.get_format_color(
-                        value.get_passed_tests(), value.get_supported_tests()))
+                        value.get_passed_tests(), value.get_total_tests()))
 
             current_row += 1
 
@@ -864,7 +864,7 @@ class XlsxReport:
                     str(product_value.get_passed_tests()) + ' / ' +
                         str(product_value.get_supported_tests()) + ' / ' +
                         str(product_value.get_total_tests()),
-                    self.get_format_color(product_value.get_passed_tests(), product_value.get_supported_tests()))
+                    self.get_format_color(product_value.get_passed_tests(), product_value.get_total_tests()))
 
     def add_static_data_summary_worksheet(self,
             worksheet: xlsxwriter.Workbook.worksheet_class,
