@@ -1318,7 +1318,7 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
-  #if  defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+  #if defined(INTERCOM_DDS)
             if ( pub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
               {
                 logger.log_message("    Presentation Access Scope "
@@ -1326,8 +1326,6 @@ public:
                                    + std::string(" : not supported"), Verbosity::ERROR);
                 return false;
               }
-  #endif
-  #if  defined(INTERCOM_DDS)
             if (pub_qos.presentation.coherent_access && pub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
               {
                 logger.log_message("    Coherent Access with Presentation Access Scope "
@@ -1542,7 +1540,7 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
-  #if defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+  #if defined(INTERCOM_DDS)
             if ( sub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
               {
                 logger.log_message("    Presentation Access Scope "
@@ -1550,8 +1548,6 @@ public:
                                    + std::string(" : not supported"), Verbosity::ERROR);
                 return false;
               }
-  #endif
-  #if defined(INTERCOM_DDS)
             if (sub_qos.presentation.coherent_access && sub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
               {
                 logger.log_message("    Coherent Access with Presentation Access Scope "
