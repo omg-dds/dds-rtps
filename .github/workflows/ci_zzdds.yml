@@ -1,0 +1,32 @@
+name: CI zzdds
+
+on:
+  pull_request:
+    paths:
+      - 'srcZig/**'
+  push:
+    paths:
+      - 'srcZig/**'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build shape_main
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout dds-rtps
+        uses: actions/checkout@v4
+
+      - name: Install Zig
+        uses: mlugg/setup-zig@v2
+        with:
+          version: "0.16.0"
+
+      - name: Build shape_main
+        working-directory: srcZig/zzdds
+        run: zig build -Dtarget=x86_64-linux-gnu -Doptimize=ReleaseSafe
