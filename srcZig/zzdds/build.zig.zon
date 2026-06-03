@@ -1,0 +1,19 @@
+.{
+    .name = .zzdds_shape_main,
+    .version = "0.0.0",
+    .fingerprint = 0x336e9664cb8850f7,
+    .minimum_zig_version = "0.16.0",
+    .dependencies = .{
+        .zzdds = .{
+            .path = "packages/zzdds",
+        },
+        .zidl = .{
+            .url = "https://github.com/zz-iot/zidl/archive/refs/tags/v0.1.0-zig.0.16.0.tar.gz",
+            .hash = "zidl-0.1.0-zig.0.16.0-H6NwLstUGABxQfEtYyyc0UyX1ownreZMlXQIjHPb0vWO",
+        },
+    },
+    .paths = .{
+        "build.zig",
+        "build.zig.zon",
+    },
+}
