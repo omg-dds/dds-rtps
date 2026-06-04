@@ -1236,7 +1236,7 @@ bool init_publisher(const ShapeOptions_t* opts, ShapeApp_t* app) {
     log_message(app->logger, DEBUG, "Publisher QoS:");
 
     if (opts->coherent_set_enabled || opts->ordered_access_enabled){
-        log_message(logger, ERROR, "    Presentation Access Scope = not supported");
+        log_message(app->logger, ERROR, "    Presentation Access Scope = not supported");
         return false;
     }
     set_presentation(pub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);
@@ -1311,7 +1311,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     log_message(app->logger, DEBUG, "Subscriber QoS:");
 
     if (opts->coherent_set_enabled || opts->ordered_access_enabled){
-        log_message(logger, ERROR, "    Presentation Access Scope = not supported");
+        log_message(app->logger, ERROR, "    Presentation Access Scope = not supported");
         return false;
     }
     set_presentation(sub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);

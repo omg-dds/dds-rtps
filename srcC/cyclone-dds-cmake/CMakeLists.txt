@@ -23,11 +23,16 @@ else()
 endif()
 
 add_executable(${EXECUTABLE_NAME} ../shape_main.c)
-if(NOT BUILD_SHARED_LIBS)
-	add_library(shape_lib shape.c shape.h)
+
+if(BUILD_SHARED_LIBS)
+	add_library(shape_lib)
 	target_link_libraries(shape_lib CycloneDDS::ddsc m)
+	target_compile_definitions(${EXECUTABLE_NAME} PUBLIC -DCYCLONE_DDS)
+	target_link_libraries(${EXECUTABLE_NAME} shape_lib CycloneDDS::ddsc m)
+else()
+	target_sources(${EXECUTABLE_NAME} PRIVATE ../shape.c PRIVATE ../shape.h)
+	target_compile_definitions(${EXECUTABLE_NAME} PUBLIC -DCYCLONE_DDS)
+	target_link_libraries(${EXECUTABLE_NAME} CycloneDDS::ddsc m)
 endif()
 
-target_compile_definitions(${EXECUTABLE_NAME} PUBLIC -DCYCLONE_DDS)
 
-target_link_libraries(${EXECUTABLE_NAME} shape_lib CycloneDDS::ddsc m)
