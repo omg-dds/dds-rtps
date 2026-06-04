@@ -406,7 +406,7 @@ bool validate(Logger* logger, ShapeOptions_t* shape_options) {
         log_message(logger, ERROR, "warning: --coherent-sample-count ignored on subscriber applications");
     }
     if (!shape_options->coherent_set_enabled && !shape_options->ordered_access_enabled && shape_options->coherent_set_access_scope_set) {
-        log_message(logger, ERROR, "warning: --access-scope ignored because not coherent, or ordered access enabled");
+        log_message(logger, ERROR, "warning: --access-scope set but not coherent, or ordered access enabled");
     }
     if (shape_options->size_modulo > 0 && shape_options->shapesize != 0) {
         log_message(logger, ERROR, "warning: --size-modulo has no effect unless shapesize (-z) is set to 0");
@@ -1235,6 +1235,10 @@ bool init_publisher(const ShapeOptions_t* opts, ShapeApp_t* app) {
 
     log_message(app->logger, DEBUG, "Publisher QoS:");
 
+    if (opts->coherent_set_enabled || opts->ordered_access_enabled){
+        log_message(logger, ERROR, "    Presentation Access Scope = not supported");
+        return false;
+    }
     set_presentation(pub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);
 
     app->publisher = dds_create_publisher(app->dp, pub_qos, NULL);
@@ -1306,6 +1310,10 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
 
     log_message(app->logger, DEBUG, "Subscriber QoS:");
 
+    if (opts->coherent_set_enabled || opts->ordered_access_enabled){
+        log_message(logger, ERROR, "    Presentation Access Scope = not supported");
+        return false;
+    }
     set_presentation(sub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);
 
     dds_qos_t* dr_qos = dds_create_qos();
