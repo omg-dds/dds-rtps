@@ -1340,7 +1340,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
     set_deadline_interval(dr_qos, opts->deadline_interval_us * 1000ll, app->logger);
     set_history_depth(dr_qos, opts->history_depth, app->logger);
 
-    if (opts->cft_expression != NULL || opts->color != NULL) {
+    if (opts->cft_expression != NULL) {
         log_message(app->logger, ERROR, "ContentFilterTopic Not Supported");
         return false;
     }
@@ -1352,7 +1352,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
             char* name = malloc(sizeof(char) * (name_len + 1));
             dds_get_name(app->topics[i], name, name_len + 1);
 
-            if (dds_set_topic_filter_and_arg(app->topics[i],color_filter, app->color) >= 0 ) {
+            if (dds_set_topic_filter_and_arg(app->topics[i],color_filter, opts->color) >= 0 ) {
                 log_message(app->logger, DEBUG, "    ContentFilterTopic = \"color = %s\"", opts->color);
             } else {
                 log_message(app->logger, ERROR, "failed to create content filtered topic");
