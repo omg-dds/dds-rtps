@@ -406,7 +406,7 @@ bool validate(Logger* logger, ShapeOptions_t* shape_options) {
         log_message(logger, ERROR, "warning: --coherent-sample-count ignored on subscriber applications");
     }
     if (!shape_options->coherent_set_enabled && !shape_options->ordered_access_enabled && shape_options->coherent_set_access_scope_set) {
-        log_message(logger, ERROR, "warning: --access-scope ignored because not coherent, or ordered access enabled");
+        log_message(logger, ERROR, "warning: --access-scope set but not coherent, or ordered access enabled");
     }
     if (shape_options->size_modulo > 0 && shape_options->shapesize != 0) {
         log_message(logger, ERROR, "warning: --size-modulo has no effect unless shapesize (-z) is set to 0");
@@ -431,15 +431,15 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         {"read-period", required_argument, NULL, 'A'},
         {"final-instance-state", required_argument, NULL, 'M'},
         {"access-scope", required_argument, NULL, 'C'},
-        {"coherent", required_argument, NULL, 'T'},
-        {"ordered", required_argument, NULL, 'O'},
+        {"coherent", no_argument, NULL, 'T'},
+        {"ordered", no_argument, NULL, 'O'},
         {"coherent-sample-count", required_argument, NULL, 'H'},
         {"additional-payload-size", required_argument, NULL, 'B'},
         {"num-topics", required_argument, NULL, 'E'},
         {"lifespan", required_argument, NULL, 'l'},
         {"num-instances", required_argument, NULL, 'I'},
         {"num-iterations", required_argument, NULL, 'n'},
-        {"take-read", required_argument, NULL, 'K'},
+        {"take-read", no_argument, NULL, 'K'},
         {"time-filter", required_argument, NULL, 'i'},
         {"periodic-announcement", required_argument, NULL, 'N'},
         {"datafrag-size", required_argument, NULL, 'Z'},
@@ -518,7 +518,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         break;
         case 'i': {
             int64_t time_input = 0;
-            int converted_param = sscanf(optarg, "%lld", &time_input);
+            int converted_param = sscanf(optarg, "%" PRId64 , &time_input);
             if (converted_param == 0) {
                 log_message(logger, ERROR, "unrecognized value for timebasedfilter_interval %s", &optarg[0]);
                 parse_ok = false;
@@ -531,7 +531,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'f': {
             int64_t time_input = 0;
-            int converted_param = sscanf(optarg, "%lld", &time_input);
+            int converted_param = sscanf(optarg, "%" PRId64 , &time_input);
             if (converted_param == 0) {
                 log_message(logger, ERROR, "unrecognized value for deadline_interval %s", &optarg[0]);
                 parse_ok = false;
@@ -614,7 +614,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'W': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for write-period %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -626,7 +626,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'A': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for read-period %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -648,7 +648,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'l': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0) {
+            if (sscanf(optarg, "%" PRId64, &converted_param) == 0) {
                 log_message(logger, ERROR, "unrecognized value for lifespan %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -667,6 +667,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
                     break;
                 case 'd':
                     shape_options->dispose = true;
+                    break;
                 default:
                     log_message(logger, ERROR, "unrecognized value for final-instance-state %s", &optarg[0]);
                     parse_ok = false;
@@ -743,7 +744,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
                 log_message(logger, ERROR, "unrecognized value for coherent-sample-count %s", &optarg[0]);
                 parse_ok = false;
             } else if (shape_options->coherent_set_sample_count < 2) {
-                log_message(logger, ERROR, "incorrecct value for coherent-sample-ount, it must be >= 2");
+                log_message(logger, ERROR, "incorrecct value for coherent-sample-count, it must be >= 2");
                 parse_ok = false;
             }
             break;
@@ -754,7 +755,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         }
         case 'N': {
             dds_duration_t converted_param = 0;
-            if (sscanf(optarg, "%lld", &converted_param) == 0){
+            if (sscanf(optarg, "%" PRId64 , &converted_param) == 0){
                 log_message(logger, ERROR, "unrecognized value for periodic-announcement %s", &optarg[0]);
                 parse_ok = false;
             } else if (converted_param < 0) {
@@ -816,15 +817,15 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    DataRepresentation = %d\n", shape_options->data_representation);
         printf("    HistoryDepth = %d\n", shape_options->history_depth);
         printf("    OwnershipStrength = %d\n",shape_options->ownership_strength);
-        printf("    TimeBasedFilterInterval = %u ms\n",shape_options->timebasedfilter_interval_us / 1000ll);
-        printf("    DeadlineInterval = %u ms\n", shape_options->deadline_interval_us / 1000ll);
+        printf("    TimeBasedFilterInterval = %" PRId64 " ms\n",shape_options->timebasedfilter_interval_us / INT64_C(1000));
+        printf("    DeadlineInterval = %" PRId64 " ms\n", shape_options->deadline_interval_us / INT64_C(1000));
         printf("    Shapesize = %d\n", shape_options->shapesize);
         printf("    Reading method = %s\n", (shape_options->use_read 
                      ? (shape_options->take_read_next_instance ? "read_next_instance" : "read") 
                      : (shape_options->take_read_next_instance ? "take_next_instance" : "take")));
-        printf("    Write period = %u ms\n", shape_options->write_period_us / 1000ll);
-        printf("    Read period = %u ms\n", shape_options->read_period_us / 1000ll);
-        printf("    Lifespan = %u ms\n", shape_options->lifespan_us / 1000ll);
+        printf("    Write period = %" PRId64 " ms\n", shape_options->write_period_us / INT64_C(1000));
+        printf("    Read period = %" PRId64 " ms\n", shape_options->read_period_us / INT64_C(1000));
+        printf("    Lifespan = %" PRId64 " ms\n", shape_options->lifespan_us / INT64_C(1000));
         printf("    Number of iterations = %u\n", shape_options->num_iterations);
         printf("    Number of instances = %u\n", shape_options->num_instances);
         printf("    Number of entities = %u\n", shape_options->num_topics);
@@ -835,7 +836,7 @@ bool parse(int argc, char *argv[], Logger* logger, ShapeOptions_t* shape_options
         printf("    Additional Payload Size = %u\n", shape_options->additional_payload_size);
         printf("    Final Instance State = %s\n", 
                      (shape_options->unregister ? "Unregister" : (shape_options->dispose ? "Dispose" : "not specified")));
-        printf("    Periodic Announcement Period = %u ms\n", shape_options->periodic_announcement_period_us / 1000ll);
+        printf("    Periodic Announcement Period = %" PRId64 " ms\n", shape_options->periodic_announcement_period_us / INT64_C(1000));
         printf("    Data Fragmentation Size = %u bytes\n", shape_options->datafrag_size);
         if (shape_options->topic_name != NULL){
             printf("    Topic = %s\n", shape_options->topic_name);
@@ -1234,6 +1235,10 @@ bool init_publisher(const ShapeOptions_t* opts, ShapeApp_t* app) {
 
     log_message(app->logger, DEBUG, "Publisher QoS:");
 
+    if (opts->coherent_set_enabled || opts->ordered_access_enabled){
+        log_message(app->logger, ERROR, "    Presentation Access Scope = not supported");
+        return false;
+    }
     set_presentation(pub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);
 
     app->publisher = dds_create_publisher(app->dp, pub_qos, NULL);
@@ -1305,6 +1310,10 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
 
     log_message(app->logger, DEBUG, "Subscriber QoS:");
 
+    if (opts->coherent_set_enabled || opts->ordered_access_enabled){
+        log_message(app->logger, ERROR, "    Presentation Access Scope = not supported");
+        return false;
+    }
     set_presentation(sub_qos, opts->coherent_set_access_scope, opts->coherent_set_enabled, opts->ordered_access_enabled, app->logger);
 
     dds_qos_t* dr_qos = dds_create_qos();
@@ -1343,7 +1352,7 @@ bool init_subscriber(const ShapeOptions_t* opts, ShapeApp_t* app) {
             char* name = malloc(sizeof(char) * (name_len + 1));
             dds_get_name(app->topics[i], name, name_len + 1);
 
-            if (dds_set_topic_filter_and_arg(app->topics[i],color_filter, app->color) >= 0 ) {
+            if (dds_set_topic_filter_and_arg(app->topics[i],color_filter, opts->color) >= 0 ) {
                 log_message(app->logger, DEBUG, "    ContentFilterTopic = \"color = %s\"", opts->color);
             } else {
                 log_message(app->logger, ERROR, "failed to create content filtered topic");
@@ -1485,7 +1494,7 @@ bool shape_init (ShapeApp_t* app,  const ShapeOptions_t* opts, Logger* logger) {
     }
     log_message(logger, DEBUG, "Topics created:");
     for (unsigned int i = 0; i < opts->num_topics; ++i) {
-        log_message(logger, DEBUG, "    topic(%d)=%p", i, (void*)app->topics[i]);
+        log_message(logger, DEBUG, "    topic(%d)=%u", i, app->topics[i]);
     }
 
     if (opts->publish) {
@@ -1517,7 +1526,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
         dds_sample_info_t sample_infos[MAX_SAMPLES];
         void* samples[MAX_SAMPLES];
 
-        for( size_t i = 0; i < MAX_SAMPLES; i ++) samples[i] = ShapeType__alloc();
+        for( size_t i = 0; i < MAX_SAMPLES; i ++) samples[i] = NULL;
         if(opts.coherent_set_enabled) {
             printf("Reading coherent sets, iteration %u\n", n);
         }
@@ -1584,8 +1593,8 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                             printf("\n");
                         }
                         if (sample_info->instance_state != DDS_IST_ALIVE) {
-                            ShapeType shape_key;
-                            dds_instance_get_key(app.readers[i], sample_info->instance_handle, &shape_key);
+                            ShapeType shape_key = *sample;
+                            //dds_instance_get_key(app.readers[i], sample_info->instance_handle, &shape_key);
                             if (sample_info->instance_state == DDS_IST_NOT_ALIVE_NO_WRITERS) {
                                 dds_entity_t reader_topic = dds_get_topic(app.readers[i]);
                                 char temp;
@@ -1606,6 +1615,7 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
                         }
                     }
                     dds_return_loan(app.readers[i], (void**)samples, MAX_SAMPLES);
+                    samples[0] = NULL;
                     previous_handles[i] = sample_infos[0].instance_handle;
                 } 
                 log_message(app.logger, DEBUG, "retval: %d", retval);
@@ -1622,7 +1632,6 @@ bool run_subscriber(ShapeApp_t app, ShapeOptions_t opts) {
             all_done = 1;
         }
 
-        for( size_t i = 0; i < MAX_SAMPLES; i ++) ShapeType_free(samples[i],DDS_FREE_ALL);
         usleep(opts.read_period_us);
     }
 
@@ -1710,9 +1719,9 @@ bool run_publisher(ShapeApp_t app, ShapeOptions_t opts) {
                 //Publish different instances with the same content (except for the color)
                 if (opts.num_instances > 1) {
                     if (strlen(opts.color) > 0 && j > 0) {
-                        sscanf(shape.color, "%s%u", opts.color, j);
+                        sprintf(shape.color, "%s%u", opts.color, j);
                     } else {
-                        sscanf(shape.color, "%s", opts.color);
+                        sprintf(shape.color, "%s", opts.color);
                     }
                 }
                 dds_return_t rc = dds_write(app.writers[i], &shape);
