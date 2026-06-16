@@ -1790,8 +1790,8 @@ public:
 #define STRING_ALLOC(A, B)
 #endif
 
-        STRING_ALLOC(shape.color, std::strlen(color_value));
         if (color_value != NULL) {
+            STRING_ALLOC(shape.color, std::strlen(color_value));
             shape_set_color(shape, color_value);
         }
     }
@@ -1816,6 +1816,10 @@ public:
         std::map<InstanceHandle_t, std::string> instance_handle_color;
 #elif defined(RTI_CONNEXT_MICRO)
         std::vector<std::pair<InstanceHandle_t, std::string>> instance_handle_color;
+#elif defined(OPENDDS)
+        // get_key_value() does not reliably return the color for NOT_ALIVE samples
+        // generated via SPDP lease expiry, so we cache the mapping ourselves.
+        std::map<InstanceHandle_t, std::string> instance_handle_color;
 #endif
 
         while ( ! all_done ) {
@@ -1932,6 +1936,11 @@ public:
                                 instance_handle_color[sample_info->instance_handle] = sample->color FIELD_ACCESSOR STRING_IN;
 #elif defined(RTI_CONNEXT_MICRO)
                                 set_instance_color(instance_handle_color, sample_info->instance_handle, sample->color);
+#elif defined(OPENDDS)
+                                {
+                                    const char* c = sample->color STRING_IN;
+                                    if (c != NULL) instance_handle_color[sample_info->instance_handle] = c;
+                                }
 #endif
                             }
 
@@ -1944,6 +1953,11 @@ public:
 #elif defined(RTI_CONNEXT_MICRO)
                                 // 128 is the max length of the color string
                                 strncpy(shape_key.color, get_instance_color(instance_handle_color, sample_info->instance_handle).c_str(), 128);
+#elif defined(OPENDDS)
+                                {
+                                    auto it = instance_handle_color.find(sample_info->instance_handle);
+                                    if (it != instance_handle_color.end()) shape_key.color = it->second.c_str();
+                                }
 #else
                                 drs[i]->get_key_value(shape_key, sample_info->instance_handle);
 #endif
