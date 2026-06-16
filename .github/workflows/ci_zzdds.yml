@@ -33,10 +33,10 @@ jobs:
           ZZDDS_VERSION=$( grep "zzdds-" build.zig.zon | cut -d '-' -f 2 )
           echo "ZZDDS_VERSION=${ZZDDS_VERSION}" >> $GITHUB_ENV
           zig build -Dtarget=x86_64-linux-gnu -Doptimize=ReleaseSafe
-          cp ./zig-out/bin/zzdds_shape_main_linux zzdds-${ZZDDS_VERSION}-shape_main_linux
+          cp ./zig-out/bin/zzdds_shape_main_linux zzdds-${ZZDDS_VERSION}_shape_main_linux
 
       - name: Upload executable artifact
         uses: actions/upload-artifact@v4
         with:
           name: zzdds-${{ env.ZZDDS_VERSION }}_shape_main_linux
-          path: srcZig/zzdds/zzdds-${{ env.ZZDDS_VERSION }}-shape_main_linux
+          path: srcZig/zzdds/zzdds-${{ env.ZZDDS_VERSION }}_shape_main_linux
