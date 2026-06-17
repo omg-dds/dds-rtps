@@ -111,7 +111,7 @@ class ProductUtils:
         elif 'cyclone' in product.lower():
             return 'Cyclone DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'zzdds' in product.lower():
-            return 'ZZDDS ' + re.search(r'([\d.]+)', product).group(1)
+            return 'Zenzen DDS ' + re.search(r'([\d.]+)', product).group(1)
         else:
             raise RuntimeError('Impossible to get product name: ' + product)
 
