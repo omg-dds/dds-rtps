@@ -28,7 +28,7 @@ use dust_dds::{
 };
 use rand::{Rng, random, thread_rng};
 use std::{
-    fmt::Debug,
+    fmt::{Debug, Display},
     io::Write,
     process::{ExitCode, Termination},
     sync::mpsc::Receiver,
@@ -327,6 +327,16 @@ impl Options {
         OwnershipStrengthQosPolicy {
             value: self.ownership_strength,
         }
+    }
+}
+
+impl Display for AccessScope {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            AccessScope::I => "INSTANCE_PRESENTATION_QOS",
+            AccessScope::T => "TOPIC_PRESENTATION_QOS",
+            AccessScope::G => "GROUP_PRESENTATION_QOS",
+        })
     }
 }
 
@@ -809,6 +819,11 @@ fn main() -> Result<(), Return> {
 
     let options = Options::parse();
     options.validate()?;
+    if let Some(access_scope) = options.access_scope {
+        println!("    Presentation Access Scope {} : not supported", access_scope);
+        return Err(InitializeError(String::from("")).into());
+    }
+
     let participant = initialize(&options)?;
     if options.publish {
         let data_writer = init_publisher(&participant, options.clone())?;
