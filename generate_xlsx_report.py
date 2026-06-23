@@ -83,7 +83,7 @@ class ProductUtils:
             return 'Naskel'
         elif 'cyclone' in product.lower():
             return 'Eclipse Foundation'
-        elif 'zzdds' in product.lower():
+        elif 'zzdds' in product.lower() or 'zenzen' in product.lower():
             return 'Zenzen IoT'
         else:
             raise RuntimeError('Impossible to get company name: ' + product)
