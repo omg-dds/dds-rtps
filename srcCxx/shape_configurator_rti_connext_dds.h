@@ -46,6 +46,9 @@ static bool configure_dp_qos(DDS::DomainParticipantQos &dp_qos) {
     } else {
         ok = true;
     }
+    dp_qos.discovery_config.enabled_builtin_channels =
+                DDS_DISCOVERYCONFIG_BUILTIN_CHANNEL_MASK_NONE;
+    dp_qos.resource_limits.type_object_max_serialized_length = 8192;
 
     return ok;
 }
