@@ -751,6 +751,7 @@ def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, l
     samples_read_per_instance = 0
     consecutive_samples = []
     ignore_first_sample = []
+    lifespan_expiration_observed = False
 
     while samples_read_per_instance < max_samples_lifespan:
         sub_string = re.search(r'\w+\s+(\w+)\s+[0-9]+\s+[0-9]+\s+\[([0-9]+)\]',
@@ -787,6 +788,7 @@ def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, l
                             # sample is consecutive with itself
                             consecutive_samples[index] = 1
                             produced_code = ReturnCode.OK
+                            lifespan_expiration_observed = True
                         else:
                             if ignore_first_sample[index]:
                                 # there may be a case in which we receive a sample
@@ -824,7 +826,13 @@ def test_lifespan_2_3_consecutive_samples_w_instances(child_sub, samples_sent, l
             return ReturnCode.DATA_NOT_RECEIVED
 
     if max_samples_lifespan == samples_read_per_instance:
-        produced_code = ReturnCode.OK
+        if lifespan_expiration_observed:
+            produced_code = ReturnCode.OK
+        else:
+            # every sample arrived with no gaps at all: the peer never
+            # actually expired anything, so this must not be reported as a
+            # pass even though enough samples were read
+            produced_code = ReturnCode.DATA_NOT_CORRECT
 
     print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code

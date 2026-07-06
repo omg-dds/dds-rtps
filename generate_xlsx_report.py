@@ -886,7 +886,7 @@ class XlsxReport:
         # Add title
         worksheet.write(
             current_row, starting_column,
-            'DDS Interoperability tests', self.__formats['title'])
+            'RTPS Interoperability tests', self.__formats['title'])
 
         # Add Summary literal
         current_row += 1
