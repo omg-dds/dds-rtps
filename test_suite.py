@@ -1269,7 +1269,7 @@ rtps_test_suite_1 = {
                   '-S -t Square -r -k 0 -D l --ordered --access-scope i'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
+                    'INSTANCE_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies an INSTANCE_PRESENTATION publisher is compatible with an '
                             'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1282,47 +1282,11 @@ rtps_test_suite_1 = {
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
     'Test_OrderedAccess_12' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope i',
-                  '-S -t Square -r -k 0 -D l --ordered --access-scope t'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
-        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
-                            'TOPIC_PRESENTATION subscriber when using ordered access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with ordered access\n'
-                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_OrderedAccess_13' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope i',
-                  '-S -t Square -r -k 0 -D l --ordered --access-scope g'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for ordered access between INSTANCE_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
-        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
-                            'GROUP_PRESENTATION subscriber when using ordered access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with ordered access\n'
-                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_OrderedAccess_14' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope t',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope i'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between TOPIC_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
+                    'INSTANCE_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies a TOPIC_PRESENTATION publisher compatible with an '
                             'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1334,12 +1298,12 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
-    'Test_OrderedAccess_15' : {
+    'Test_OrderedAccess_13' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope t',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between TOPIC_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
+                    'TOPIC_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies a TOPIC_PRESENTATION publisher compatible with a '
                             'TOPIC_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1351,30 +1315,13 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
-    'Test_OrderedAccess_16' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope t',
-                  '-S -t Square -r -k 0 -D l --ordered --access-scope g'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for ordered access between TOPIC_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
-        'description' : 'Verifies an TOPIC_PRESENTATION publisher does not match with a '
-                            'GROUP_PRESENTATION subscriber when using ordered access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with ordered access\n'
-                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_OrderedAccess_17' : {
+
+    'Test_OrderedAccess_14' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope g',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope i'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
+                    'INSTANCE_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with an '
                             'INSTANCE_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1386,12 +1333,12 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
-    'Test_OrderedAccess_18' : {
+    'Test_OrderedAccess_15' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope g',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
+                    'TOPIC_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with a '
                             'TOPIC_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1403,12 +1350,12 @@ rtps_test_suite_1 = {
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
-    'Test_OrderedAccess_19' : {
+    'Test_OrderedAccess_16' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope g',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope g'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for ordered access between GROUP_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
+                    'GROUP_PRESENTATION subscriber both using TRANSIENT_LOCAL',
         'description' : 'Verifies a GROUP_PRESENTATION publisher compatible with an '
                             'GROUP_PRESENTATION subscriber when using ordered access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1421,23 +1368,7 @@ rtps_test_suite_1 = {
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
-    'Test_OrderedAccess_20' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --access-scope t',
-                  '-S -t Square -r -k 0 -D l --ordered --access-scope t'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for no ordered access publisher and ordered access subscriber',
-        'description' : 'Verifies that publisher without ordered access does not match with a '
-                            'subscriber with ordered access\n\n'
-                        ' * Configures the publisher and the subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher and the subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher and the subscriber with access scope TOPIC_PRESENTATION\n'
-                        ' * Configures the subscriber with ordered access\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-
-    'Test_OrderedAccess_21' : {
+    'Test_OrderedAccess_17' : {
         'apps' : ['-P -t Square -r -k 0 -D l --ordered --access-scope t -z 0 --num-instances 4 --write-period 100',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope i --take-read --read-period 400',
                   '-S -t Square -r -k 0 -D l --ordered --access-scope t --take-read --read-period 400'],
@@ -1445,7 +1376,7 @@ rtps_test_suite_1 = {
         'check_function' : tsf.ordered_access_w_instances,
         'title' : 'Test the behavior of ordered access',
         'description' : 'Verifies subscribers receives data correctly depending on the ordered '
-                            'access: TOPIC_PRESENTATION and INSTANCE_PRESENTATION.\n\n'
+                            'access: TOPIC_PRESENTATION and INSTANCE_PRESENTATION. Using TRANSIENT_LOCAL\n\n'
                         ' * Configures the publisher and all subscribers with a RELIABLE reliability\n'
                         ' * Configures the publisher and all subscribers with history KEEP_ALL\n'
                         ' * Configures the publisher and all subscribers with TRANSIENT_LOCAL durability\n'
@@ -1715,7 +1646,7 @@ rtps_test_suite_1 = {
                   '-S -t Square -r -k 0 -D l --coherent --access-scope i'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
+                    'INSTANCE_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
         'description' : 'Verifies an INSTANCE_PRESENTATION publisher is compatible with an '
                             'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1728,46 +1659,11 @@ rtps_test_suite_1 = {
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
     'Test_CoherentSets_14' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope i',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope t'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
-        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
-                            'TOPIC_PRESENTATION subscriber when using coherent access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_CoherentSets_15' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope i',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope g'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for coherent access between INSTANCE_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
-        'description' : 'Verifies an INSTANCE_PRESENTATION publisher does not match with a '
-                            'GROUP_PRESENTATION subscriber when using coherent access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with INSTANCE_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_CoherentSets_16' : {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope i'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for coherent access between TOPIC_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
+                    'INSTANCE_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
         'description' : 'Verifies an TOPIC_PRESENTATION publisher is compatible with an '
                             'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1775,85 +1671,67 @@ rtps_test_suite_1 = {
                         ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
                         ' * Configures the publisher / subscriber with coherent access\n'
                         ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_15' : {
+        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t',
+                  '-S -t Square -r -k 0 -D l --coherent --access-scope t'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between TOPIC_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
+        'description' : 'Verifies an TOPIC_PRESENTATION publisher is compatible with an '
+                            'TOPIC_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+    'Test_CoherentSets_16' : {
+        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g',
+                  '-S -t Square -r -k 0 -D l --coherent --access-scope i'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
+                    'INSTANCE_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
+        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
+                            'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
+                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
+                        ' * Configures the publisher / subscriber with coherent access\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
                         ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
     'Test_CoherentSets_17' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t',
+        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope t'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'title' : 'Compatibility for coherent access between TOPIC_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
-        'description' : 'Verifies an TOPIC_PRESENTATION publisher is compatible with an '
+        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
+                    'TOPIC_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
+        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
                             'TOPIC_PRESENTATION subscriber when using coherent access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
                         ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
                         ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
+                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
                         ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
     'Test_CoherentSets_18' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope g'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for coherent access between TOPIC_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
-        'description' : 'Verifies an TOPIC_PRESENTATION publisher does not match with a '
-                            'GROUP_PRESENTATION subscriber when using coherent access and '
-                            'report an IncompatibleQos notification\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with TOPIC_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with GROUP_PRESENTATION access_scope\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-    'Test_CoherentSets_19' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope i'],
-        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
-                    'INSTANCE_PRESENTATION subscriber',
-        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
-                            'INSTANCE_PRESENTATION subscriber when using coherent access\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with INSTANCE_PRESENTATION access_scope\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
-                        'The test passes if the subscriber receives samples from the publisher\n'
-    },
-    'Test_CoherentSets_20' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope t'],
-        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
-                    'TOPIC_PRESENTATION subscriber',
-        'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
-                            'TOPIC_PRESENTATION subscriber when using coherent access\n\n'
-                        ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher / subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher / subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher / subscriber with coherent access\n'
-                        ' * Configures the publisher with GROUP_PRESENTATION access_scope\n'
-                        ' * Configures the subscriber with TOPIC_PRESENTATION access_scope\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
-                        'The test passes if the subscriber receives samples from the publisher\n'
-    },
-    'Test_CoherentSets_21' : {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope g'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'title' : 'Compatibility for coherent access between GROUP_PRESENTATION publisher and '
-                    'GROUP_PRESENTATION subscriber',
+                    'GROUP_PRESENTATION subscriber, both using TRANSIENT_LOCAL',
         'description' : 'Verifies an GROUP_PRESENTATION publisher is compatible with an '
                             'GROUP_PRESENTATION subscriber when using coherent access\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1866,28 +1744,12 @@ rtps_test_suite_1 = {
                         'The test passes if the subscriber receives samples from the publisher\n'
     },
 
-    'Test_CoherentSets_22' : {
-        'apps' : ['-P -t Square -r -k 0 -D l --access-scope t',
-                  '-S -t Square -r -k 0 -D l --coherent --access-scope t'],
-        'expected_codes' : [ReturnCode.INCOMPATIBLE_QOS, ReturnCode.INCOMPATIBLE_QOS],
-        'title' : 'No compatibility for no coherent access publisher and coherent access subscriber',
-        'description' : 'Verifies that publisher without coherent access does not match with a '
-                            'subscriber with coherent access\n\n'
-                        ' * Configures the publisher and the subscriber with a RELIABLE reliability\n'
-                        ' * Configures the publisher and the subscriber with history KEEP_ALL\n'
-                        ' * Configures the publisher and the subscriber with TRANSIENT_LOCAL durability\n'
-                        ' * Configures the publisher and the subscriber with access scope TOPIC_PRESENTATION\n'
-                        ' * Configures the subscriber with coherent access\n'
-                        'The test passes if the listeners trigger the IncompatibleQos notification in the publisher '
-                            'and the subscriber\n'
-    },
-
-    'Test_CoherentSets_23' : {
+    'Test_CoherentSets_19' : {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope i --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope i --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.coherent_sets_w_instances,
-        'title' : 'Test the behavior of coherent access with INSTANCE_PRESENTATION with several instances',
+        'title' : 'Test the behavior of coherent access with INSTANCE_PRESENTATION with several instances, using TRANSIENT_LOCAL',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access INSTANCE_PRESENTATION.\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1909,12 +1771,12 @@ rtps_test_suite_1 = {
                             'per instance and topic is 3 each time we receive a new coherent set of samples. '
                             f'The subscriber has to read {tsf.MAX_SAMPLES_READ} samples per instance\n'
     },
-    'Test_CoherentSets_24' : {
+    'Test_CoherentSets_20' : {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope t --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.coherent_sets_w_instances,
-        'title' : 'Test the behavior of coherent access with TOPIC_PRESENTATION with several instances',
+        'title' : 'Test the behavior of coherent access with TOPIC_PRESENTATION with several instances, using TRANSIENT_LOCAL',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access TOPIC_PRESENTATION.\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
@@ -1936,12 +1798,12 @@ rtps_test_suite_1 = {
                             'per instance and topic is 3 each time we receive a new coherent set of samples. '
                             f'The subscriber has to read {tsf.MAX_SAMPLES_READ} samples per instance\n'
     },
-    'Test_CoherentSets_25' : {
+    'Test_CoherentSets_21' : {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope g --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope g --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
         'check_function' : tsf.coherent_sets_w_instances,
-        'title' : 'Test the behavior of coherent access with GROUP_PRESENTATION with several instances',
+        'title' : 'Test the behavior of coherent access with GROUP_PRESENTATION with several instances, using TRANSIENT_LOCAL',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access GROUP_PRESENTATION.\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
