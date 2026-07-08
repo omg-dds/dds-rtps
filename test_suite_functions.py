@@ -469,7 +469,7 @@ def test_reading_1_sample_every_10_samples_w_instances(child_sub, samples_sent, 
     instance_seq_num = []
     first_iteration = []
     ignore_first_sample = []
-    max_samples_received = MAX_SAMPLES_READ / 20 # 25
+    max_samples_received = MAX_SAMPLES_READ / 10 # 50
     samples_read_per_instance = 0
 
     while samples_read_per_instance < max_samples_received:
