@@ -18,6 +18,17 @@
 //!     StatusMask, and the status constants (OFFERED_INCOMPATIBLE_QOS_STATUS,
 //!     etc.).
 //!
+//!   pub const DDS = ...;
+//!     The vendor's standard DCPS type package (see above).
+//!
+//!   -- Type aliases required by the zidl-generated ShapeTypeDataWriter /
+//!   -- ShapeTypeDataReader (which call into this module as "_dds"):
+//!
+//!   pub const DataWriter = DDS.DataWriter;
+//!   pub const DataReader = DDS.DataReader;
+//!   pub const InstanceStateKind = DDS.InstanceStateKind;
+//!   pub const InstanceHandle_t = DDS.InstanceHandle_t;
+//!
 //!   pub const Participant = struct { ... };
 //!     Opaque vendor state that bundles transport, discovery, and factory.
 //!     shape_main calls createParticipant / destroyParticipant and then
@@ -30,31 +41,34 @@
 //!   pub fn topicName(topic: DDS.Topic) []const u8;
 //!     Returns the topic name string from a DDS.Topic handle.
 //!
-//!   ── DataWriter extras (not in the standard DCPS vtable) ───────────────
+//!   ── Raw CDR write / read (used by ShapeTypeDataWriter, ShapeTypeDataReader,
+//!   ── and directly by shape_main for NOT_ALIVE sample handling) ─────────────
 //!
 //!   pub const WriteKind = enum { alive, dispose, unregister };
 //!
-//!   pub fn writeRaw(dw: DDS.DataWriter, kind: WriteKind,
+//!   pub fn writeCdr(dw: DDS.DataWriter, kind: WriteKind,
 //!                   key_hash: [16]u8, data: []const u8) !void;
 //!     Write a pre-serialized CDR payload.  The vendor stamps the source
-//!     timestamp internally (always "now") matching the behaviour of the
-//!     standard typed write() call in C/C++/Rust shape_main implementations.
+//!     timestamp internally (always "now").  Called by the generated
+//!     ShapeTypeDataWriter.write() / .dispose() / .unregister() methods.
 //!
-//!   pub fn writerMatchedCount(dw: DDS.DataWriter) usize;
-//!   pub fn writerNotifyDeadline(dw: DDS.DataWriter) void;
-//!
-//!   ── DataReader extras ─────────────────────────────────────────────────
-//!
-//!   pub const TakenSample = struct {
-//!       data:  []u8,
-//!       alloc: std.mem.Allocator,
-//!       pub fn deinit(self: TakenSample) void,
+//!   pub const RawSample = struct {
+//!       data:             []u8,
+//!       alloc:            std.mem.Allocator,
+//!       instance_state:   DDS.InstanceStateKind,
+//!       instance_handle:  DDS.InstanceHandle_t,
+//!       pub fn deinit(self: RawSample) void,
 //!   };
 //!
-//!   pub fn takeRaw(dr: DDS.DataReader) ?TakenSample;
+//!   pub fn takeCdr(dr: DDS.DataReader) ?RawSample;
 //!     Returns the next pending sample, or null if the queue is empty.
 //!     Caller must call sample.deinit() when done.
+//!     Called by the generated ShapeTypeDataReader.take() and directly by
+//!     shape_main for NOT_ALIVE sample key extraction.
 //!
+//!   pub fn writerWaitForAck(dw: DDS.DataWriter, timeout: DDS.Duration_t) DDS.ReturnCode_t;
+//!   pub fn writerMatchedCount(dw: DDS.DataWriter) usize;
+//!   pub fn writerNotifyDeadline(dw: DDS.DataWriter) void;
 //!   pub fn readerMatchedCount(dr: DDS.DataReader) usize;
 //!   pub fn readerNotifyDeadline(dr: DDS.DataReader) void;
 //!
@@ -77,7 +91,8 @@
 //!   ── TypeSupport (type schema registration) ────────────────────────────
 //!
 //!   pub const TypeSupport = struct {
-//!       compute_key_hash: *const fn (payload: []const u8) [16]u8,
+//!       ctx:              *anyopaque,
+//!       compute_key_hash: *const fn (ctx: *anyopaque, payload: []const u8) [16]u8,
 //!   };
 //!
 //!   pub fn registerTypeSupport(dp: DDS.DomainParticipant,
@@ -89,46 +104,20 @@
 //!     CDR payload.  `payload` passed to compute_key_hash includes the
 //!     4-byte CDR encapsulation header.
 
-// ── ShapeType serialization (Option B) ────────────────────────────────────────
+// ── Module layout ─────────────────────────────────────────────────────────────
 //
-// shape_main.zig delegates all CDR serialization and key-hash computation to
-// the vendor module so each vendor can handle type support however they like —
-// generated code from their IDL compiler, hand-coded CDR, etc.  For zzdds the
-// implementations live in dds_impl.zig and will eventually be produced by zidl
-// from srcZig/shape.idl.
+// CDR serialization and key-hash computation are NOT part of the "dds" shim.
+// They live in the zidl-generated "shape_gen" module imported by shape_main.zig.
 //
-//   pub const ShapeType = struct {
-//       color: []const u8,
-//       x: i32,
-//       y: i32,
-//       shapesize: i32,
-//       additional_payload: u32,  // extra CDR bytes appended by publisher (test harness)
-//       last_payload_byte: ?u8,   // last byte of received payload (null if absent)
-//   };
+// The generated shape.zig emits ShapeTypeDataWriter and ShapeTypeDataReader
+// which internally call into this module as "_dds" (via @import("dds")):
+//   - ShapeTypeDataWriter.write()      → writeCdr(dw, .alive, hash, payload)
+//   - ShapeTypeDataWriter.dispose()    → writeCdr(dw, .dispose, hash, key_payload)
+//   - ShapeTypeDataWriter.unregister() → writeCdr(dw, .unregister, hash, key_payload)
+//   - ShapeTypeDataReader.take()       → takeCdr(dr) + ShapeType.deserialize()
 //
-//   pub fn serializeShape(
-//       buf: *std.ArrayList(u8), alloc: std.mem.Allocator,
-//       s: ShapeType, xcdr2: bool) !void;
-//     Serialize `s` into `buf` (cleared first).  xcdr2 selects XCDR2 DELIMITED_CDR.
-//
-//   pub fn serializeShapeKeyOnly(
-//       buf: *std.ArrayList(u8), alloc: std.mem.Allocator,
-//       color: []const u8) !void;
-//     Serialize a key-only CDR_LE payload containing just `color`.
-//
-//   pub fn deserializeShape(payload: []const u8) ?ShapeType;
-//     Parse CDR/CDR2 bytes into ShapeType.  Returns null on error or key-only payload.
-//     Returned `color` slice borrows from `payload`; valid while `payload` is alive.
-//
-//   pub fn deserializeShapeKey(payload: []const u8) []const u8;
-//     Extract the color key string from any ShapeType CDR payload (full or key-only).
-//
-//   pub fn shapeKeyHash(color: []const u8) [16]u8;
-//     Compute the RTPS 16-byte key hash for a given color string.
-//
-//   pub fn shapeKeyHashFromCdr(payload: []const u8) [16]u8;
-//     Compute the RTPS key hash from a received CDR payload.
-//     Passed as TypeSupport.compute_key_hash to registerTypeSupport.
+// shape_main.zig also calls takeCdr() directly to inspect instance_state
+// before deserialization for NOT_ALIVE sample handling.
 
 // This file is documentation only.  shape_main.zig imports the module
 // named "dds" which is provided by the vendor's build.zig, not this file.

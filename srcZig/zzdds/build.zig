@@ -23,10 +23,24 @@ pub fn build(b: *std.Build) void {
     const zidl_exe = zidl_dep.artifact("zidl");
     const zidl_rt_mod = zidl_dep.module("zidl_rt");
 
+    // Build the "dds" shim module from our vendor implementation.
+    // dds_impl.zig provides participant bootstrapping and entity-management
+    // helpers.  CDR encoding is handled by the generated typed wrappers.
+    const dds_mod = b.createModule(.{
+        .root_source_file = b.path("dds_impl.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{
+            .{ .name = "zzdds", .module = zzdds_mod },
+            .{ .name = "zzdds_generated", .module = zzdds_gen },
+        },
+    });
+
     // Generate ShapeType Zig bindings from srcZig/shape.idl.
-    // Output lands in the build cache (not checked in).
+    // The generated shape.zig uses ShapeTypeDataWriter/ShapeTypeDataReader which
+    // call into dds_mod via @import("dds").  Output lands in the build cache.
     const gen_shape = b.addRunArtifact(zidl_exe);
-    gen_shape.addArgs(&.{ "-b", "zig", "--split-files", "-o" });
+    gen_shape.addArgs(&.{ "-b", "zig", "--split-files", "--generate-zzdds-wrappers", "-o" });
     const shape_gen_dir = gen_shape.addOutputDirectoryArg("shape-generated");
     gen_shape.addFileArg(b.path("../shape.idl"));
 
@@ -36,20 +50,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .imports = &.{
             .{ .name = "zidl_rt", .module = zidl_rt_mod },
-        },
-    });
-
-    // Build the "dds" shim module from our vendor implementation.
-    // shape_main.zig imports only this module; it has no direct zzdds dependency.
-    const dds_mod = b.createModule(.{
-        .root_source_file = b.path("dds_impl.zig"),
-        .target = target,
-        .optimize = optimize,
-        .imports = &.{
             .{ .name = "zzdds", .module = zzdds_mod },
-            .{ .name = "zzdds_generated", .module = zzdds_gen },
-            .{ .name = "shape_gen", .module = shape_gen_mod },
-            .{ .name = "zidl_rt", .module = zidl_rt_mod },
         },
     });
 
@@ -68,6 +69,8 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
             .imports = &.{
                 .{ .name = "dds", .module = dds_mod },
+                .{ .name = "shape_gen", .module = shape_gen_mod },
+                .{ .name = "zidl_rt", .module = zidl_rt_mod },
                 .{ .name = "shape_main_options", .module = shape_main_options.createModule() },
             },
         }),
