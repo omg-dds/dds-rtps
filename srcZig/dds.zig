@@ -5,8 +5,6 @@
 //! their own implementation of this module and wires it up as the "dds"
 //! dependency in their build.zig.
 //!
-//! ZenzenDDS's implementation lives in zenzen-zig/dds_impl.zig.
-//!
 //! ── Required exports ──────────────────────────────────────────────────────
 //!
 //!   pub const DDS = ...;
@@ -68,9 +66,7 @@
 //!
 //!   pub fn writerWaitForAck(dw: DDS.DataWriter, timeout: DDS.Duration_t) DDS.ReturnCode_t;
 //!   pub fn writerMatchedCount(dw: DDS.DataWriter) usize;
-//!   pub fn writerNotifyDeadline(dw: DDS.DataWriter) void;
 //!   pub fn readerMatchedCount(dr: DDS.DataReader) usize;
-//!   pub fn readerNotifyDeadline(dr: DDS.DataReader) void;
 //!
 //!   ── ContentFilteredTopic evaluation ──────────────────────────────────
 //!

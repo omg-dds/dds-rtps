@@ -426,12 +426,6 @@ fn runPublisher(
     const match_deadline = monoNs() + 10 * std.time.ns_per_s;
     var printed_matched = false;
 
-    const deadline_ns: i64 = if (opts.deadline_ms > 0)
-        @intCast(opts.deadline_ms * std.time.ns_per_ms)
-    else
-        0;
-    var last_write_ns: i64 = monoNs();
-
     // Coherent set gating: each outer write-loop iteration is one whole coherent
     // window (begin_coherent_changes -> `sc` consecutive samples per instance ->
     // end_coherent_changes). When coherent_access is enabled but no explicit count
@@ -463,11 +457,6 @@ fn runPublisher(
         if (use_coherent_gating and !printed_matched) {
             sleepNs(opts.write_period_ms * std.time.ns_per_ms);
             continue;
-        }
-
-        if (deadline_ns > 0) {
-            const elapsed = monoNs() - last_write_ns;
-            if (elapsed > deadline_ns) dds.writerNotifyDeadline(dw_handles[0]);
         }
 
         if (use_coherent_gating) {
@@ -523,7 +512,6 @@ fn runPublisher(
             }
         }
 
-        last_write_ns = monoNs();
         iteration += 1;
         sleepNs(opts.write_period_ms * std.time.ns_per_ms);
     }
@@ -637,29 +625,6 @@ fn runSubscriber(
         typed_readers[i] = shape_gen.ShapeTypeDataReader.init(dr_handles[i], alloc);
     }
 
-    const sub_deadline_ns: i64 = if (opts.deadline_ms > 0)
-        @intCast(opts.deadline_ms * std.time.ns_per_ms)
-    else
-        0;
-    var deadline_base_ns: i64 = 0;
-
-    const ShapeAccessor = struct {
-        shape: *const shape_gen.ShapeType,
-
-        fn get(ctx: *anyopaque, field: []const u8) ?dds.FilterValue {
-            const self: *const @This() = @ptrCast(@alignCast(ctx));
-            if (std.mem.eql(u8, field, "color"))
-                return .{ .string = self.shape.color.slice() };
-            if (std.mem.eql(u8, field, "x"))
-                return .{ .int = self.shape.x };
-            if (std.mem.eql(u8, field, "y"))
-                return .{ .int = self.shape.y };
-            if (std.mem.eql(u8, field, "shapesize"))
-                return .{ .int = self.shape.shapesize };
-            return null;
-        }
-    };
-
     const use_access = opts.coherent_access or opts.ordered_access;
 
     // Maps instance_handle → color for recovering key identity from NOT_ALIVE samples
@@ -671,10 +636,6 @@ fn runSubscriber(
     while (!g_all_done.load(.acquire)) {
         if (opts.num_iterations >= 0 and iteration >= opts.num_iterations) break;
 
-        if (sub_deadline_ns > 0 and deadline_base_ns == 0 and dds.readerMatchedCount(dr_handles[0]) > 0) {
-            deadline_base_ns = monoNs();
-        }
-
         // Begin access window for GROUP/TOPIC_PRESENTATION coherent or ordered access.
         if (use_access) {
             if (opts.coherent_access)
@@ -684,7 +645,6 @@ fn runSubscriber(
             _ = sub.vtable.begin_access(sub.ptr);
         }
 
-        var got_data = false;
         for (0..n) |ti| {
             const tn = lctxs[ti].topic_name;
 
@@ -757,7 +717,6 @@ fn runSubscriber(
                     if (!got) break;
                 }
                 defer value.deinit(alloc);
-                got_data = true;
 
                 if (info.instance_state == DDS.NOT_ALIVE_NO_WRITERS_INSTANCE_STATE or
                     info.instance_state == DDS.NOT_ALIVE_DISPOSED_INSTANCE_STATE)
@@ -776,18 +735,6 @@ fn runSubscriber(
 
                 ih_to_color.put(info.instance_handle, value.color) catch {};
 
-                // CFT post-filter (only for topic[0] when CFT is active).
-                if (ti == 0) {
-                    if (cft) |c| {
-                        var acc_ctx = ShapeAccessor{ .shape = &value };
-                        const accessor = dds.FieldAccessor{
-                            .ctx = &acc_ctx,
-                            .get = ShapeAccessor.get,
-                        };
-                        if (!dds.cftMatchSample(c, accessor)) continue;
-                    }
-                }
-
                 const extra_len = value.additional_payload_size._length;
                 const last_byte: ?u8 = if (extra_len > 0 and value.additional_payload_size._buffer != null)
                     value.additional_payload_size._buffer.?[extra_len - 1]
@@ -803,15 +750,6 @@ fn runSubscriber(
         }
 
         if (use_access) _ = sub.vtable.end_access(sub.ptr);
-
-        if (got_data) {
-            deadline_base_ns = monoNs();
-        } else if (sub_deadline_ns > 0 and deadline_base_ns != 0) {
-            if (monoNs() - deadline_base_ns > sub_deadline_ns) {
-                dds.readerNotifyDeadline(dr_handles[0]);
-                deadline_base_ns = monoNs();
-            }
-        }
 
         iteration += 1;
         sleepNs(opts.read_period_ms * std.time.ns_per_ms);
@@ -1055,7 +993,8 @@ pub fn main(init: std.process.Init.Minimal) !void {
     defer dds.destroyParticipant(participant);
     const dp = participant.toDDS();
 
-    dds.registerTypeSupport(dp, "ShapeType", .{ .ctx = undefined, .compute_key_hash = shapeKeyHashFromCdr });
+    var ts_alloc = alloc;
+    dds.registerTypeSupport(dp, "ShapeType", .{ .ctx = @ptrCast(&ts_alloc), .compute_key_hash = shapeKeyHashFromCdr, .get_field = shape_gen.ShapeType.getFieldFromCdr });
 
     // Create the base topic (index 0). Additional topics are created inside run functions.
     const base_topic = dp.create_topic(

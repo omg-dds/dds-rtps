@@ -13,12 +13,9 @@ const zzdds_gen = @import("zzdds_generated");
 pub const DDS = zzdds_gen.DDS;
 
 const DomainParticipantImpl = zzdds.dcps.DomainParticipantImpl;
-const DataWriterImpl = zzdds.dcps.DataWriterImpl;
-const DataReaderImpl = zzdds.dcps.DataReaderImpl;
 const TopicImpl = zzdds.dcps.TopicImpl;
 const ContentFilteredTopicImpl = zzdds.dcps.ContentFilteredTopicImpl;
 const nil = zzdds.dcps;
-const filter_mod = zzdds.dcps.filter;
 
 // ── Participant bootstrapping ─────────────────────────────────────────────────
 
@@ -72,36 +69,22 @@ pub fn writerWaitForAck(dw: DDS.DataWriter, timeout: DDS.Duration_t) DDS.ReturnC
 }
 
 pub fn writerMatchedCount(dw: DDS.DataWriter) usize {
-    const impl: *DataWriterImpl = @ptrCast(@alignCast(dw.ptr));
-    return impl.matchedReaderCount();
-}
-
-pub fn writerNotifyDeadline(dw: DDS.DataWriter) void {
-    const impl: *DataWriterImpl = @ptrCast(@alignCast(dw.ptr));
-    impl.notifyDeadlineMissed();
+    var status: DDS.PublicationMatchedStatus = .{};
+    _ = dw.vtable.get_publication_matched_status(dw.ptr, &status);
+    return @intCast(status.current_count);
 }
 
 // ── DataReader extras ─────────────────────────────────────────────────────────
 
 pub fn readerMatchedCount(dr: DDS.DataReader) usize {
-    const impl: *DataReaderImpl = @ptrCast(@alignCast(dr.ptr));
-    return impl.matchedWriterCount();
+    var status: DDS.SubscriptionMatchedStatus = .{};
+    _ = dr.vtable.get_subscription_matched_status(dr.ptr, &status);
+    return @intCast(status.current_count);
 }
 
-pub fn readerNotifyDeadline(dr: DDS.DataReader) void {
-    const impl: *DataReaderImpl = @ptrCast(@alignCast(dr.ptr));
-    impl.notifyDeadlineMissed();
-}
-
-// ── ContentFilteredTopic evaluation ──────────────────────────────────────────
-
-pub const FilterValue = filter_mod.FilterValue;
-pub const FieldAccessor = filter_mod.FieldAccessor;
-
-pub fn cftMatchSample(cft: DDS.ContentFilteredTopic, acc: FieldAccessor) bool {
-    const impl: *ContentFilteredTopicImpl = @ptrCast(@alignCast(cft.ptr));
-    return impl.matchSample(acc);
-}
+// ── ContentFilteredTopic ──────────────────────────────────────────────────────
+// Filtering itself is automatic, at the reader layer, once TypeSupport.get_field
+// is wired (see registerTypeSupport's call site in shape_main.zig)
 
 pub fn cftTopicDescription(cft: DDS.ContentFilteredTopic) DDS.TopicDescription {
     const impl: *ContentFilteredTopicImpl = @ptrCast(@alignCast(cft.ptr));

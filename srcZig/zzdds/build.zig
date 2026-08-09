@@ -18,10 +18,17 @@ pub fn build(b: *std.Build) void {
     const zzdds_mod = zzdds_dep.module("zzdds");
     const zzdds_gen = zzdds_dep.module("zzdds_generated");
 
-    // Acquire zidl executable and zidl_rt module from the zidl dependency.
-    const zidl_dep = b.dependency("zidl", .{ .target = target, .optimize = optimize });
-    const zidl_exe = zidl_dep.artifact("zidl");
-    const zidl_rt_mod = zidl_dep.module("zidl_rt");
+    // Acquire zidl executable and zidl_rt module *through* zzdds, not via our
+    // own separate top-level zidl dependency -- see zzdds's own build.zig
+    // comment on `b.modules.put(... "zidl_rt" ...)`/`b.installArtifact(zidl_exe)`
+    // for why: while zidl is a `.path` dependency (developing zidl and zzdds
+    // together, pre-release), Zig's package manager doesn't dedupe two
+    // independent `.path` deps on the same directory declared by two
+    // different build.zig files, so declaring our own here too crashes the
+    // build the moment anything imports both ("file exists in modules
+    // 'zidl_rt' and 'zidl_rt0'").
+    const zidl_exe = zzdds_dep.artifact("zidl");
+    const zidl_rt_mod = zzdds_dep.module("zidl_rt");
 
     // Build the "dds" shim module from our vendor implementation.
     // dds_impl.zig provides participant bootstrapping and entity-management
