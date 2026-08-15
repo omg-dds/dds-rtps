@@ -962,7 +962,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     std.posix.sigaction(std.posix.SIG.INT, &sa, null);
 
     var gpa = std.heap.DebugAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer if (gpa.deinit() == .leak) std.log.err("DebugAllocator: leak detected at shutdown", .{});
     const alloc = gpa.allocator();
 
     if (std.c.getenv("SHAPE_STARTUP_DELAY_MS")) |v| {

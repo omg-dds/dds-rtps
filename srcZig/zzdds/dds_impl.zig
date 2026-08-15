@@ -9,6 +9,7 @@ const std = @import("std");
 
 const zzdds = @import("zzdds");
 const zzdds_gen = @import("zzdds_generated");
+const build_options = @import("dds_impl_options");
 
 pub const DDS = zzdds_gen.DDS;
 
@@ -21,6 +22,14 @@ const nil = zzdds.dcps;
 
 pub const Participant = struct {
     alloc: std.mem.Allocator,
+    /// Only populated (and only referenced by `factory`) when
+    /// build_options.debug_allocator is set -- must live exactly as long as
+    /// `factory` does, hence stored here rather than as a temporary in
+    /// createParticipant: a ZidlAllocator built as a local in the function
+    /// that calls createFactoryWithAllocator would leave the factory holding
+    /// a dangling pointer the moment that function returns (see
+    /// createFactoryWithAllocator's own doc comment in zzdds).
+    c_alloc: zzdds.c_abi.allocator_adapter.ZidlAllocator = undefined,
     factory: zzdds.DomainParticipantFactory,
     dp: DDS.DomainParticipant,
 
@@ -32,19 +41,23 @@ pub const Participant = struct {
 pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32) !*Participant {
     const p = try alloc.create(Participant);
     errdefer alloc.destroy(p);
+    p.alloc = alloc;
 
-    var factory = try zzdds.createFactory();
+    var factory = if (build_options.debug_allocator) blk: {
+        p.c_alloc = zzdds.c_abi.allocator_adapter.fromAllocator(&p.alloc);
+        break :blk try zzdds.createFactoryWithAllocator(&p.c_alloc);
+    } else try zzdds.createFactory();
     errdefer factory.deinit();
     const dpf = factory.toDDSFactory();
 
     const dp = dpf.create_participant(domain_id, .{}, null, 0);
     if (dp.ptr == nil.NIL_PTR) return error.ParticipantFailed;
 
-    p.* = .{
-        .alloc = alloc,
-        .factory = factory,
-        .dp = dp,
-    };
+    // Field-by-field, not a `p.* = .{...}` struct literal: that would reset
+    // c_alloc to its `undefined` default, corrupting the ZidlAllocator the
+    // factory (already constructed above) is holding a live pointer into.
+    p.factory = factory;
+    p.dp = dp;
     return p;
 }
 
