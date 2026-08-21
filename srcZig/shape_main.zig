@@ -25,10 +25,6 @@ const shape_gen = @import("shape_gen");
 const zidl_rt = @import("zidl_rt");
 const shape_main_options = @import("shape_main_options");
 
-// zzdds resolves its SPDP participant-announcement period from this env var
-// (see zzdds/src/config/resolve.zig); Zig's std.c doesn't expose setenv on Linux.
-extern "c" fn setenv(name: [*:0]const u8, value: [*:0]const u8, overwrite: c_int) c_int;
-
 pub const std_options: std.Options = .{
     .log_level = std.meta.stringToEnum(std.log.Level, shape_main_options.log_level) orelse
         @compileError("invalid shape_main log level"),
@@ -120,6 +116,7 @@ const Options = struct {
     read_only: bool = false, // -R: use read() instead of take() (non-destructive)
     coherent_sample_count: u32 = 0, // --coherent-sample-count (0 = no coherent set gating)
     periodic_announcement_ms: u32 = 0, // --periodic-announcement (0 = use zzdds's own default)
+    datafrag_size: u16 = 0, // --datafrag-size/-Z (0 = use zzdds's own default)
 };
 
 // ── Policy name mapping ───────────────────────────────────────────────────────
@@ -877,6 +874,16 @@ fn parseArgs(process_args: std.process.Args) !Options {
         } else if (std.mem.eql(u8, arg, "--periodic-announcement")) {
             const v = it.next() orelse return error.MissingValue;
             opts.periodic_announcement_ms = std.fmt.parseInt(u32, v, 10) catch 0;
+        } else if (std.mem.eql(u8, arg, "-Z") or std.mem.eql(u8, arg, "--datafrag-size")) {
+            const v = it.next() orelse return error.MissingValue;
+            // fragment_size is a u16 field in the type itself (RTPS spec: must be
+            // <= 65535 bytes), so parseInt already rejects an out-of-range value --
+            // no separate bounds check needed the way srcC's `unsigned int` parse
+            // does.
+            opts.datafrag_size = std.fmt.parseInt(u16, v, 10) catch {
+                std.log.err("incorrect value for datafrag-size, must be a non-negative integer <= 65535", .{});
+                return error.InvalidValue;
+            };
         } else if (std.mem.eql(u8, arg, "--publisher-matches") or
             std.mem.eql(u8, arg, "--subscriber-matches"))
         {
@@ -931,6 +938,8 @@ fn parseArgs(process_args: std.process.Args) !Options {
                 \\  -w                  Print each sample on the writer side
                 \\  --periodic-announcement <ms>  SPDP participant re-announcement period
                 \\                                (0 = use zzdds's own default)
+                \\  -Z, --datafrag-size <bytes>  DATA_FRAG fragment size in bytes, <= 65535
+                \\                                (0 = use zzdds's own default)
                 \\  -h, --help          Show this help and exit
                 \\
                 \\Environment variables:
@@ -980,13 +989,10 @@ pub fn main(init: std.process.Init.Minimal) !void {
         std.process.exit(1);
     }
 
-    if (opts.periodic_announcement_ms > 0) {
-        var buf: [16]u8 = undefined;
-        const val = std.fmt.bufPrintZ(&buf, "{d}", .{opts.periodic_announcement_ms}) catch unreachable;
-        _ = setenv("ZZDDS_PARTICIPANT_ANNOUNCEMENT_PERIOD_MS", val, 1);
-    }
-
-    const participant = dds.createParticipant(alloc, opts.domain_id) catch |err| {
+    const participant = dds.createParticipant(alloc, opts.domain_id, .{
+        .fragment_size = opts.datafrag_size,
+        .announcement_period_ms = opts.periodic_announcement_ms,
+    }) catch |err| {
         std.log.err("failed to create participant on domain {d}: {}", .{ opts.domain_id, err });
         std.process.exit(1);
     };

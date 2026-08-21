@@ -33,7 +33,22 @@
 //!     calls toDDS() to get the standard DomainParticipant handle for use
 //!     with the standard vtable API.
 //!
-//!   pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32) !*Participant;
+//!   pub const ParticipantOptions = struct {
+//!       fragment_size: u16 = 0,
+//!       announcement_period_ms: u32 = 0,
+//!   };
+//!     RTPS-level tunables shape_main exposes via CLI flags that don't map to
+//!     standard DCPS QoS. A field value of 0 means "leave the vendor's current
+//!     default alone" -- a vendor with no such knob may simply ignore a field
+//!     it doesn't support (a nonzero value doing nothing is acceptable; a zero
+//!     value must never change vendor behavior). `fragment_size` is the
+//!     DATA_FRAG fragment size in bytes (--datafrag-size/-Z, RTPS spec caps
+//!     this at 65535 -- shape_main validates the range before calling in).
+//!     `announcement_period_ms` is the SPDP participant re-announcement period
+//!     (--periodic-announcement).
+//!
+//!   pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32,
+//!                            opts: ParticipantOptions) !*Participant;
 //!   pub fn destroyParticipant(p: *Participant) void;
 //!
 //!   pub fn topicName(topic: DDS.Topic) []const u8;

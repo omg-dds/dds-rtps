@@ -38,7 +38,14 @@ pub const Participant = struct {
     }
 };
 
-pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32) !*Participant {
+/// RTPS-level tunables with no standard DCPS QoS equivalent -- see dds.zig's
+/// contract doc for the "0 = leave the vendor default alone" convention.
+pub const ParticipantOptions = struct {
+    fragment_size: u16 = 0,
+    announcement_period_ms: u32 = 0,
+};
+
+pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32, opts: ParticipantOptions) !*Participant {
     const p = try alloc.create(Participant);
     errdefer alloc.destroy(p);
     p.alloc = alloc;
@@ -48,9 +55,22 @@ pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32) !*Participant
         break :blk try zzdds.createFactoryWithAllocator(&p.c_alloc);
     } else try zzdds.createFactory();
     errdefer factory.deinit();
-    const dpf = factory.toDDSFactory();
 
-    const dp = dpf.create_participant(domain_id, .{}, null, 0);
+    const dp = if (opts.fragment_size > 0 or opts.announcement_period_ms > 0) blk: {
+        // Starts from the plain IDL-declared defaults (`.{}`), not the
+        // factory's current default_participant_config: this shim has no
+        // other way to customize the factory's defaults before this call
+        // (unlike zzdds-examples' zig/shape, which also supports --config),
+        // so there is nothing else to preserve. Deliberately does NOT use
+        // get_default_participant_config/set_default_participant_config --
+        // those don't exist yet at the zzdds release this build.zig.zon pins
+        // (added later, in "Config File Improvements" (#54)); only
+        // create_participant_ex is guaranteed present.
+        var cfg: zzdds.ZZDDS.DomainParticipantConfig = .{};
+        if (opts.fragment_size > 0) cfg.rtps.fragment_size = opts.fragment_size;
+        if (opts.announcement_period_ms > 0) cfg.participant.announcement_period_ms = opts.announcement_period_ms;
+        break :blk factory.toZZDDSFactory().create_participant_ex(domain_id, .{}, null, 0, cfg);
+    } else factory.toDDSFactory().create_participant(domain_id, .{}, null, 0);
     if (dp.ptr == nil.NIL_PTR) return error.ParticipantFailed;
 
     // Field-by-field, not a `p.* = .{...}` struct literal: that would reset
