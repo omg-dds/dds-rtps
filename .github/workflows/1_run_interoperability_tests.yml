@@ -28,8 +28,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: generate_timestamp
     strategy:
-strategy:
-    fail-fast: false 
+      fail-fast: false 
       matrix:
         publisher: ${{ fromJson(github.event.inputs.publishers) }}
         subscriber: ${{ fromJson(github.event.inputs.subscribers) }}
