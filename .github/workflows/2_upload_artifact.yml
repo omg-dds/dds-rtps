@@ -11,6 +11,7 @@ jobs:
           name: interoperability_report_complete
           workflow: 1_run_interoperability_tests.yml
           workflow_conclusion: completed
+
       - name: Create files to upload
         run: |
             current_date=$(cat timestamp)
@@ -22,23 +23,19 @@ jobs:
             mkdir report_$current_date
             mv *.zip report_$current_date/
             mv *.xlsx report_$current_date/
-      - name: Upload zip artifact
-        uses: adityak74/google-drive-upload-git-action@main
+
+      - name: Setup Rclone
+        uses: AnimMouse/setup-rclone@v1
         with:
-          credentials: ${{ secrets.GCP_CREDENTIAL }}
-          filename: report_*/*.zip
-          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
-          overwrite: "true"
-          mirrorDirectoryStructure: "true"
-      - name: Upload spreadsheet
-        uses: adityak74/google-drive-upload-git-action@main
-        with:
-          credentials: ${{ secrets.GCP_CREDENTIAL }}
-          filename: report_*/*.xlsx
-          folderId: ${{ secrets.DRIVE_FOLDER_ID }}
-          overwrite: "true"
-          mirrorDirectoryStructure: "true"
-          mimeType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+          rclone_config: |
+            [mygdrive]
+            type = drive
+            token = ${{ secrets.RCLONE_TOKEN }}
+
+      - name: Upload reports to Google Drive
+        run: |
+          rclone copy report_* mygdrive: --drive-root-folder-id ${{ secrets.DRIVE_FOLDER_ID }} -v
+
       - name: Attach detailed report html
         uses: actions/upload-artifact@v4
         with:
