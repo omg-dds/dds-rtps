@@ -765,14 +765,11 @@ class XlsxReport:
         worksheet.write(
             current_row, current_column + 2,
             'Single-Product Tests', self.__formats['bold_w_border'])
-        worksheet.write(
-            current_row, current_column + 3,
-            'Cross Product Tests', self.__formats['bold_w_border'])
 
         current_row += 1
 
         # Create table with the total passed_tests/total_tests per product
-        for product_name, value in self.__data.summary_dict.items():
+        for product_name in self.__data.summary_dict:
             # company name
             worksheet.write(
                 current_row, current_column,
@@ -804,15 +801,6 @@ class XlsxReport:
                         self.get_format_color(
                                 product_coverage_passed_tests,
                                 product_coverage_total_tests))
-
-            # total tests
-            worksheet.write(
-                current_row, current_column + 3,
-                str(value.get_passed_tests()) + ' / ' +
-                    str(value.get_supported_tests()) + ' / ' +
-                    str(value.get_total_tests()),
-                self.get_format_color(
-                        value.get_passed_tests(), value.get_total_tests()))
 
             current_row += 1
 
