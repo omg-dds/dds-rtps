@@ -22,7 +22,6 @@ const std = @import("std");
 const dds = @import("dds");
 const DDS = dds.DDS;
 const shape_gen = @import("shape_gen");
-const zidl_rt = @import("zidl_rt");
 const shape_main_options = @import("shape_main_options");
 
 pub const std_options: std.Options = .{
@@ -762,15 +761,6 @@ fn instanceColor(alloc: std.mem.Allocator, base: []const u8, inst: usize) ![]con
     return std.fmt.allocPrint(alloc, "{s}{d}", .{ base, inst });
 }
 
-// Compute RTPS key hash from a received CDR payload (full or key-only).
-// Passed as TypeSupport.compute_key_hash; payload includes the 4-byte encap header.
-fn shapeKeyHashFromCdr(_: *anyopaque, payload: []const u8) [16]u8 {
-    var reader = zidl_rt.CdrReader.init(payload) catch return std.mem.zeroes([16]u8);
-    const key_shape = shape_gen.ShapeType.deserializeKey(&reader, std.heap.page_allocator) catch
-        return std.mem.zeroes([16]u8);
-    return shape_gen.ShapeType.computeKeyHash(key_shape);
-}
-
 // ── Argument parsing ──────────────────────────────────────────────────────────
 
 fn parseArgs(process_args: std.process.Args) !Options {
@@ -1000,7 +990,12 @@ pub fn main(init: std.process.Init.Minimal) !void {
     const dp = participant.toDDS();
 
     var ts_alloc = alloc;
-    dds.registerTypeSupport(dp, "ShapeType", .{ .ctx = @ptrCast(&ts_alloc), .compute_key_hash = shapeKeyHashFromCdr, .get_field = shape_gen.ShapeType.getFieldFromCdr });
+    dds.registerTypeSupport(dp, "ShapeType", .{
+        .ctx = @ptrCast(&ts_alloc),
+        .compute_key_hash = shape_gen.ShapeType.computeKeyHashFromCdr,
+        .compute_key_hash_key_only = shape_gen.ShapeType.computeKeyHashFromCdrKeyOnly,
+        .get_field = shape_gen.ShapeType.getFieldFromCdr,
+    });
 
     // Create the base topic (index 0). Additional topics are created inside run functions.
     const base_topic = dp.create_topic(
