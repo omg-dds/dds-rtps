@@ -1566,7 +1566,8 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 --coherent --access-scope i --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 --coherent --access-scope i --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.coherent_sets_w_instances,
+        # per-DataWriter coherent set (see coherent_sets_w_instances_non_group)
+        'check_function' : tsf.coherent_sets_w_instances_non_group,
         'title' : 'Test the behavior of coherent access with INSTANCE_PRESENTATION with several instances',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access INSTANCE_PRESENTATION.\n\n'
@@ -1592,7 +1593,8 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 --coherent --access-scope t --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 --coherent --access-scope t --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.coherent_sets_w_instances,
+        # per-DataWriter coherent set (see coherent_sets_w_instances_non_group)
+        'check_function' : tsf.coherent_sets_w_instances_non_group,
         'title' : 'Test the behavior of coherent access with TOPIC_PRESENTATION with several instances',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access TOPIC_PRESENTATION.\n\n'
@@ -1748,7 +1750,8 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope i --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope i --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.coherent_sets_w_instances,
+        # per-DataWriter coherent set (see coherent_sets_w_instances_non_group)
+        'check_function' : tsf.coherent_sets_w_instances_non_group,
         'title' : 'Test the behavior of coherent access with INSTANCE_PRESENTATION with several instances, using TRANSIENT_LOCAL',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access INSTANCE_PRESENTATION.\n\n'
@@ -1775,7 +1778,8 @@ rtps_test_suite_1 = {
         'apps' : ['-P -t Square -r -k 0 -D l --coherent --access-scope t --num-topics 3 --num-instances 4 --coherent-sample-count 3 --write-period 100 -z 0',
                   '-S -t Square -r -k 0 -D l --coherent --access-scope t --num-topics 3 --take-read --read-period 100'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.coherent_sets_w_instances,
+        # per-DataWriter coherent set (see coherent_sets_w_instances_non_group)
+        'check_function' : tsf.coherent_sets_w_instances_non_group,
         'title' : 'Test the behavior of coherent access with TOPIC_PRESENTATION with several instances, using TRANSIENT_LOCAL',
         'description' : 'Verifies subscribers receives data correctly when using coherent '
                             'access TOPIC_PRESENTATION.\n\n'
