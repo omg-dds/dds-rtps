@@ -5,8 +5,6 @@
 //! their own implementation of this module and wires it up as the "dds"
 //! dependency in their build.zig.
 //!
-//! ZenzenDDS's implementation lives in zenzen-zig/dds_impl.zig.
-//!
 //! ── Required exports ──────────────────────────────────────────────────────
 //!
 //!   pub const DDS = ...;
@@ -21,7 +19,7 @@
 //!   pub const DDS = ...;
 //!     The vendor's standard DCPS type package (see above).
 //!
-//!   -- Type aliases required by the zidl-generated ShapeTypeDataWriter /
+//!   -- Type aliases required by the generated ShapeTypeDataWriter /
 //!   -- ShapeTypeDataReader (which call into this module as "_dds"):
 //!
 //!   pub const DataWriter = DDS.DataWriter;
@@ -35,7 +33,22 @@
 //!     calls toDDS() to get the standard DomainParticipant handle for use
 //!     with the standard vtable API.
 //!
-//!   pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32) !*Participant;
+//!   pub const ParticipantOptions = struct {
+//!       fragment_size: u16 = 0,
+//!       announcement_period_ms: u32 = 0,
+//!   };
+//!     RTPS-level tunables shape_main exposes via CLI flags that don't map to
+//!     standard DCPS QoS. A field value of 0 means "leave the vendor's current
+//!     default alone" -- a vendor with no such knob may simply ignore a field
+//!     it doesn't support (a nonzero value doing nothing is acceptable; a zero
+//!     value must never change vendor behavior). `fragment_size` is the
+//!     DATA_FRAG fragment size in bytes (--datafrag-size/-Z, RTPS spec caps
+//!     this at 65535 -- shape_main validates the range before calling in).
+//!     `announcement_period_ms` is the SPDP participant re-announcement period
+//!     (--periodic-announcement).
+//!
+//!   pub fn createParticipant(alloc: std.mem.Allocator, domain_id: u32,
+//!                            opts: ParticipantOptions) !*Participant;
 //!   pub fn destroyParticipant(p: *Participant) void;
 //!
 //!   pub fn topicName(topic: DDS.Topic) []const u8;
@@ -68,9 +81,7 @@
 //!
 //!   pub fn writerWaitForAck(dw: DDS.DataWriter, timeout: DDS.Duration_t) DDS.ReturnCode_t;
 //!   pub fn writerMatchedCount(dw: DDS.DataWriter) usize;
-//!   pub fn writerNotifyDeadline(dw: DDS.DataWriter) void;
 //!   pub fn readerMatchedCount(dr: DDS.DataReader) usize;
-//!   pub fn readerNotifyDeadline(dr: DDS.DataReader) void;
 //!
 //!   ── ContentFilteredTopic evaluation ──────────────────────────────────
 //!
@@ -107,7 +118,7 @@
 // ── Module layout ─────────────────────────────────────────────────────────────
 //
 // CDR serialization and key-hash computation are NOT part of the "dds" shim.
-// They live in the zidl-generated "shape_gen" module imported by shape_main.zig.
+// They live in the generated "shape_gen" module imported by shape_main.zig.
 //
 // The generated shape.zig emits ShapeTypeDataWriter and ShapeTypeDataReader
 // which internally call into this module as "_dds" (via @import("dds")):

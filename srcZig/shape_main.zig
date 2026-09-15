@@ -7,7 +7,7 @@
 //! behind the "dds" module, which each Zig DDS vendor supplies via their
 //! build.zig.  See srcZig/dds.zig for the full interface contract.
 //!
-//! CDR serialization and key-hash computation are handled by the zidl-generated
+//! CDR serialization and key-hash computation are handled by the generated
 //! "shape_gen" module (ShapeTypeDataWriter / ShapeTypeDataReader).  The typed
 //! wrappers query the DataWriter QoS at init time to select XCDR1 vs XCDR2.
 //!
@@ -22,12 +22,7 @@ const std = @import("std");
 const dds = @import("dds");
 const DDS = dds.DDS;
 const shape_gen = @import("shape_gen");
-const zidl_rt = @import("zidl_rt");
 const shape_main_options = @import("shape_main_options");
-
-// zzdds resolves its SPDP participant-announcement period from this env var
-// (see zzdds/src/config/resolve.zig); Zig's std.c doesn't expose setenv on Linux.
-extern "c" fn setenv(name: [*:0]const u8, value: [*:0]const u8, overwrite: c_int) c_int;
 
 pub const std_options: std.Options = .{
     .log_level = std.meta.stringToEnum(std.log.Level, shape_main_options.log_level) orelse
@@ -119,7 +114,8 @@ const Options = struct {
     take_read: bool = false, // --take-read: use take() instead of take_next_instance()
     read_only: bool = false, // -R: use read() instead of take() (non-destructive)
     coherent_sample_count: u32 = 0, // --coherent-sample-count (0 = no coherent set gating)
-    periodic_announcement_ms: u32 = 0, // --periodic-announcement (0 = use zzdds's own default)
+    periodic_announcement_ms: u32 = 0, // --periodic-announcement (0 = use the implementation's own default)
+    datafrag_size: u16 = 0, // --datafrag-size/-Z (0 = use the implementation's own default)
 };
 
 // ── Policy name mapping ───────────────────────────────────────────────────────
@@ -426,12 +422,6 @@ fn runPublisher(
     const match_deadline = monoNs() + 10 * std.time.ns_per_s;
     var printed_matched = false;
 
-    const deadline_ns: i64 = if (opts.deadline_ms > 0)
-        @intCast(opts.deadline_ms * std.time.ns_per_ms)
-    else
-        0;
-    var last_write_ns: i64 = monoNs();
-
     // Coherent set gating: each outer write-loop iteration is one whole coherent
     // window (begin_coherent_changes -> `sc` consecutive samples per instance ->
     // end_coherent_changes). When coherent_access is enabled but no explicit count
@@ -463,11 +453,6 @@ fn runPublisher(
         if (use_coherent_gating and !printed_matched) {
             sleepNs(opts.write_period_ms * std.time.ns_per_ms);
             continue;
-        }
-
-        if (deadline_ns > 0) {
-            const elapsed = monoNs() - last_write_ns;
-            if (elapsed > deadline_ns) dds.writerNotifyDeadline(dw_handles[0]);
         }
 
         if (use_coherent_gating) {
@@ -523,7 +508,6 @@ fn runPublisher(
             }
         }
 
-        last_write_ns = monoNs();
         iteration += 1;
         sleepNs(opts.write_period_ms * std.time.ns_per_ms);
     }
@@ -637,29 +621,6 @@ fn runSubscriber(
         typed_readers[i] = shape_gen.ShapeTypeDataReader.init(dr_handles[i], alloc);
     }
 
-    const sub_deadline_ns: i64 = if (opts.deadline_ms > 0)
-        @intCast(opts.deadline_ms * std.time.ns_per_ms)
-    else
-        0;
-    var deadline_base_ns: i64 = 0;
-
-    const ShapeAccessor = struct {
-        shape: *const shape_gen.ShapeType,
-
-        fn get(ctx: *anyopaque, field: []const u8) ?dds.FilterValue {
-            const self: *const @This() = @ptrCast(@alignCast(ctx));
-            if (std.mem.eql(u8, field, "color"))
-                return .{ .string = self.shape.color.slice() };
-            if (std.mem.eql(u8, field, "x"))
-                return .{ .int = self.shape.x };
-            if (std.mem.eql(u8, field, "y"))
-                return .{ .int = self.shape.y };
-            if (std.mem.eql(u8, field, "shapesize"))
-                return .{ .int = self.shape.shapesize };
-            return null;
-        }
-    };
-
     const use_access = opts.coherent_access or opts.ordered_access;
 
     // Maps instance_handle → color for recovering key identity from NOT_ALIVE samples
@@ -671,10 +632,6 @@ fn runSubscriber(
     while (!g_all_done.load(.acquire)) {
         if (opts.num_iterations >= 0 and iteration >= opts.num_iterations) break;
 
-        if (sub_deadline_ns > 0 and deadline_base_ns == 0 and dds.readerMatchedCount(dr_handles[0]) > 0) {
-            deadline_base_ns = monoNs();
-        }
-
         // Begin access window for GROUP/TOPIC_PRESENTATION coherent or ordered access.
         if (use_access) {
             if (opts.coherent_access)
@@ -684,7 +641,6 @@ fn runSubscriber(
             _ = sub.vtable.begin_access(sub.ptr);
         }
 
-        var got_data = false;
         for (0..n) |ti| {
             const tn = lctxs[ti].topic_name;
 
@@ -757,7 +713,6 @@ fn runSubscriber(
                     if (!got) break;
                 }
                 defer value.deinit(alloc);
-                got_data = true;
 
                 if (info.instance_state == DDS.NOT_ALIVE_NO_WRITERS_INSTANCE_STATE or
                     info.instance_state == DDS.NOT_ALIVE_DISPOSED_INSTANCE_STATE)
@@ -776,18 +731,6 @@ fn runSubscriber(
 
                 ih_to_color.put(info.instance_handle, value.color) catch {};
 
-                // CFT post-filter (only for topic[0] when CFT is active).
-                if (ti == 0) {
-                    if (cft) |c| {
-                        var acc_ctx = ShapeAccessor{ .shape = &value };
-                        const accessor = dds.FieldAccessor{
-                            .ctx = &acc_ctx,
-                            .get = ShapeAccessor.get,
-                        };
-                        if (!dds.cftMatchSample(c, accessor)) continue;
-                    }
-                }
-
                 const extra_len = value.additional_payload_size._length;
                 const last_byte: ?u8 = if (extra_len > 0 and value.additional_payload_size._buffer != null)
                     value.additional_payload_size._buffer.?[extra_len - 1]
@@ -804,15 +747,6 @@ fn runSubscriber(
 
         if (use_access) _ = sub.vtable.end_access(sub.ptr);
 
-        if (got_data) {
-            deadline_base_ns = monoNs();
-        } else if (sub_deadline_ns > 0 and deadline_base_ns != 0) {
-            if (monoNs() - deadline_base_ns > sub_deadline_ns) {
-                dds.readerNotifyDeadline(dr_handles[0]);
-                deadline_base_ns = monoNs();
-            }
-        }
-
         iteration += 1;
         sleepNs(opts.read_period_ms * std.time.ns_per_ms);
     }
@@ -825,15 +759,6 @@ fn runSubscriber(
 fn instanceColor(alloc: std.mem.Allocator, base: []const u8, inst: usize) ![]const u8 {
     if (inst == 0) return base;
     return std.fmt.allocPrint(alloc, "{s}{d}", .{ base, inst });
-}
-
-// Compute RTPS key hash from a received CDR payload (full or key-only).
-// Passed as TypeSupport.compute_key_hash; payload includes the 4-byte encap header.
-fn shapeKeyHashFromCdr(_: *anyopaque, payload: []const u8) [16]u8 {
-    var reader = zidl_rt.CdrReader.init(payload) catch return std.mem.zeroes([16]u8);
-    const key_shape = shape_gen.ShapeType.deserializeKey(&reader, std.heap.page_allocator) catch
-        return std.mem.zeroes([16]u8);
-    return shape_gen.ShapeType.computeKeyHash(key_shape);
 }
 
 // ── Argument parsing ──────────────────────────────────────────────────────────
@@ -939,6 +864,16 @@ fn parseArgs(process_args: std.process.Args) !Options {
         } else if (std.mem.eql(u8, arg, "--periodic-announcement")) {
             const v = it.next() orelse return error.MissingValue;
             opts.periodic_announcement_ms = std.fmt.parseInt(u32, v, 10) catch 0;
+        } else if (std.mem.eql(u8, arg, "-Z") or std.mem.eql(u8, arg, "--datafrag-size")) {
+            const v = it.next() orelse return error.MissingValue;
+            // fragment_size is a u16 field in the type itself (RTPS spec: must be
+            // <= 65535 bytes), so parseInt already rejects an out-of-range value --
+            // no separate bounds check needed the way srcC's `unsigned int` parse
+            // does.
+            opts.datafrag_size = std.fmt.parseInt(u16, v, 10) catch {
+                std.log.err("incorrect value for datafrag-size, must be a non-negative integer <= 65535", .{});
+                return error.InvalidValue;
+            };
         } else if (std.mem.eql(u8, arg, "--publisher-matches") or
             std.mem.eql(u8, arg, "--subscriber-matches"))
         {
@@ -992,7 +927,9 @@ fn parseArgs(process_args: std.process.Args) !Options {
                 \\  -d <id>             Domain ID (default: 0)
                 \\  -w                  Print each sample on the writer side
                 \\  --periodic-announcement <ms>  SPDP participant re-announcement period
-                \\                                (0 = use zzdds's own default)
+                \\                                (0 = use the implementation's own default)
+                \\  -Z, --datafrag-size <bytes>  DATA_FRAG fragment size in bytes, <= 65535
+                \\                                (0 = use the implementation's own default)
                 \\  -h, --help          Show this help and exit
                 \\
                 \\Environment variables:
@@ -1024,7 +961,7 @@ pub fn main(init: std.process.Init.Minimal) !void {
     std.posix.sigaction(std.posix.SIG.INT, &sa, null);
 
     var gpa = std.heap.DebugAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer if (gpa.deinit() == .leak) std.log.err("DebugAllocator: leak detected at shutdown", .{});
     const alloc = gpa.allocator();
 
     if (std.c.getenv("SHAPE_STARTUP_DELAY_MS")) |v| {
@@ -1042,20 +979,23 @@ pub fn main(init: std.process.Init.Minimal) !void {
         std.process.exit(1);
     }
 
-    if (opts.periodic_announcement_ms > 0) {
-        var buf: [16]u8 = undefined;
-        const val = std.fmt.bufPrintZ(&buf, "{d}", .{opts.periodic_announcement_ms}) catch unreachable;
-        _ = setenv("ZZDDS_PARTICIPANT_ANNOUNCEMENT_PERIOD_MS", val, 1);
-    }
-
-    const participant = dds.createParticipant(alloc, opts.domain_id) catch |err| {
+    const participant = dds.createParticipant(alloc, opts.domain_id, .{
+        .fragment_size = opts.datafrag_size,
+        .announcement_period_ms = opts.periodic_announcement_ms,
+    }) catch |err| {
         std.log.err("failed to create participant on domain {d}: {}", .{ opts.domain_id, err });
         std.process.exit(1);
     };
     defer dds.destroyParticipant(participant);
     const dp = participant.toDDS();
 
-    dds.registerTypeSupport(dp, "ShapeType", .{ .ctx = undefined, .compute_key_hash = shapeKeyHashFromCdr });
+    var ts_alloc = alloc;
+    dds.registerTypeSupport(dp, "ShapeType", .{
+        .ctx = @ptrCast(&ts_alloc),
+        .compute_key_hash = shape_gen.ShapeType.computeKeyHashFromCdr,
+        .compute_key_hash_key_only = shape_gen.ShapeType.computeKeyHashFromCdrKeyOnly,
+        .get_field = shape_gen.ShapeType.getFieldFromCdr,
+    });
 
     // Create the base topic (index 0). Additional topics are created inside run functions.
     const base_topic = dp.create_topic(
