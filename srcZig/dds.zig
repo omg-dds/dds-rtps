@@ -19,7 +19,7 @@
 //!   pub const DDS = ...;
 //!     The vendor's standard DCPS type package (see above).
 //!
-//!   -- Type aliases required by the zidl-generated ShapeTypeDataWriter /
+//!   -- Type aliases required by the generated ShapeTypeDataWriter /
 //!   -- ShapeTypeDataReader (which call into this module as "_dds"):
 //!
 //!   pub const DataWriter = DDS.DataWriter;
@@ -118,7 +118,7 @@
 // ── Module layout ─────────────────────────────────────────────────────────────
 //
 // CDR serialization and key-hash computation are NOT part of the "dds" shim.
-// They live in the zidl-generated "shape_gen" module imported by shape_main.zig.
+// They live in the generated "shape_gen" module imported by shape_main.zig.
 //
 // The generated shape.zig emits ShapeTypeDataWriter and ShapeTypeDataReader
 // which internally call into this module as "_dds" (via @import("dds")):

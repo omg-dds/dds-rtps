@@ -7,7 +7,7 @@
 //! behind the "dds" module, which each Zig DDS vendor supplies via their
 //! build.zig.  See srcZig/dds.zig for the full interface contract.
 //!
-//! CDR serialization and key-hash computation are handled by the zidl-generated
+//! CDR serialization and key-hash computation are handled by the generated
 //! "shape_gen" module (ShapeTypeDataWriter / ShapeTypeDataReader).  The typed
 //! wrappers query the DataWriter QoS at init time to select XCDR1 vs XCDR2.
 //!
@@ -114,8 +114,8 @@ const Options = struct {
     take_read: bool = false, // --take-read: use take() instead of take_next_instance()
     read_only: bool = false, // -R: use read() instead of take() (non-destructive)
     coherent_sample_count: u32 = 0, // --coherent-sample-count (0 = no coherent set gating)
-    periodic_announcement_ms: u32 = 0, // --periodic-announcement (0 = use zzdds's own default)
-    datafrag_size: u16 = 0, // --datafrag-size/-Z (0 = use zzdds's own default)
+    periodic_announcement_ms: u32 = 0, // --periodic-announcement (0 = use the implementation's own default)
+    datafrag_size: u16 = 0, // --datafrag-size/-Z (0 = use the implementation's own default)
 };
 
 // ── Policy name mapping ───────────────────────────────────────────────────────
@@ -927,9 +927,9 @@ fn parseArgs(process_args: std.process.Args) !Options {
                 \\  -d <id>             Domain ID (default: 0)
                 \\  -w                  Print each sample on the writer side
                 \\  --periodic-announcement <ms>  SPDP participant re-announcement period
-                \\                                (0 = use zzdds's own default)
+                \\                                (0 = use the implementation's own default)
                 \\  -Z, --datafrag-size <bytes>  DATA_FRAG fragment size in bytes, <= 65535
-                \\                                (0 = use zzdds's own default)
+                \\                                (0 = use the implementation's own default)
                 \\  -h, --help          Show this help and exit
                 \\
                 \\Environment variables:
