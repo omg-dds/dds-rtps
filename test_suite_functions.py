@@ -987,7 +987,8 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
-def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+def _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout,
+        expected_total):
     """
     This function tests that coherent sets works correctly. This counts the
     consecutive samples received from the same instance. The value should be 3
@@ -995,10 +996,13 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     Note: when using GROUP_PRESENTATION, the first iteration may print more
     samples (more coherent sets), the test checks that the samples received per
     instance is a multiple of 3, so the coherent sets are received complete.
+    A read cycle may also catch more than one coherent set, so the total is
+    checked as a multiple of expected_total rather than exact equality.
     child_sub: child program generated with pexpect
     samples_sent: not used
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
+    expected_total: sample count of one complete coherent set
     """
 
     basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
@@ -1012,7 +1016,6 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     samples_read_per_instance = 0
     previous_sample_color = None
     new_coherent_set_read = False
-    first_time_reading = True
     ignore_firsts_coherent_set = 2
     coherent_sets_count = 0
     coherent_set_sample_count = 0
@@ -1064,37 +1067,24 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
                 elif new_coherent_set_read:
                     # the test is only ok if it has received coherent sets
                     produced_code = ReturnCode.OK
-                    # each set has 4 instances, 3 samples per instance, 3 topics
-                    # therefore, each set contains 4*3*3 = 36 samples, if the count
-                    # is different than 36, it means that there is an error
-                    if coherent_set_sample_count != 36:
-                        print(f'Coherent set sample count is {coherent_set_sample_count} instead of 36')
+                    # a cycle may catch several whole sets; see expected_total above.
+                    if coherent_set_sample_count % expected_total != 0:
+                        print(f'Coherent set sample count is {coherent_set_sample_count}, '
+                            f'not a multiple of {expected_total}')
                         produced_code = ReturnCode.DATA_NOT_CORRECT
                         break
                     else:
                         coherent_set_sample_count = 0
                     for topic in topics:
                         for color in topics[topic]:
-                            if first_time_reading:
-                                # with group presentation we may get several coherent
-                                # sets at the beginning, just checking that the samples
-                                # received are multiple of 3 (coherent set count)
-                                if topics[topic][color] is not None and topics[topic][color] % 3 != 0:
-                                    print(f'Coherent set count for topic {topic} and instance {color} is {topics[topic][color]} instead of 3')
-                                    produced_code = ReturnCode.DATA_NOT_CORRECT
-                                    break
-                            else:
-                                # there should be 3 consecutive samples per instance,
-                                # as the test specifies this with the argument
-                                # --coherent-sample-count 3
-                                if topics[topic][color] is not None and topics[topic][color] != 3:
-                                    print(f'Coherent set count for topic {topic} and instance {color} is {topics[topic][color]} instead of 3')
-                                    produced_code = ReturnCode.DATA_NOT_CORRECT
-                                    break
+                            # same reasoning, per instance
+                            if topics[topic][color] is not None and topics[topic][color] % 3 != 0:
+                                print(f'Coherent set count for topic {topic} and instance {color} is {topics[topic][color]} instead of 3')
+                                produced_code = ReturnCode.DATA_NOT_CORRECT
+                                break
                             topics[topic][color] = None
                     if produced_code == ReturnCode.DATA_NOT_CORRECT:
                         break
-                    first_time_reading = False
                 new_coherent_set_read = False
 
         # Get the next sample the subscriber is receiving or the next
@@ -1137,3 +1127,15 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
         print(f"Topic {topic}: {', '.join(topics[topic].keys())}")
 
     return produced_code
+
+def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """coherent_sets_w_instances for GROUP_PRESENTATION: one coherent set spans
+    all DataWriters sharing the group (3 topics x 4 instances x 3 samples = 36)."""
+    return _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved,
+        timeout, expected_total=36)
+
+def coherent_sets_w_instances_non_group(child_sub, samples_sent, last_sample_saved, timeout):
+    """coherent_sets_w_instances for INSTANCE/TOPIC_PRESENTATION: one coherent
+    set is one DataWriter's own (4 instances x 3 samples = 12)."""
+    return _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved,
+        timeout, expected_total=12)
