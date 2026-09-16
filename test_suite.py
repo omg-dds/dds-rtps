@@ -523,6 +523,25 @@ rtps_test_suite_1 = {
                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ/2} samples with size < 20\n'
     },
 
+    # Combines a key and a non-key field in one compound expression, unlike
+    # Test_Cft_0 (key only) and Test_Cft_1 (non-key only).
+    'Test_Cft_2': {
+        'apps': ['-P -t Square -r -k 0 -c RED -z 15', '-P -t Square -r -k 0 -c RED -z 25',
+                 '-S -t Square -r -k 0 --cft "(color = \'RED\') AND (shapesize <= 20)"'],
+        'expected_codes': [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
+        'check_function': tsf.test_size_receivers,
+        'title' : 'Use of a compound content filter combining a key and a non-key field',
+        'description': 'Verifies a subscription using a ContentFilteredTopic compound (AND) expression only '
+                       'receives data that passes both clauses\n\n'
+                       ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                       ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                       ' * Configures a first publisher with "color" equal to "RED" and constant "shapesize" 15\n'
+                       ' * Configures a second publisher with "color" equal to "RED" and constant "shapesize" 25\n'
+                       ' * Subscriber uses --cft "(color = \'RED\') AND (shapesize <= 20)"\n\n'
+                       f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples from the '
+                       'first publisher only\n'
+    },
+
     # PARTITION
     'Test_Partition_0' : {
         'apps' : ['-P -t Square -p "p1"', '-S -t Square -p "p1"'],
