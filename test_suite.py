@@ -882,6 +882,24 @@ rtps_test_suite_1 = {
                             'the last byte sent in additional_payload_size is correctly set.\n'
     },
 
+    # BEST_EFFORT variant of Test_LargeData_0: large samples must be fragmented
+    # (RTPS DATA_FRAG) and reassembled without the retransmission safety net
+    # that RELIABLE provides.
+    'Test_LargeData_1' : {
+        'apps' : ['-P -t Square -b --additional-payload-size 100000',
+                  '-S -t Square -b'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_large_data,
+        'title' : 'Test large data with BEST_EFFORT reliability',
+        'description' : 'This test covers the interoperability scenario with large, fragmented data '
+                            'sent over BEST_EFFORT reliability:\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
+                        ' * Configures the publisher to use 100000 additional payload size (to represent large data samples)\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The tests passes if the subscriber receives samples from the publisher and '
+                            'the last byte sent in additional_payload_size is correctly set.\n'
+    },
+
     'Test_Lifespan_0' : {
         'apps' : ['-P -t Square -r -k 0 -z 0 --write-period 100 --lifespan 250',
                   '-S -t Square -r -k 0 --read-period 500'],
