@@ -15,7 +15,7 @@ jobs:
         working-directory: srcRs/DustDDS
     steps:
     - name: Checkout sources
-      uses: actions/checkout@v4
+      uses: actions/checkout@v7
     - name: Build executable
       run: cargo build --package dust_dds_shape_main_linux --release
     - name: Rename executable
@@ -25,7 +25,7 @@ jobs:
         mkdir artifacts
         zip --junk-paths artifacts/dust_dds-${version}_shape_main_linux.zip ./dust_dds-${version}_shape_main_linux
     - name: Upload executable artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v7
       with:
         name: interoperability_executable
         path: srcRs/DustDDS/artifacts/
