@@ -827,6 +827,9 @@ fn init_publisher(
         if options.ownership_qos_policy().kind == OwnershipQosPolicyKind::Exclusive {
             data_writer_qos.ownership_strength = options.ownership_strength_qos_policy();
         }
+        if let Some(FinalInstanceState::U) = options.final_instance_state {
+            data_writer_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
+        }
 
         let data_writer = publisher.create_datawriter::<ShapeType>(
             &topic,
@@ -1386,6 +1389,7 @@ fn run_app() -> Result<(), Return> {
     participant
         .delete_contained_entities()
         .expect("Entities being deleted");
+    std::thread::sleep(std::time::Duration::from_millis(500));
     println!("Done.");
     Ok(())
 }
