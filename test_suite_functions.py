@@ -987,8 +987,8 @@ def ordered_access_w_instances(child_sub, samples_sent, last_sample_saved, timeo
     print(f'Samples read per instance: {samples_read_per_instance}, instances: {instance_color}')
     return produced_code
 
-def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout,
-        expected_total=36):
+def _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout,
+        expected_total):
     """
     This function tests that coherent sets works correctly. This counts the
     consecutive samples received from the same instance. The value should be 3
@@ -997,13 +997,12 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
     samples (more coherent sets), the test checks that the samples received per
     instance is a multiple of 3, so the coherent sets are received complete.
     A read cycle may also catch more than one coherent set, so the total is
-    checked as a multiple of expected_total rather than exact equality --
-    same tolerance-for-timing approach as commit 95b6f62.
+    checked as a multiple of expected_total rather than exact equality.
     child_sub: child program generated with pexpect
     samples_sent: not used
     last_sample_saved: not used
     timeout: time pexpect waits until it matches a pattern
-    expected_total: sample count of one complete coherent set (default 36)
+    expected_total: sample count of one complete coherent set
     """
 
     basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
@@ -1129,8 +1128,14 @@ def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeou
 
     return produced_code
 
+def coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved, timeout):
+    """coherent_sets_w_instances for GROUP_PRESENTATION: one coherent set spans
+    all DataWriters sharing the group (3 topics x 4 instances x 3 samples = 36)."""
+    return _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved,
+        timeout, expected_total=36)
+
 def coherent_sets_w_instances_non_group(child_sub, samples_sent, last_sample_saved, timeout):
     """coherent_sets_w_instances for INSTANCE/TOPIC_PRESENTATION: one coherent
     set is one DataWriter's own (4 instances x 3 samples = 12)."""
-    return coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved,
+    return _coherent_sets_w_instances(child_sub, samples_sent, last_sample_saved,
         timeout, expected_total=12)
