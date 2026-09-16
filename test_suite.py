@@ -251,6 +251,27 @@ rtps_test_suite_1 = {
                             'instance, without losses or duplicates, in the same order as sent\n'
         },
 
+    # Unlike Test_History_0/1 (depth 5, no losses expected), depth 1 is the
+    # most common real-world setting and intentionally drops superseded
+    # samples; the writer must GAP them for the RELIABLE protocol to proceed.
+    'Test_History_2' : {
+        'apps' : ['-P -t Square -r -k 1 -z 0 --write-period 10',
+                  '-S -t Square -r -k 1'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_order_w_instances,
+        'title' : 'Behavior of KEEP_LAST 1 history',
+        'description' : 'Verifies a RELIABLE, KEEP_LAST 1 publisher communicates with a RELIABLE, KEEP_LAST 1 '
+                            'subscriber. The publisher writes much faster than the subscriber reads, so older '
+                            'unread samples are expected to be superseded and never delivered.\n\n'
+                        ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and subscriber with history KEEP_LAST 1\n'
+                        ' * Configures the publisher with a writing period of 10ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples with a strictly increasing '
+                            f'"size" value for {tsf.MAX_SAMPLES_READ} samples, even though some are skipped\n'
+        },
+
     # OWNERSHIP
     'Test_Ownership_0' : {
         'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
