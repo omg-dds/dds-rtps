@@ -562,6 +562,38 @@ rtps_test_suite_1 = {
                         '(first publisher)\n'
     },
 
+    # Exercises the single-character "?" wildcard, a distinct partition
+    # matching rule from the "*" (any number of characters) case above.
+    'Test_Partition_3' : {
+        'apps' : ['-P -t Square -p "p1" -c BLUE', '-P -t Square -p "pxx" -c RED', '-S -t Square -p "p?"'],
+        'check_function' : tsf.test_color_receivers,
+        'expected_codes' : [ReturnCode.OK, ReturnCode.READER_NOT_MATCHED, ReturnCode.RECEIVING_FROM_ONE],
+        'title' : 'Usage of a partition "?" wildcard to match a single character',
+        'description' : 'Verifies a subscription using a partition "?" wildcard only receives data from '
+                            'publishers whose partition differs by exactly one character\n\n'
+                        ' * Configures a subscriber with a PARTITION expression "p?" that only matches '
+                            'partitions consisting of "p" followed by exactly one character\n'
+                        ' * Configures a first publisher to use PARTITION "p1" and "color" equal to "BLUE"\n'
+                        ' * Configures a second publisher to use PARTITION "pxx" and "color" equal to "RED"\n'
+                        ' * Verifies that only the first publisher (PARTITION "p1") discovers and matches subscriber\n'
+                        ' * Verifies that the second publisher (PARTITION "pxx") does not match the subscriber\n\n'
+                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color '
+                        '(first publisher)\n'
+    },
+
+    # The DDS spec treats the default (empty) partition as equivalent to a
+    # single empty-string partition, which "*" must also match.
+    'Test_Partition_4' : {
+        'apps' : ['-P -t Square', '-S -t Square -p "*"'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Communication between a publisher using the default partition and a subscriber using "*"',
+        'description' : 'Verifies a subscriber using the wildcard partition "*" matches a publisher that does '
+                            'not set a PARTITION (the default, empty partition)\n\n'
+                        ' * Configures the publisher with no PARTITION (default)\n'
+                        ' * Configures the subscriber with PARTITION expression "*"\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+
     # DURABILITY
     'Test_Durability_0' : {
         'apps' : ['-P -t Square -D v', '-S -t Square -D v'],
