@@ -251,6 +251,27 @@ rtps_test_suite_1 = {
                             'instance, without losses or duplicates, in the same order as sent\n'
         },
 
+    # Unlike Test_History_0/1 (depth 5, no losses expected), depth 1 is the
+    # most common real-world setting and intentionally drops superseded
+    # samples; the writer must GAP them for the RELIABLE protocol to proceed.
+    'Test_History_2' : {
+        'apps' : ['-P -t Square -r -k 1 -z 0 --write-period 10',
+                  '-S -t Square -r -k 1'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_order_w_instances,
+        'title' : 'Behavior of KEEP_LAST 1 history',
+        'description' : 'Verifies a RELIABLE, KEEP_LAST 1 publisher communicates with a RELIABLE, KEEP_LAST 1 '
+                            'subscriber. The publisher writes much faster than the subscriber reads, so older '
+                            'unread samples are expected to be superseded and never delivered.\n\n'
+                        ' * Configures the publisher and subscriber with a RELIABLE reliability\n'
+                        ' * Configures the publisher and subscriber with history KEEP_LAST 1\n'
+                        ' * Configures the publisher with a writing period of 10ms\n'
+                        ' * The publisher application sends samples with increasing value of the "size" member\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The test passes if the subscriber receives samples with a strictly increasing '
+                            f'"size" value for {tsf.MAX_SAMPLES_READ} samples, even though some are skipped\n'
+        },
+
     # OWNERSHIP
     'Test_Ownership_0' : {
         'apps' : ['-P -t Square -s -1', '-S -t Square -s -1'],
@@ -487,6 +508,19 @@ rtps_test_suite_1 = {
                         'The test passes if the publisher and subscriber do not discover each other\n'
     },
 
+    # MULTIPLE TOPICS
+    'Test_MultiTopic_0' : {
+        'apps' : ['-P -t Square --num-topics 3', '-S -t Square --num-topics 3'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Communication using several topics on the same participant',
+        'description' : 'Verifies a publisher and a subscriber, each publishing/subscribing to several topics '
+                            'from a single participant, discover and match on every topic\n\n'
+                        ' * Configures the publisher and subscriber with 3 topics: "Square", "Square1", "Square2"\n'
+                        ' * Each topic has its own DataWriter / DataReader on the same participant\n'
+                        ' * Verifies the publisher and subscriber discover and match each other on every topic\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
+    },
+
     # Content Filtered Topic
     'Test_Cft_0' : {
         'apps' : ['-P -t Square -r -k 0 -c BLUE', '-P -t Square -r -k 0 -c RED', '-S -t Square -r -k 0 -c RED'],
@@ -521,6 +555,25 @@ rtps_test_suite_1 = {
                        ' * Publisher sends samples with size cycling from 1 to 50 (using --size-modulo 50 and -z 0)\n'
                        ' * Subscriber uses --cft "shapesize <= 20"\n\n'
                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ/2} samples with size < 20\n'
+    },
+
+    # Combines a key and a non-key field in one compound expression, unlike
+    # Test_Cft_0 (key only) and Test_Cft_1 (non-key only).
+    'Test_Cft_2': {
+        'apps': ['-P -t Square -r -k 0 -c RED -z 15', '-P -t Square -r -k 0 -c RED -z 25',
+                 '-S -t Square -r -k 0 --cft "(color = \'RED\') AND (shapesize <= 20)"'],
+        'expected_codes': [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
+        'check_function': tsf.test_size_receivers,
+        'title' : 'Use of a compound content filter combining a key and a non-key field',
+        'description': 'Verifies a subscription using a ContentFilteredTopic compound (AND) expression only '
+                       'receives data that passes both clauses\n\n'
+                       ' * Use RELIABLE Qos in all publishers and subscriber to avoid samples losses\n'
+                       ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                       ' * Configures a first publisher with "color" equal to "RED" and constant "shapesize" 15\n'
+                       ' * Configures a second publisher with "color" equal to "RED" and constant "shapesize" 25\n'
+                       ' * Subscriber uses --cft "(color = \'RED\') AND (shapesize <= 20)"\n\n'
+                       f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples from the '
+                       'first publisher only\n'
     },
 
     # PARTITION
@@ -560,6 +613,38 @@ rtps_test_suite_1 = {
                         ' * Verifies that the second publisher (PARTITION "x1") does not match the subscriber\n\n'
                         f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color '
                         '(first publisher)\n'
+    },
+
+    # Exercises the single-character "?" wildcard, a distinct partition
+    # matching rule from the "*" (any number of characters) case above.
+    'Test_Partition_3' : {
+        'apps' : ['-P -t Square -p "p1" -c BLUE', '-P -t Square -p "pxx" -c RED', '-S -t Square -p "p?"'],
+        'check_function' : tsf.test_color_receivers,
+        'expected_codes' : [ReturnCode.OK, ReturnCode.READER_NOT_MATCHED, ReturnCode.RECEIVING_FROM_ONE],
+        'title' : 'Usage of a partition "?" wildcard to match a single character',
+        'description' : 'Verifies a subscription using a partition "?" wildcard only receives data from '
+                            'publishers whose partition differs by exactly one character\n\n'
+                        ' * Configures a subscriber with a PARTITION expression "p?" that only matches '
+                            'partitions consisting of "p" followed by exactly one character\n'
+                        ' * Configures a first publisher to use PARTITION "p1" and "color" equal to "BLUE"\n'
+                        ' * Configures a second publisher to use PARTITION "pxx" and "color" equal to "RED"\n'
+                        ' * Verifies that only the first publisher (PARTITION "p1") discovers and matches subscriber\n'
+                        ' * Verifies that the second publisher (PARTITION "pxx") does not match the subscriber\n\n'
+                        f'The test passes if the subscriber receives {tsf.MAX_SAMPLES_READ} samples of one color '
+                        '(first publisher)\n'
+    },
+
+    # The DDS spec treats the default (empty) partition as equivalent to a
+    # single empty-string partition, which "*" must also match.
+    'Test_Partition_4' : {
+        'apps' : ['-P -t Square', '-S -t Square -p "*"'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'title' : 'Communication between a publisher using the default partition and a subscriber using "*"',
+        'description' : 'Verifies a subscriber using the wildcard partition "*" matches a publisher that does '
+                            'not set a PARTITION (the default, empty partition)\n\n'
+                        ' * Configures the publisher with no PARTITION (default)\n'
+                        ' * Configures the subscriber with PARTITION expression "*"\n\n'
+                        'The test passes if the subscriber receives samples from the publisher\n'
     },
 
     # DURABILITY
@@ -876,6 +961,24 @@ rtps_test_suite_1 = {
         'description' : 'This test covers the interoperability scenario with large data:\n\n'
                         ' * Configures the publisher / subscriber with a RELIABLE reliability\n'
                         ' * Configures the publisher / subscriber with history KEEP_ALL\n'
+                        ' * Configures the publisher to use 100000 additional payload size (to represent large data samples)\n'
+                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
+                        'The tests passes if the subscriber receives samples from the publisher and '
+                            'the last byte sent in additional_payload_size is correctly set.\n'
+    },
+
+    # BEST_EFFORT variant of Test_LargeData_0: large samples must be fragmented
+    # (RTPS DATA_FRAG) and reassembled without the retransmission safety net
+    # that RELIABLE provides.
+    'Test_LargeData_1' : {
+        'apps' : ['-P -t Square -b --additional-payload-size 100000',
+                  '-S -t Square -b'],
+        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_large_data,
+        'title' : 'Test large data with BEST_EFFORT reliability',
+        'description' : 'This test covers the interoperability scenario with large, fragmented data '
+                            'sent over BEST_EFFORT reliability:\n\n'
+                        ' * Configures the publisher / subscriber with a BEST_EFFORT reliability\n'
                         ' * Configures the publisher to use 100000 additional payload size (to represent large data samples)\n'
                         ' * Verifies the publisher and subscriber discover and match each other\n\n'
                         'The tests passes if the subscriber receives samples from the publisher and '
