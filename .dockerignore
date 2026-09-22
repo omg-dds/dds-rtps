@@ -1,0 +1,12 @@
+.git
+.github
+.venv
+__pycache__
+*.pyc
+*.xml
+*.xlsx
+*.html
+*.zip
+OpenDDS-durable-data-dir
+zipped_executables
+archive_reports

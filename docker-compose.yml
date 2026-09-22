@@ -1,0 +1,9 @@
+services:
+  tester:
+    build: .
+    image: dds-rtps-tester
+    volumes:
+      - .:/workspace
+    working_dir: /workspace
+    # Default bridge network contains all RTPS multicast discovery within this container
+    command: ["/bin/bash"]

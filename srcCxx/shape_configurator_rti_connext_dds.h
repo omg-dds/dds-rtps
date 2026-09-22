@@ -6,6 +6,24 @@
 
 #define LISTENER_STATUS_MASK_ALL (DDS_STATUS_MASK_ALL)
 
+#define DDS_VENDOR_NAME "RTI Connext DDS"
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    (void)options;
+    (void)error_msg;
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    (void)options;
+    (void)error_msg;
+    return true;
+}
+
 void StringSeq_push(DDS::StringSeq  &string_seq, const char *elem)
 {
     string_seq.ensure_length(string_seq.length()+1, string_seq.length()+1);

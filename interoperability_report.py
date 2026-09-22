@@ -601,14 +601,35 @@ def run_test(
     for i in range(0, num_entities):
         if expected_codes[i] != return_codes[i]:
             # if any of the ReturnCode does not match with the expected code,
-            # there is an error.
+            # there is an error or unsupported feature.
             test_result_correct = False
+
+    is_unsupported = any(
+        rc in (ReturnCode.PUB_UNSUPPORTED_FEATURE, ReturnCode.SUB_UNSUPPORTED_FEATURE)
+        for rc in return_codes
+    )
 
     if test_result_correct:
         print(f'{test_case.name} : OK')
 
-    else:
-        print(f'{test_case.name} : ERROR')
+    elif is_unsupported:
+        unsupported_reasons = []
+        for i in range(num_entities):
+            if return_codes[i] in (ReturnCode.PUB_UNSUPPORTED_FEATURE, ReturnCode.SUB_UNSUPPORTED_FEATURE):
+                found_reason = None
+                for line in shape_main_application_output[i].splitlines():
+                    line_clean = remove_ansi_colors(line).strip()
+                    if 'not supported' in line_clean.lower():
+                        found_reason = f'{entity_type[i]}: {line_clean}'
+                        break
+                if found_reason:
+                    unsupported_reasons.append(found_reason)
+                else:
+                    unsupported_reasons.append(f'{entity_type[i]}: {return_codes[i].name}')
+
+        reason_str = "; ".join(unsupported_reasons) if unsupported_reasons else "Feature not supported by DDS vendor"
+        print(f'{test_case.name} : UNSUPPORTED ({reason_str})')
+
         for i in range(0, num_entities):
             print(f'{entity_type[i]} expected code: {expected_codes[i].name}; '
                 f'Code found: {return_codes[i].name}')
@@ -621,6 +642,56 @@ def run_test(
                         shape_main_application_output[i]
                         .replace('\n', '<br>')
                         .replace(chr(3),'<br>'))
+
+        # generate the table for the html code.
+        message = \
+            '<table> ' \
+                '<tr> ' \
+                    '<th/> ' \
+                    '<th> Expected Code </th> ' \
+                    '<th> Code Produced </th> ' \
+                '</tr> '
+        for i in range(num_entities):
+            message += \
+                '<tr> ' \
+                    f'<th> {entity_type[i]} </th> ' \
+                    f'<th> {expected_codes[i].name} </th> ' \
+                    f'<th> {return_codes[i].name} </th> ' \
+                '</tr>'
+        message += '</table>'
+        for i in range(0, num_entities):
+            message += f'<strong> Information {entity_type[i]} </strong>' \
+                    f'<br> {shape_main_application_output_edited[i]} <br>'
+        message = remove_ansi_colors(message)
+        test_case.result = [junitparser.Skipped(message)]
+
+    else:
+        failure_reasons = []
+        for i in range(num_entities):
+            if return_codes[i] != expected_codes[i]:
+                failure_reasons.append(f'{entity_type[i]}: got {return_codes[i].name}, expected {expected_codes[i].name}')
+        reason_str = "; ".join(failure_reasons)
+        print(f'{test_case.name} : FAILED ({reason_str})')
+
+        for i in range(0, num_entities):
+            print(f'{entity_type[i]} expected code: {expected_codes[i].name}; '
+                f'Code found: {return_codes[i].name}')
+
+            log_message(f'\nInformation about {entity_type[i]}:\n '
+                      f'{shape_main_application_output[i]} ', verbosity)
+
+            # Change the '\n' and SIGINT chars to html <br>
+            shape_main_application_output_edited.append(
+                        shape_main_application_output[i]
+                        .replace('\n', '<br>')
+                        .replace(chr(3),'<br>'))
+
+            if return_codes[i] != expected_codes[i]:
+                for line in shape_main_application_output[i].splitlines():
+                    line_clean = remove_ansi_colors(line).strip()
+                    if any(kw in line_clean.lower() for kw in ['failed to', 'error allocating', '[error]', 'error:']):
+                        print(f'  -> Reason from {entity_type[i]}: {line_clean}')
+                        break
 
         # generate the table for the html code.
         message = \

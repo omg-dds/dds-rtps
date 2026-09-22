@@ -68,11 +68,17 @@ build/
 *.xml
 *.zip
 *.html
+discovery_report_*.json
+discovery_summary.json
+timestamp
+archive_reports/
 
 # Do not ignore templates
 !doc/_templates/*.html
 
 .DS_Store
+core
+core.*
 
 # Generated documentation files
 gdrive_url.py
