@@ -47,6 +47,8 @@ and can interoperate with each other.
 
     * 3.4. [Report](#report)
 
+    * 3.5. [Running Tests in an Isolated Docker Container](#running-tests-in-an-isolated-docker-container)
+
 * 4\. [Automation with GitHub Actions](#automation-with-github-actions)
 
 * 5\. [Workflow](#workflow)
@@ -468,6 +470,42 @@ The report file contains the following items:
             * Console output from the shape application publisher
             and subscriber.
 
+## Running Tests in an Isolated Docker Container
+
+Running interoperability tests inside Docker provides a self-contained, reproducible environment with all dependencies (Python 3, Node.js, `xunit-viewer`, `junitparser`, `XlsxWriter`, `lxml`) pre-installed.
+
+Furthermore, Docker's default bridge network isolates RTPS multicast discovery traffic (such as `239.255.0.1` and `224.0.0.0/4`) within the container, preventing multicast leaks to the local LAN and avoiding interference between concurrent test runs or other DDS applications on the network (which is particularly useful when running tests inside virtualized environments, LXC containers, or multi-tenant machines).
+
+### Quick Start (All-in-One Automated Run)
+
+Run all tests against executables in `./executables` and automatically generate XML, Excel (`.xlsx`), and HTML (`index.html`) reports:
+
+```bash
+./run_tests_in_docker.sh
+```
+
+To run tests on a specific subset of executables or pass custom flags to `run_tests.sh`:
+
+```bash
+./run_tests_in_docker.sh -p ./executables/connext_dds*shape_main_linux -s ./executables/opendds*shape_main_linux
+```
+
+### Interactive Shell or Custom Execution
+
+You can also launch an interactive shell in the Docker container:
+
+```bash
+./run_in_docker.sh
+```
+
+Or run via Docker Compose:
+
+```bash
+docker compose run --rm tester ./run_tests.sh -i ./executables
+```
+
+All generated reports (`junit_interoperability_report.xml`, `interoperability_report.xlsx`, `index.html`) are saved directly to the host workspace, and previous runs are automatically archived to `archive_reports/`.
+
 # Automation with GitHub Actions
 
 GitHub Actions allows to automate the testing phase by calling
@@ -506,6 +544,10 @@ To generate the report you should follow the next steps:
 3. Press *Run workflow*, select master branch (for the official tests).
 
 ![Run-workflow](./resource/_md/img/img3.png)
+
+> **Note on Runner Environment**:
+> * **`ubuntu-latest`** *(default)*: Executes in GitHub Actions cloud.
+> * **`self-hosted`**: Executes on your own self-hosted runner (e.g. inside an LXC container). In this mode, the workflow automatically runs tests inside an isolated Docker container (`run_in_docker.sh`) to prevent RTPS multicast discovery traffic from leaking into the physical local network.
 
 4. Wait a few minutes until the new task is finished and then press it.\
 Example of a successful and a failed test:
