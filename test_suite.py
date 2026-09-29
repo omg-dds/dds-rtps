@@ -619,7 +619,9 @@ rtps_test_suite_1 = {
     # Exercises the single-character "?" wildcard, a distinct partition
     # matching rule from the "*" (any number of characters) case above.
     'Test_Partition_3' : {
-        'apps' : ['-P -t Square -p "p1" -c BLUE', '-P -t Square -p "pxx" -c RED', '-S -t Square -p "p?"'],
+        'apps' : ['-P -t Square -p "p1" -c BLUE',
+                  '-P -t Square -p "pxx" -c RED',
+                  '-S -t Square -p "p?"'],
         'check_function' : tsf.test_color_receivers,
         'expected_codes' : [ReturnCode.OK, ReturnCode.READER_NOT_MATCHED, ReturnCode.RECEIVING_FROM_ONE],
         'title' : 'Usage of a partition "?" wildcard to match a single character',
