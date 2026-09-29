@@ -508,17 +508,17 @@ rtps_test_suite_1 = {
                         'The test passes if the publisher and subscriber do not discover each other\n'
     },
 
-    # MULTIPLE TOPICS
-    'Test_MultiTopic_0' : {
+    'Test_Topic_2' : {
         'apps' : ['-P -t Square --num-topics 3', '-S -t Square --num-topics 3'],
         'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+        'check_function' : tsf.test_receiving_on_3_topics,
         'title' : 'Communication using several topics on the same participant',
         'description' : 'Verifies a publisher and a subscriber, each publishing/subscribing to several topics '
                             'from a single participant, discover and match on every topic\n\n'
                         ' * Configures the publisher and subscriber with 3 topics: "Square", "Square1", "Square2"\n'
                         ' * Each topic has its own DataWriter / DataReader on the same participant\n'
                         ' * Verifies the publisher and subscriber discover and match each other on every topic\n\n'
-                        'The test passes if the subscriber receives samples from the publisher\n'
+                        'The test passes if the subscriber receives samples on every topic\n'
     },
 
     # Content Filtered Topic
