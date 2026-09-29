@@ -560,7 +560,8 @@ rtps_test_suite_1 = {
     # Combines a key and a non-key field in one compound expression, unlike
     # Test_Cft_0 (key only) and Test_Cft_1 (non-key only).
     'Test_Cft_2': {
-        'apps': ['-P -t Square -r -k 0 -c RED -z 15', '-P -t Square -r -k 0 -c RED -z 25',
+        'apps': ['-P -t Square -r -k 0 -c RED -z 15',
+                 '-P -t Square -r -k 0 -c RED -z 25',
                  '-S -t Square -r -k 0 --cft "(color = \'RED\') AND (shapesize <= 20)"'],
         'expected_codes': [ReturnCode.OK, ReturnCode.OK, ReturnCode.RECEIVING_FROM_ONE],
         'check_function': tsf.test_size_receivers,
