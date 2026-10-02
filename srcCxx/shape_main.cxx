@@ -1189,7 +1189,7 @@ public:
 #endif
         logger.log_message("Running initialize() function", Verbosity::DEBUG);
 
-        DomainParticipantFactory *dpf = OBTAIN_DOMAIN_PARTICIPANT_FACTORY;
+        dpf = OBTAIN_DOMAIN_PARTICIPANT_FACTORY;
         if (dpf == NULL) {
             logger.log_message("failed to create participant factory (missing license?).", Verbosity::ERROR);
             return false;
