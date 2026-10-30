@@ -1,0 +1,19 @@
+[workspace]
+
+[package]
+name = "int2dds_shape_main_linux"
+version = "0.1.0"
+edition = "2021"
+description = "OMG DDS-RTPS Interoperability"
+repository = "https://github.com/IntellectusCorp/int2DDS"
+publish = false
+
+[dependencies]
+int2dds = { git = "https://github.com/IntellectusCorp/int2DDS.git", tag = "v1.0.0" }
+
+clap = { version = "4.2.7", features = ["derive"] }
+log = "0.4.11"
+speedy = "0.6"
+md5 = "0.8.0"
+ctrlc = "3.0"
+fastrand = "2.0"
