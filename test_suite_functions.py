@@ -137,6 +137,66 @@ def test_color_receivers(child_sub, samples_sent, last_sample_saved, timeout):
     print(f'Samples read: {samples_read}')
     return ReturnCode.RECEIVING_FROM_ONE
 
+def _test_receiving_on_all_topics(child_sub, samples_sent, last_sample_saved,
+        timeout, num_topics):
+    """
+    This function is used by test cases in which the subscriber application
+    creates one DataReader per topic. This tests that samples are received on
+    every topic, and therefore by every DataReader.
+
+    child_sub: child program generated with pexpect
+    samples_sent: not used
+    last_sample_saved: not used
+    timeout: time pexpect waits until it matches a pattern.
+    num_topics: number of topics that must receive samples.
+    """
+    basic_check_retcode = basic_check(child_sub, samples_sent, last_sample_saved, timeout)
+
+    if basic_check_retcode != ReturnCode.OK:
+        return basic_check_retcode
+
+    sub_string = re.search(r'(\w+)\s+\w+\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+        child_sub.before + child_sub.after)
+
+    topics_received = set()
+    max_samples_received = MAX_SAMPLES_READ
+    samples_read = 0
+
+    while sub_string is not None and samples_read < max_samples_received:
+        topics_received.add(sub_string.group(1))
+        if len(topics_received) == num_topics:
+            break
+
+        index = child_sub.expect(
+            [
+                r'\[[0-9]+\]', # index = 0
+                pexpect.TIMEOUT, # index = 1
+                pexpect.EOF # index = 2
+            ],
+            timeout
+        )
+
+        if index == 1:
+            break
+        elif index == 2:
+            return ReturnCode.DATA_NOT_RECEIVED
+
+        samples_read += 1
+
+        sub_string = re.search(r'(\w+)\s+\w+\s+[0-9]+ [0-9]+ \[[0-9]+\]',
+            child_sub.before + child_sub.after)
+
+    print(f'Samples read: {samples_read}, '
+          f'topics received: {", ".join(sorted(topics_received))}')
+    if len(topics_received) != num_topics:
+        return ReturnCode.DATA_NOT_RECEIVED
+    return ReturnCode.OK
+
+def test_receiving_on_3_topics(child_sub, samples_sent, last_sample_saved, timeout):
+    """_test_receiving_on_all_topics for a subscriber with 3 topics."""
+    return _test_receiving_on_all_topics(child_sub, samples_sent, last_sample_saved,
+        timeout, num_topics=3)
+
 def test_size_less_than_20(child_sub, samples_sent, last_sample_saved, timeout):
     """
     Checks that all received samples have size between 1 and 20 (inclusive).
