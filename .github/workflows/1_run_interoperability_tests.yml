@@ -11,9 +11,13 @@ on:
         description: Subscribers to use
         type: string
         default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone", "zzdds"]'
+      runner:
+        description: Runner to use
+        type: string
+        default: 'ubuntu-latest'
 jobs:
   generate_timestamp:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     steps:
     - name: Generate timestamp file
       run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
@@ -25,9 +29,10 @@ jobs:
           ./timestamp
 
   run_tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     needs: generate_timestamp
     strategy:
+      fail-fast: false
       matrix:
         publisher: ${{ fromJson(github.event.inputs.publishers) }}
         subscriber: ${{ fromJson(github.event.inputs.subscribers) }}
@@ -36,11 +41,13 @@ jobs:
     - name: Checkout sources
       uses: actions/checkout@v6
     - uses: actions/setup-python@v6
+      if: runner.environment != 'self-hosted'
       with:
         python-version: '3.11.4'
     - name: Download shape_main executables
       uses: robinraju/release-downloader@v1.13
       with:
+        repository: "omg-dds/dds-rtps"
         latest: true
         fileName: "*"
         out-file-path: zipped_executables
@@ -48,6 +55,7 @@ jobs:
     - name: Unzip executables
       run: unzip 'zipped_executables/*.zip' -d executables
     - name: Install Python requirements
+      if: runner.environment != 'self-hosted'
       run: pip install --requirement requirements.txt
     - name: Run Interoperability script
       timeout-minutes: 120
@@ -70,7 +78,13 @@ jobs:
         if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext_dds* ]]; then
           extra_args="--periodic-announcement 5000"
         fi
-        python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
+        if [ "$RUNNER_ENVIRONMENT" = "self-hosted" ]; then
+          echo "Running on self-hosted runner: executing inside isolated Docker container..."
+          ./run_in_docker.sh python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
+        else
+          echo "Running in GitHub-hosted environment: executing directly..."
+          python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
+        fi
     - name: Download timestamp
       uses: actions/download-artifact@v8
       with:
@@ -84,7 +98,7 @@ jobs:
           ./timestamp
 
   generate_report:
-    runs-on: ubuntu-latest
+    runs-on: ${{ inputs.runner || 'ubuntu-latest' }}
     needs: run_tests
     steps:
       - name: Checkout
@@ -95,16 +109,21 @@ jobs:
           pattern: junit_report-*
           merge-multiple: true
       - uses: actions/setup-python@v6
+        if: runner.environment != 'self-hosted'
         with:
           python-version: '3.11.4'
       - name: Install Python requirements
+        if: runner.environment != 'self-hosted'
         run: pip install --requirement requirements.txt
-      - name: merge reports
-        run: junitparser merge *.xml junit_interoperability_report.xml
-      - name: Generate xlsx report
-        run: python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
-      - name: XUnit
-        run: npx xunit-viewer --results=./junit_interoperability_report.xml --output=./index.html
+      - name: Generate report files
+        run: |
+          if [ "$RUNNER_ENVIRONMENT" = "self-hosted" ]; then
+            ./run_in_docker.sh ./generate_reports.sh
+          else
+            python3 -m junitparser merge *.xml junit_interoperability_report.xml
+            python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
+            npx xunit-viewer --results=./junit_interoperability_report.xml --output=./index.html
+          fi
       - name: Download timestamp
         uses: actions/download-artifact@v8
         with:

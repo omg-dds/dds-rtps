@@ -16,6 +16,36 @@
 #define DDS_BOOLEAN_TRUE                   true
 #define DDS_BOOLEAN_FALSE                  false
 
+#define DDS_VENDOR_NAME "Kongsberg InterCOM DDS"
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope >= DDS::GROUP_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope GROUP_PRESENTATION_QOS is not supported: InterCOM DDS only supports INSTANCE_PRESENTATION_QOS.";
+        return false;
+    }
+    if (options->coherent_set_enabled && options->coherent_set_access_scope >= DDS::TOPIC_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Coherent Access with Presentation Access Scope TOPIC_PRESENTATION_QOS or higher is not supported: InterCOM DDS only supports INSTANCE_PRESENTATION_QOS for coherent access.";
+        return false;
+    }
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope >= DDS::GROUP_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope GROUP_PRESENTATION_QOS is not supported: InterCOM DDS only supports INSTANCE_PRESENTATION_QOS.";
+        return false;
+    }
+    if (options->coherent_set_enabled && options->coherent_set_access_scope >= DDS::TOPIC_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Coherent Access with Presentation Access Scope TOPIC_PRESENTATION_QOS or higher is not supported: InterCOM DDS only supports INSTANCE_PRESENTATION_QOS for coherent access.";
+        return false;
+    }
+    return true;
+}
+
 inline const char *get_qos_policy_name(DDS::QosPolicyId_t policy_id) {
   switch (policy_id) {
   case DDS::USERDATA_QOS_POLICY_ID:

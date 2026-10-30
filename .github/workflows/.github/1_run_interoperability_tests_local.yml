@@ -1,0 +1,123 @@
+name: 1 - Run Interoperability Tests Local
+run-name: Run Interoperability Tests Local
+on:
+  workflow_dispatch:
+    inputs:
+      publishers:
+        description: Publishers to use
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone", "zzdds"]'
+      subscribers:
+        description: Subscribers to use
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone", "zzdds"]'
+jobs:
+  generate_timestamp:
+    runs-on: self-hosted
+    steps:
+    - name: Generate timestamp file
+      run: date '+%Y-%m-%d-%H_%M_%S' > timestamp
+    - name: Upload timestamp file
+      uses: actions/upload-artifact@v7
+      with:
+        name: timestamp
+        path: |
+          ./timestamp
+
+  run_tests:
+    runs-on: self-hosted
+    needs: generate_timestamp
+    strategy:
+      fail-fast: false 
+      matrix:
+        publisher: ${{ fromJson(github.event.inputs.publishers) }}
+        subscriber: ${{ fromJson(github.event.inputs.subscribers) }}
+
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v6
+    - uses: actions/setup-python@v6
+      with:
+        python-version: '3.11.4'
+    - name: Download shape_main executables
+      uses: robinraju/release-downloader@v1.13
+      with:
+        repository: "omg-dds/dds-rtps"   # <-- PŘIDEJTE TENTO ŘÁDEK
+        latest: true
+        fileName: "*"
+        out-file-path: zipped_executables
+        preRelease: false
+    - name: Unzip executables
+      run: unzip 'zipped_executables/*.zip' -d executables
+    - name: Install Python requirements
+      run: pip install --requirement requirements.txt
+    - name: Run Interoperability script
+      timeout-minutes: 120
+      continue-on-error: true
+      run: |
+        publisher_exe=executables/${{ matrix.publisher }}*shape_main_linux
+        subscriber_exe=executables/${{ matrix.subscriber }}*shape_main_linux
+        output_file=junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
+        extra_args=""
+        # Check if publisher executable exists
+        if ! ls $publisher_exe 1> /dev/null 2>&1; then
+          echo "ERROR: Publisher executable not found: $publisher_exe"
+          exit 1
+        fi
+        # Check if subscriber executable exists
+        if ! ls $subscriber_exe 1> /dev/null 2>&1; then
+          echo "ERROR: Subscriber executable not found: $subscriber_exe"
+          exit 1
+        fi
+        if [[ "${subscriber_exe,,}" == *opendds* && "${publisher_exe,,}" == *connext_dds* ]]; then
+          extra_args="--periodic-announcement 5000"
+        fi
+        python3 interoperability_report.py --publisher $publisher_exe --subscriber $subscriber_exe --output-name $output_file $extra_args
+    - name: Download timestamp
+      uses: actions/download-artifact@v8
+      with:
+        name: timestamp
+    - name: Upload report
+      uses: actions/upload-artifact@v7
+      with:
+        name: junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}
+        path: |
+          ./junit_report-${{ matrix.publisher }}-${{ matrix.subscriber }}.xml
+          ./timestamp
+
+  generate_report:
+    runs-on: self-hosted
+    needs: run_tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Download artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: junit_report-*
+          merge-multiple: true
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.11.4'
+      - name: Install Python requirements
+        run: pip install --requirement requirements.txt
+      - name: merge reports
+        run: junitparser merge *.xml junit_interoperability_report.xml
+      - name: Generate xlsx report
+        run: python3 generate_xlsx_report.py --input junit_interoperability_report.xml --output interoperability_report.xlsx
+      - name: XUnit
+        run: npx xunit-viewer --results=./junit_interoperability_report.xml --output=./index.html
+      - name: Download timestamp
+        uses: actions/download-artifact@v8
+        with:
+          name: timestamp
+      - name: Attach the report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: interoperability_report_complete
+          path: |
+            ./index.html
+            ./junit_interoperability_report.xml
+            ./interoperability_report.xlsx
+            ./timestamp
