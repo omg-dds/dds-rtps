@@ -211,6 +211,8 @@ dependencies = [
 [[package]]
 name = "dust_dds"
 version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "769e637705ab26402e67a5fdb526776eaeb444e75bcc8f88e1e32ca77cd45be0"
 dependencies = [
  "critical-section",
  "dust_dds_derive",
@@ -225,6 +227,8 @@ dependencies = [
 [[package]]
 name = "dust_dds_derive"
 version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f92f2936c8627aaaf867de3862044ebf0ce979a415fbda4751b1c670c2b25778"
 dependencies = [
  "md5",
  "proc-macro2",
@@ -236,6 +240,8 @@ dependencies = [
 [[package]]
 name = "dust_dds_gen"
 version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "600e174a7b2a66bc137c49946f14366c9b18679b0f35f86c55baa78076ef87ff"
 dependencies = [
  "pest",
  "pest_derive",
