@@ -1,6 +1,5 @@
 use clap::{Parser, ValueEnum};
 use dust_dds::{
-    configuration::DustDdsConfigurationBuilder,
     dds_async::{topic::TopicAsync, topic_description::TopicDescriptionAsync},
     domain::{
         domain_participant::DomainParticipant,
@@ -8,6 +7,7 @@ use dust_dds::{
         domain_participant_listener::DomainParticipantListener,
     },
     infrastructure::{
+        configuration::DustDdsConfigurationBuilder,
         error::DdsError,
         instance::InstanceHandle,
         listener::NO_LISTENER,
@@ -23,6 +23,8 @@ use dust_dds::{
         time::{Duration, DurationKind},
     },
     publication::data_writer::DataWriter,
+    rtps_udp_transport::RtpsUdpTransport,
+    security::plugins::types::DdsSecurityPlugins,
     subscription::data_reader::DataReader,
 };
 use rand::{Rng, random, thread_rng};
@@ -1252,16 +1254,20 @@ fn initialize(options: &Options, logger: &Logger) -> Result<DomainParticipant, I
         )));
     }
 
-    let participant_factory = DomainParticipantFactory::get_instance();
-
-    if options.periodic_announcement > 0 {
+    let participant_factory = if options.periodic_announcement > 0 {
         let configuration = DustDdsConfigurationBuilder::new()
             .participant_announcement_interval(std::time::Duration::from_millis(
                 options.periodic_announcement,
             ))
             .build()?;
-        *participant_factory.get_mut_configuration() = configuration;
-    }
+        DomainParticipantFactory::get_custom_instance(
+            configuration,
+            RtpsUdpTransport::default(),
+            DdsSecurityPlugins::disabled(),
+        )
+    } else {
+        DomainParticipantFactory::get_instance()
+    };
 
     let participant = participant_factory.create_participant(
         options.domain_id,
