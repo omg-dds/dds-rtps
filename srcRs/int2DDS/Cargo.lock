@@ -847,7 +847,8 @@ dependencies = [
 [[package]]
 name = "int2dds"
 version = "1.0.0"
-source = "git+https://github.com/IntellectusCorp/int2DDS.git?tag=v1.0.0#c4dc383da817ffdb46a80e707fe2725fbca8f943"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b25f0f20cb6f8126ee5489e2e17f6f0c31eb270b1b554a5d441275c2af30d8cc"
 dependencies = [
  "arc-swap",
  "bitflags 2.13.2",
@@ -898,7 +899,8 @@ dependencies = [
 [[package]]
 name = "int2dds-derive"
 version = "1.0.0"
-source = "git+https://github.com/IntellectusCorp/int2DDS.git?tag=v1.0.0#c4dc383da817ffdb46a80e707fe2725fbca8f943"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3a246911b5084973a7f2eb2fada400d575bc09ead627681c23e5b26712cb7a73"
 dependencies = [
  "md5",
  "proc-macro2",
