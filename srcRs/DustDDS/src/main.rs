@@ -23,7 +23,7 @@ use dust_dds::{
         status::{InconsistentTopicStatus, NO_STATUS, StatusKind},
         time::{Duration, DurationKind},
     },
-    publication::data_writer::DataWriter,
+    publication::{data_writer::DataWriter, publisher::Publisher},
     rtps_udp_transport::RtpsUdpTransport,
     security::plugins::types::DdsSecurityPlugins,
     subscription::data_reader::DataReader,
@@ -748,7 +748,7 @@ fn init_publisher(
     participant: &DomainParticipant,
     options: &Options,
     logger: &Logger,
-) -> Result<Vec<DataWriter<ShapeType>>, InitializeError> {
+) -> Result<(Publisher, Vec<DataWriter<ShapeType>>), InitializeError> {
     logger.log_message("Running init_publisher() function", Verbosity::Debug);
 
     let publisher_qos = QosKind::Specific(PublisherQos {
@@ -828,10 +828,11 @@ fn init_publisher(
         data_writers.push(data_writer);
     }
 
-    Ok(data_writers)
+    Ok((publisher, data_writers))
 }
 
 fn run_publisher(
+    publisher: &Publisher,
     data_writers: &[DataWriter<ShapeType>],
     options: &Options,
     logger: &Logger,
@@ -887,6 +888,16 @@ fn run_publisher(
             }
         }
 
+        if options.coherent || options.ordered {
+            // n also represents the number of samples written per publisher per instance
+            if let Some(coherent_sample_count) = options.coherent_sample_count {
+                if coherent_sample_count != 0 && n % coherent_sample_count == 0 {
+                    println!("Started Coherent Set");
+                    publisher.begin_coherent_changes()?;
+                }
+            }
+        }
+
         for (i, data_writer) in data_writers.iter().enumerate() {
             let topic_name = format!(
                 "{}{}",
@@ -913,6 +924,18 @@ fn run_publisher(
                         print!(" {{{}}}", shape.additional_payload_size.last().unwrap());
                     }
                     println!();
+                }
+            }
+        }
+
+        if options.coherent || options.ordered {
+            // n also represents the number of samples written per publisher per instance
+            if let Some(coherent_sample_count) = options.coherent_sample_count {
+                if coherent_sample_count != 0
+                    && n % coherent_sample_count == coherent_sample_count - 1
+                {
+                    println!("Finished Coherent Set");
+                    publisher.end_coherent_changes()?;
                 }
             }
         }
@@ -1382,8 +1405,8 @@ fn run_app() -> Result<(), Return> {
 
     logger.log_message("Running ShapeApp...", Verbosity::Debug);
     if options.publish {
-        let data_writers = init_publisher(&participant, &options, &logger)?;
-        run_publisher(&data_writers, &options, &logger, rx)?;
+        let (publisher, data_writers) = init_publisher(&participant, &options, &logger)?;
+        run_publisher(&publisher, &data_writers, &options, &logger, rx)?;
     } else {
         let data_readers = init_subscriber(&participant, &options, &logger)?;
         run_subscriber(&data_readers, &options, &logger, rx)?;
