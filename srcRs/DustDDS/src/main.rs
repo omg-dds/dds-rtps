@@ -26,7 +26,7 @@ use dust_dds::{
     publication::{data_writer::DataWriter, publisher::Publisher},
     rtps_udp_transport::RtpsUdpTransport,
     security::plugins::types::DdsSecurityPlugins,
-    subscription::data_reader::DataReader,
+    subscription::{data_reader::DataReader, subscriber::Subscriber},
 };
 use rand::{Rng, random, thread_rng};
 use std::{
@@ -990,7 +990,7 @@ fn init_subscriber(
     participant: &DomainParticipant,
     options: &Options,
     logger: &Logger,
-) -> Result<Vec<DataReader<ShapeType>>, InitializeError> {
+) -> Result<(Subscriber, Vec<DataReader<ShapeType>>), InitializeError> {
     logger.log_message("Running init_subscriber() function", Verbosity::Debug);
 
     let subscriber_qos = QosKind::Specific(SubscriberQos {
@@ -1092,10 +1092,11 @@ fn init_subscriber(
         }
     }
 
-    Ok(data_readers)
+    Ok((subscriber, data_readers))
 }
 
 fn run_subscriber(
+    _subscriber: &Subscriber,
     data_readers: &[DataReader<ShapeType>],
     options: &Options,
     logger: &Logger,
@@ -1108,6 +1109,16 @@ fn run_subscriber(
     let mut n: u32 = 0;
 
     while all_done.try_recv().is_err() {
+        if options.coherent {
+            println!("Reading coherent sets, iteration {n}");
+        }
+        if options.ordered {
+            println!("Reading with ordered access, iteration {n}");
+        }
+        // if (options.coherent || options.ordered) {
+        //     subscriber.begin_access()
+        // }
+
         for (i, data_reader) in data_readers.iter().enumerate() {
             previous_handles[i] = None;
             loop {
@@ -1209,6 +1220,10 @@ fn run_subscriber(
                 }
             }
         }
+
+        // if (options.coherent || options.ordered) {
+        //                 subscriber.end_access();
+        //             }
 
         n += 1;
         logger.log_message(format!("Subscriber iteration: <{}>", n), Verbosity::Debug);
@@ -1378,8 +1393,8 @@ fn run_app() -> Result<(), Return> {
         let (publisher, data_writers) = init_publisher(&participant, &options, &logger)?;
         run_publisher(&publisher, &data_writers, &options, &logger, rx)?;
     } else {
-        let data_readers = init_subscriber(&participant, &options, &logger)?;
-        run_subscriber(&data_readers, &options, &logger, rx)?;
+        let (subscriber, data_readers) = init_subscriber(&participant, &options, &logger)?;
+        run_subscriber(&subscriber, &data_readers, &options, &logger, rx)?;
     }
 
     participant
