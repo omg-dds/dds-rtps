@@ -15,8 +15,9 @@ use dust_dds::{
         qos_policy::{
             self, DataRepresentationQosPolicy, DurabilityQosPolicy, HistoryQosPolicy,
             HistoryQosPolicyKind, OwnershipQosPolicy, OwnershipQosPolicyKind,
-            OwnershipStrengthQosPolicy, PartitionQosPolicy, ReliabilityQosPolicy,
-            XCDR_DATA_REPRESENTATION, XCDR2_DATA_REPRESENTATION,
+            OwnershipStrengthQosPolicy, PartitionQosPolicy, PresentationQosPolicy,
+            PresentationQosPolicyAccessScopeKind, ReliabilityQosPolicy, XCDR_DATA_REPRESENTATION,
+            XCDR2_DATA_REPRESENTATION,
         },
         sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE, InstanceStateKind},
         status::{InconsistentTopicStatus, NO_STATUS, StatusKind},
@@ -750,38 +751,20 @@ fn init_publisher(
 ) -> Result<Vec<DataWriter<ShapeType>>, InitializeError> {
     logger.log_message("Running init_publisher() function", Verbosity::Debug);
 
-    if options.coherent {
-        logger.log_message(
-            "    Presentation Coherent Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Coherent Access = not supported".to_string(),
-        ));
-    }
-    if options.ordered {
-        logger.log_message(
-            "    Presentation Ordered Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Ordered Access = not supported".to_string(),
-        ));
-    }
-    if let Some(access_scope) = options.access_scope {
-        if access_scope != AccessScope::I {
-            logger.log_message(
-                "    Presentation Access Scope = not supported",
-                Verbosity::Error,
-            );
-            return Err(InitializeError(
-                "Presentation Access Scope = not supported".to_string(),
-            ));
-        }
-    }
-
     let publisher_qos = QosKind::Specific(PublisherQos {
         partition: options.partition_qos_policy(),
+        presentation: PresentationQosPolicy {
+            access_scope: options
+                .access_scope
+                .map(|x| match x {
+                    AccessScope::I => PresentationQosPolicyAccessScopeKind::Instance,
+                    AccessScope::T => PresentationQosPolicyAccessScopeKind::Topic,
+                    AccessScope::G => PresentationQosPolicyAccessScopeKind::Group,
+                })
+                .unwrap_or(PresentationQosPolicyAccessScopeKind::Instance),
+            coherent_access: options.coherent,
+            ordered_access: options.ordered,
+        },
         ..Default::default()
     });
     let publisher = participant.create_publisher(publisher_qos, NO_LISTENER, NO_STATUS)?;
@@ -830,7 +813,9 @@ fn init_publisher(
             data_writer_qos.ownership_strength = options.ownership_strength_qos_policy();
         }
         if let Some(FinalInstanceState::U) = options.final_instance_state {
-            data_writer_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
+            data_writer_qos
+                .writer_data_lifecycle
+                .autodispose_unregistered_instances = false;
         }
 
         let data_writer = publisher.create_datawriter::<ShapeType>(
@@ -1017,6 +1002,18 @@ fn init_subscriber(
 
     let subscriber_qos = QosKind::Specific(SubscriberQos {
         partition: options.partition_qos_policy(),
+        presentation: PresentationQosPolicy {
+            access_scope: options
+                .access_scope
+                .map(|x| match x {
+                    AccessScope::I => PresentationQosPolicyAccessScopeKind::Instance,
+                    AccessScope::T => PresentationQosPolicyAccessScopeKind::Topic,
+                    AccessScope::G => PresentationQosPolicyAccessScopeKind::Group,
+                })
+                .unwrap_or(PresentationQosPolicyAccessScopeKind::Instance),
+            coherent_access: options.coherent,
+            ordered_access: options.ordered,
+        },
         ..Default::default()
     });
     let subscriber = participant.create_subscriber(subscriber_qos, NO_LISTENER, NO_STATUS)?;
