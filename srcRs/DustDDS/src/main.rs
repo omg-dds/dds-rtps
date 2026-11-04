@@ -993,36 +993,6 @@ fn init_subscriber(
 ) -> Result<Vec<DataReader<ShapeType>>, InitializeError> {
     logger.log_message("Running init_subscriber() function", Verbosity::Debug);
 
-    if options.coherent {
-        logger.log_message(
-            "    Presentation Coherent Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Coherent Access = not supported".to_string(),
-        ));
-    }
-    if options.ordered {
-        logger.log_message(
-            "    Presentation Ordered Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Ordered Access = not supported".to_string(),
-        ));
-    }
-    if let Some(access_scope) = options.access_scope {
-        if access_scope != AccessScope::I {
-            logger.log_message(
-                "    Presentation Access Scope = not supported",
-                Verbosity::Error,
-            );
-            return Err(InitializeError(
-                "Presentation Access Scope = not supported".to_string(),
-            ));
-        }
-    }
-
     let subscriber_qos = QosKind::Specific(SubscriberQos {
         partition: options.partition_qos_policy(),
         presentation: PresentationQosPolicy {
