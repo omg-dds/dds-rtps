@@ -1096,7 +1096,7 @@ fn init_subscriber(
 }
 
 fn run_subscriber(
-    _subscriber: &Subscriber,
+    subscriber: &Subscriber,
     data_readers: &[DataReader<ShapeType>],
     options: &Options,
     logger: &Logger,
@@ -1115,8 +1115,8 @@ fn run_subscriber(
         if options.ordered {
             println!("Reading with ordered access, iteration {n}");
         }
-        if (options.coherent || options.ordered) {
-            subscriber.begin_access()
+        if options.coherent || options.ordered {
+            let _ = subscriber.begin_access();
         }
 
         for (i, data_reader) in data_readers.iter().enumerate() {
@@ -1221,8 +1221,8 @@ fn run_subscriber(
             }
         }
 
-        if (options.coherent || options.ordered) {
-            subscriber.end_access();
+        if options.coherent || options.ordered {
+            let _ = subscriber.end_access();
         }
 
         n += 1;
