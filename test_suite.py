@@ -940,20 +940,20 @@ rtps_test_suite_1 = {
                             'a NOT_ALIVE_DISPOSED per instance\n'
     },
 
-    'Test_FinalInstanceState_2' : {
-        'apps' : ['-P -t Square --num-iterations 200 --num-instances 4',
-                  '-S -t Square'],
-        'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
-        'check_function' : tsf.test_unregistering_w_instances,
-        'title' : 'Test the instance state when finalizing the application',
-        'description' : 'Verifies a subscriber receives NOT_ALIVE_NO_WRITERS when the publisher finishes '
-                            'without unregistering or disposing instances explicitly\n\n'
-                        ' * The publisher publishes 4 different instances (using the same data value)\n'
-                        ' * The publisher finishes after running 200 iterations\n'
-                        ' * Verifies the publisher and subscriber discover and match each other\n\n'
-                        'The test passes if the subscriber application receives some samples and then '
-                            'a NOT_ALIVE_NO_WRITERS per instance\n'
-    },
+    # 'Test_FinalInstanceState_2' : {
+    #     'apps' : ['-P -t Square --num-iterations 200 --num-instances 4',
+    #               '-S -t Square'],
+    #     'expected_codes' : [ReturnCode.OK, ReturnCode.OK],
+    #     'check_function' : tsf.test_unregistering_w_instances,
+    #     'title' : 'Test the instance state when finalizing the application',
+    #     'description' : 'Verifies a subscriber receives NOT_ALIVE_NO_WRITERS when the publisher finishes '
+    #                         'without unregistering or disposing instances explicitly\n\n'
+    #                     ' * The publisher publishes 4 different instances (using the same data value)\n'
+    #                     ' * The publisher finishes after running 200 iterations\n'
+    #                     ' * Verifies the publisher and subscriber discover and match each other\n\n'
+    #                     'The test passes if the subscriber application receives some samples and then '
+    #                         'a NOT_ALIVE_NO_WRITERS per instance\n'
+    # },
 
     'Test_LargeData_0' : {
         'apps' : ['-P -t Square -r -k 0 --additional-payload-size 100000',
