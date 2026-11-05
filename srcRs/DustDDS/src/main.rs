@@ -1115,9 +1115,9 @@ fn run_subscriber(
         if options.ordered {
             println!("Reading with ordered access, iteration {n}");
         }
-        // if (options.coherent || options.ordered) {
-        //     subscriber.begin_access()
-        // }
+        if (options.coherent || options.ordered) {
+            subscriber.begin_access()
+        }
 
         for (i, data_reader) in data_readers.iter().enumerate() {
             previous_handles[i] = None;
@@ -1221,9 +1221,9 @@ fn run_subscriber(
             }
         }
 
-        // if (options.coherent || options.ordered) {
-        //                 subscriber.end_access();
-        //             }
+        if (options.coherent || options.ordered) {
+            subscriber.end_access();
+        }
 
         n += 1;
         logger.log_message(format!("Subscriber iteration: <{}>", n), Verbosity::Debug);
