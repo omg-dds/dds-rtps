@@ -85,6 +85,8 @@ class ProductUtils:
             return 'Eclipse Foundation'
         elif 'zzdds' in product.lower() or 'zenzen' in product.lower():
             return 'Zenzen IoT'
+        elif 'int2dds' in product.lower():
+            return 'Intellectus Corp.'
         else:
             raise RuntimeError('Impossible to get company name: ' + product)
 
@@ -112,6 +114,8 @@ class ProductUtils:
             return 'Cyclone DDS ' + re.search(r'([\d.]+)', product).group(1)
         elif 'zzdds' in product.lower():
             return 'Zenzen DDS ' + re.search(r'([\d.]+)', product).group(1)
+        elif 'int2dds' in product.lower():
+            return 'int2DDS ' + re.search(r'int2dds-([\d.]+)', product.lower()).group(1)
         else:
             raise RuntimeError('Impossible to get product name: ' + product)
 

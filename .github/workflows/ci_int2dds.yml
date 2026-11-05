@@ -1,0 +1,35 @@
+name: CI int2DDS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+    - 'srcRs/int2DDS/**'
+
+jobs:
+  create_bin_release:
+    name: Create binary release
+    runs-on: ubuntu-latest
+    # Debian 11 ships GLIBC 2.31; the README requires building with 2.31 or older
+    container: rust:1.89-bullseye
+    defaults:
+      run:
+        working-directory: srcRs/int2DDS
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v7
+    - name: Install zip
+      run: apt-get update && apt-get install -y zip
+    - name: Build executable
+      run: cargo build --package int2dds_shape_main_linux --release --locked
+    - name: Rename executable
+      run: |
+        version=$( cargo tree --package int2dds --depth 0 --prefix none | awk '{print $2}' | tr -d 'v' )
+        cp ./target/release/int2dds_shape_main_linux ./int2dds-${version}_shape_main_linux
+        mkdir artifacts
+        zip --junk-paths artifacts/int2dds-${version}_shape_main_linux.zip ./int2dds-${version}_shape_main_linux
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v7
+      with:
+        name: interoperability_executable
+        path: srcRs/int2DDS/artifacts/
