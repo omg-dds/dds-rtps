@@ -1,0 +1,36 @@
+name: CI ZeroDDS
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+    - 'srcRs/ZeroDDS/**'
+
+jobs:
+  create_bin_release:
+    name: Create binary release
+    runs-on: ubuntu-latest
+    # Debian 11 has GLIBC 2.31, the oldest the README asks for; ZeroDDS needs
+    # Rust 1.97 or newer.
+    container: rust:1.97-bullseye
+    defaults:
+      run:
+        working-directory: srcRs/ZeroDDS
+    steps:
+    - name: Checkout sources
+      uses: actions/checkout@v4
+    - name: Install zip
+      run: apt-get update && apt-get install -y zip
+    - name: Build executable
+      run: cargo build --package zerodds_shape_main_linux --release --locked
+    - name: Rename executable
+      run: |
+        version=$( cargo tree --package zerodds-dcps --depth 0 --prefix none | awk '{print $2}' | tr -d 'v' )
+        cp ./target/release/zerodds_shape_main_linux ./zerodds-${version}_shape_main_linux
+        mkdir artifacts
+        zip --junk-paths artifacts/zerodds-${version}_shape_main_linux.zip ./zerodds-${version}_shape_main_linux
+    - name: Upload executable artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: interoperability_executable
+        path: srcRs/ZeroDDS/artifacts/
