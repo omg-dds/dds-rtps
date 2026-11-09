@@ -6,7 +6,7 @@
 .. |SHAPE_APPS| replace:: ``Shape Applications``
 .. |INTEROPERABILITY_TESTS_CP| replace:: OMG® DDS® Interoperability Testsuite
 .. |INTEROPERABILITY_TESTS| replace:: OMG DDS Interoperability Testsuite
-.. |COPYRIGHT_YEAR| replace:: 2024
+.. |COPYRIGHT_YEAR| replace:: |today|
 .. |COPYRIGHT_HEADER_RTI| replace:: © |COPYRIGHT_YEAR| Real-Time Innovations, Inc.
 .. |COPYRIGHT_HEADER_ATOSTEK| replace:: © |COPYRIGHT_YEAR| Atostek Oy.
 .. |COPYRIGHT_HEADER_EPROSIMA| replace:: © |COPYRIGHT_YEAR| Proyectos y Sistemas de Mantenimiento SL (eProsima).
