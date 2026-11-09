@@ -29,8 +29,50 @@
 #define ShapeTypeDataWriter DataWriter
 #define StringSeq std::vector<std::string>
 
+#define DDS_VENDOR_NAME "eProsima Fast DDS"
+
 namespace DDS = eprosima::fastdds::dds;
 #define RETCODE_OK DDS::RETCODE_OK
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported: Fast DDS does not implement ordered sample delivery.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported: Fast DDS does not implement coherent changes across readers.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS::INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported: Fast DDS only supports default INSTANCE_PRESENTATION_QOS.";
+        return false;
+    }
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported: Fast DDS does not implement ordered sample delivery.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported: Fast DDS does not implement coherent changes across readers.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS::INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported: Fast DDS only supports default INSTANCE_PRESENTATION_QOS.";
+        return false;
+    }
+    if (options->timebasedfilter_interval_us > 0) {
+        error_msg = "[" DDS_VENDOR_NAME "] TimeBasedFilter QoS is not supported: Fast DDS does not implement minimum_separation sample filtering on DataReader.";
+        return false;
+    }
+    return true;
+}
 
 void configure_fastdds_dp_qos(DDS::DomainParticipantQos &dp_qos)
 {

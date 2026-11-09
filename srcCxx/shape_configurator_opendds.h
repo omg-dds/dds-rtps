@@ -17,6 +17,43 @@
 #define STRING_IN .in()
 #define STRING_INOUT .inout()
 #define STRING_ALLOC(LHS, RHS) LHS = CORBA::string_alloc(RHS)
+#define DDS_VENDOR_NAME "OpenDDS"
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported in this test configuration.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported in this test configuration.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS::INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported in this test configuration: only default INSTANCE_PRESENTATION_QOS is supported.";
+        return false;
+    }
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported in this test configuration.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported in this test configuration.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS::INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported in this test configuration: only default INSTANCE_PRESENTATION_QOS is supported.";
+        return false;
+    }
+    return true;
+}
 
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {

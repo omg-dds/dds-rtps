@@ -49,6 +49,72 @@ void StringSeq_push(StringSeq  &string_seq, const char *elem)
 }
 
 
+#define DDS_VENDOR_NAME "RTI Connext Micro"
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS_INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported by RTI Connext Micro: only default INSTANCE_PRESENTATION_QOS is supported.";
+        return false;
+    }
+    if (options->lifespan_us > 0) {
+        error_msg = "[" DDS_VENDOR_NAME "] Lifespan QoS is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->durability_kind == TRANSIENT_DURABILITY_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Durability = TRANSIENT_DURABILITY_QOS is not supported: RTI Connext Micro only supports VOLATILE and TRANSIENT_LOCAL.";
+        return false;
+    }
+    if (options->durability_kind == PERSISTENT_DURABILITY_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Durability = PERSISTENT_DURABILITY_QOS is not supported: RTI Connext Micro only supports VOLATILE and TRANSIENT_LOCAL.";
+        return false;
+    }
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    if (options->ordered_access_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->coherent_set_enabled) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->coherent_set_access_scope_set && options->coherent_set_access_scope != DDS_INSTANCE_PRESENTATION_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Presentation Access Scope is not supported by RTI Connext Micro: only default INSTANCE_PRESENTATION_QOS is supported.";
+        return false;
+    }
+    if (options->timebasedfilter_interval_us > 0) {
+        error_msg = "[" DDS_VENDOR_NAME "] TimeBasedFilter QoS is not supported by RTI Connext Micro.";
+        return false;
+    }
+    if (options->durability_kind == TRANSIENT_DURABILITY_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Durability = TRANSIENT_DURABILITY_QOS is not supported: RTI Connext Micro only supports VOLATILE and TRANSIENT_LOCAL.";
+        return false;
+    }
+    if (options->durability_kind == PERSISTENT_DURABILITY_QOS) {
+        error_msg = "[" DDS_VENDOR_NAME "] Durability = PERSISTENT_DURABILITY_QOS is not supported: RTI Connext Micro only supports VOLATILE and TRANSIENT_LOCAL.";
+        return false;
+    }
+    if (options->cft_expression != NULL) {
+        error_msg = "[" DDS_VENDOR_NAME "] ContentFilteredTopic is not supported by RTI Connext Micro.";
+        return false;
+    }
+    return true;
+}
+
 const char* get_qos_policy_name(DDS::QosPolicyId_t policy_id)
 {
   //case DDS::USERDATA_QOS_POLICY_ID) { return "USERDATA";

@@ -492,16 +492,18 @@ public:
         }
 
 #if defined(RTI_CONNEXT_MICRO)
-        if (subscribe && (color != NULL || cft_expression != NULL)) {
+        if (subscribe && cft_expression != NULL) {
+            logger.log_message("[RTI Connext Micro] ContentFilteredTopic (--cft) is not supported by RTI Connext Micro.", Verbosity::ERROR);
+            return false;
+        }
+        if (subscribe && color != NULL) {
             STRING_FREE(color);
             color = NULL;
-            STRING_FREE(cft_expression);
-            cft_expression = NULL;
-            logger.log_message("warning: content filtered topic not supported, normal topic used", Verbosity::ERROR);
+            logger.log_message("warning: content filtered topic not available in Micro, normal topic used", Verbosity::DEBUG);
         }
         if (subscribe && take_read_next_instance) {
             take_read_next_instance = false;
-            logger.log_message("warning: use of take/read_next_instance() not available, using take/read()", Verbosity::ERROR);
+            logger.log_message("warning: use of take/read_next_instance() not available, using take/read()", Verbosity::DEBUG);
         }
 #endif
 
@@ -1156,7 +1158,7 @@ public:
         // Initialize entities array
         topics = (Topic**) malloc(sizeof(Topic*) * options->num_topics);
         if (topics == NULL) {
-            logger.log_message("Error allocating memory for topics", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Error allocating memory for topics (" + std::to_string(options->num_topics) + " requested)", Verbosity::ERROR);
             return false;
         }
         for (unsigned int i = 0; i < options->num_topics; ++i) {
@@ -1166,7 +1168,7 @@ public:
         if (options->publish) {
             dws = (ShapeTypeDataWriter**) malloc(sizeof(ShapeTypeDataWriter*) * options->num_topics);
             if (dws == NULL) {
-                logger.log_message("Error allocating memory for DataWriters", Verbosity::ERROR);
+                logger.log_message("[" DDS_VENDOR_NAME "] Error allocating memory for DataWriters (" + std::to_string(options->num_topics) + " requested)", Verbosity::ERROR);
                 return false;
             }
             for (unsigned int i = 0; i < options->num_topics; ++i) {
@@ -1175,7 +1177,7 @@ public:
         } else {
             drs = (ShapeTypeDataReader**) malloc(sizeof(ShapeTypeDataReader*) * options->num_topics);
             if (drs == NULL) {
-                logger.log_message("Error allocating memory for DataReaders", Verbosity::ERROR);
+                logger.log_message("[" DDS_VENDOR_NAME "] Error allocating memory for DataReaders (" + std::to_string(options->num_topics) + " requested)", Verbosity::ERROR);
                 return false;
             }
             for (unsigned int i = 0; i < options->num_topics; ++i) {
@@ -1191,7 +1193,7 @@ public:
 
         DomainParticipantFactory *dpf = OBTAIN_DOMAIN_PARTICIPANT_FACTORY;
         if (dpf == NULL) {
-            logger.log_message("failed to create participant factory (missing license?).", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Failed to create participant factory (missing license or initialization failed).", Verbosity::ERROR);
             return false;
         }
         logger.log_message("Participant Factory created", Verbosity::DEBUG);
@@ -1201,7 +1203,7 @@ public:
 
 #ifdef RTI_CONNEXT_MICRO
         if (!config_micro()) {
-            logger.log_message("Error configuring Connext Micro", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Failed to configure Connext Micro registry components (wh, rh, dpde, or udp)", Verbosity::ERROR);
             return false;
         }
 #endif
@@ -1232,7 +1234,7 @@ public:
   #endif
 
             if (!result) {
-                logger.log_message("Error configuring Data Fragmentation Size = "
+                logger.log_message("[" DDS_VENDOR_NAME "] Error configuring Data Fragmentation Size = "
                     + std::to_string(options->datafrag_size), Verbosity::ERROR);
                 return false;
             } else {
@@ -1243,7 +1245,7 @@ public:
 
         dp = dpf->create_participant( options->domain_id, dp_qos, &dp_listener, LISTENER_STATUS_MASK_ALL );
         if (dp == NULL) {
-            logger.log_message("failed to create participant (missing license?).", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Failed to create participant on domain " + std::to_string(options->domain_id) + " (missing license or invalid QoS).", Verbosity::ERROR);
             return false;
         }
         logger.log_message("Participant created", Verbosity::DEBUG);
@@ -1262,7 +1264,7 @@ public:
             printf("Create topic: %s\n", topic_name.c_str());
             topics[i] = dp->create_topic( topic_name.c_str(), "ShapeType", TOPIC_QOS_DEFAULT, NULL, LISTENER_STATUS_MASK_NONE);
             if (topics[i] == NULL) {
-                logger.log_message("failed to create topic <" + topic_name + ">", Verbosity::ERROR);
+                logger.log_message("[" DDS_VENDOR_NAME "] Failed to create topic <" + topic_name + ">", Verbosity::ERROR);
                 return false;
             }
         }
@@ -1292,6 +1294,7 @@ public:
             return run_subscriber(options);
         }
 
+        logger.log_message("[" DDS_VENDOR_NAME "] Neither Publisher nor Subscriber was initialized before run()", Verbosity::ERROR);
         return false;
     }
 
@@ -1299,6 +1302,12 @@ public:
     bool init_publisher(ShapeOptions *options)
     {
         logger.log_message("Running init_publisher() function", Verbosity::DEBUG);
+        std::string vendor_error;
+        if (!vendor_check_publisher_options(options, vendor_error)) {
+            logger.log_message(vendor_error, Verbosity::ERROR);
+            return false;
+        }
+
         PublisherQos  pub_qos;
         DataWriterQos dw_qos;
 
@@ -1318,22 +1327,6 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             pub_qos.presentation.access_scope = options->coherent_set_access_scope;
-  #if defined(INTERCOM_DDS)
-            if ( pub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
-              {
-                logger.log_message("    Presentation Access Scope "
-                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : not supported"), Verbosity::ERROR);
-                return false;
-              }
-            if (pub_qos.presentation.coherent_access && pub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
-              {
-                logger.log_message("    Coherent Access with Presentation Access Scope "
-                                   + QosUtils::to_string(pub_qos.presentation.access_scope)
-                                   + std::string(" : not supported"), Verbosity::ERROR);
-                return false;
-              }
-  #endif
         }
         logger.log_message("    Presentation Coherent Access = " +
                 std::string(pub_qos.presentation.coherent_access ? "true" : "false"), Verbosity::DEBUG);
@@ -1343,23 +1336,23 @@ public:
                 QosUtils::to_string(pub_qos.presentation.access_scope), Verbosity::DEBUG);
 #else
         if (options->coherent_set_enabled) {
-            logger.log_message("    Presentation Coherent Access = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported", Verbosity::ERROR);
             return false;
         }
         if (options->ordered_access_enabled) {
-            logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported", Verbosity::ERROR);
             return false;
         }
         if (options->coherent_set_access_scope_set
                 && options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS) {
-            logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Access Scope " + QosUtils::to_string(options->coherent_set_access_scope) + " is not supported", Verbosity::ERROR);
             return false;
         }
 #endif
 
         pub = dp->create_publisher(pub_qos, NULL, LISTENER_STATUS_MASK_NONE);
         if (pub == NULL) {
-            logger.log_message("failed to create publisher", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Failed to create publisher (incompatible QoS or resource limit)", Verbosity::ERROR);
             return false;
         }
         logger.log_message("Publisher created", Verbosity::DEBUG);
@@ -1375,10 +1368,10 @@ public:
         dw_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
 #if defined(RTI_CONNEXT_MICRO)
         if (dw_qos.durability FIELD_ACCESSOR.kind == TRANSIENT_DURABILITY_QOS) {
-            logger.log_message("    Durability = TRANSIENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Durability = TRANSIENT_DURABILITY_QOS is not supported", Verbosity::ERROR);
             return false;
         } else if (dw_qos.durability FIELD_ACCESSOR.kind == PERSISTENT_DURABILITY_QOS) {
-            logger.log_message("    Durability = PERSISTENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Durability = PERSISTENT_DURABILITY_QOS is not supported", Verbosity::ERROR);
             return false;
         }
 #endif
@@ -1451,13 +1444,11 @@ public:
 
         if (options->lifespan_us > 0) {
 #if defined (RTI_CONNEXT_MICRO)
-            logger.log_message("    Lifespan = not supported", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Lifespan QoS is not supported", Verbosity::ERROR);
             return false;
-#elif defined(RTI_CONNEXT_DDS) || defined(OPENDDS) || defined(TWINOAKS_COREDX) || defined(INTERCOM_DDS)
+#else
             dw_qos.lifespan FIELD_ACCESSOR.duration.SECONDS_FIELD_NAME = options->lifespan_us / 1000000;
             dw_qos.lifespan FIELD_ACCESSOR.duration.nanosec = (options->lifespan_us % 1000000) * 1000;
-#elif defined(EPROSIMA_FAST_DDS)
-            dw_qos.lifespan FIELD_ACCESSOR.duration = Duration_t(options->lifespan_us * 1e-6);
 #endif
         }
 #if !defined(RTI_CONNEXT_MICRO)
@@ -1490,7 +1481,7 @@ public:
             printf("Create writer for topic: %s color: %s\n", topics[i]->get_name() NAME_ACCESSOR, options->color );
             dws[i] = dynamic_cast<ShapeTypeDataWriter *>(pub->create_datawriter( topics[i], dw_qos, NULL, LISTENER_STATUS_MASK_NONE));
             if (dws[i] == NULL) {
-                logger.log_message("failed to create datawriter[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
+                logger.log_message("[" DDS_VENDOR_NAME "] Failed to create datawriter[" + std::to_string(i) + "] for topic: " + topics[i]->get_name() NAME_ACCESSOR + " (check QoS compatibility or resource limits)", Verbosity::ERROR);
                 return false;
             }
         }
@@ -1521,6 +1512,12 @@ public:
     bool init_subscriber(ShapeOptions *options)
     {
         logger.log_message("Running init_subscriber() function", Verbosity::DEBUG);
+        std::string vendor_error;
+        if (!vendor_check_subscriber_options(options, vendor_error)) {
+            logger.log_message(vendor_error, Verbosity::ERROR);
+            return false;
+        }
+
         SubscriberQos sub_qos;
         DataReaderQos dr_qos;
 
@@ -1540,22 +1537,6 @@ public:
         }
         if (options->ordered_access_enabled || options->coherent_set_enabled) {
             sub_qos.presentation.access_scope = options->coherent_set_access_scope;
-  #if defined(INTERCOM_DDS)
-            if ( sub_qos.presentation.access_scope >= GROUP_PRESENTATION_QOS )
-              {
-                logger.log_message("    Presentation Access Scope "
-                                   + QosUtils::to_string(sub_qos.presentation.access_scope)
-                                   + std::string(" : not supported"), Verbosity::ERROR);
-                return false;
-              }
-            if (sub_qos.presentation.coherent_access && sub_qos.presentation.access_scope >= TOPIC_PRESENTATION_QOS)
-              {
-                logger.log_message("    Coherent Access with Presentation Access Scope "
-                                   + QosUtils::to_string(sub_qos.presentation.access_scope)
-                                   + std::string(" : not supported"), Verbosity::ERROR);
-                return false;
-              }
-  #endif
         }
 
         logger.log_message("    Presentation Coherent Access = " +
@@ -1567,23 +1548,23 @@ public:
 
 #else
         if (options->coherent_set_enabled) {
-            logger.log_message("    Presentation Coherent Access = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Coherent Access is not supported", Verbosity::ERROR);
             return false;
         }
         if (options->ordered_access_enabled) {
-            logger.log_message("    Presentation Ordered Access = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Ordered Access is not supported", Verbosity::ERROR);
             return false;
         }
         if (options->coherent_set_access_scope_set
                 && (options->coherent_set_access_scope != INSTANCE_PRESENTATION_QOS)) {
-            logger.log_message("    Presentation Access Scope = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Presentation Access Scope " + QosUtils::to_string(options->coherent_set_access_scope) + " is not supported", Verbosity::ERROR);
             return false;
         }
 #endif
 
         sub = dp->create_subscriber( sub_qos, NULL, LISTENER_STATUS_MASK_NONE );
         if (sub == NULL) {
-            logger.log_message("failed to create subscriber", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Failed to create subscriber (incompatible QoS or resource limit)", Verbosity::ERROR);
             return false;
         }
 
@@ -1600,10 +1581,10 @@ public:
         dr_qos.durability FIELD_ACCESSOR.kind  = options->durability_kind;
 #if defined(RTI_CONNEXT_MICRO)
         if (dr_qos.durability FIELD_ACCESSOR.kind == TRANSIENT_DURABILITY_QOS) {
-            logger.log_message("    Durability = TRANSIENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Durability = TRANSIENT_DURABILITY_QOS is not supported", Verbosity::ERROR);
             return false;
         } else if (dr_qos.durability FIELD_ACCESSOR.kind == PERSISTENT_DURABILITY_QOS) {
-            logger.log_message("    Durability = PERSISTENT_DURABILITY_QOS : not supported", Verbosity::ERROR);
+            logger.log_message("[RTI Connext Micro] Durability = PERSISTENT_DURABILITY_QOS is not supported", Verbosity::ERROR);
             return false;
         }
 #endif
@@ -1646,7 +1627,7 @@ public:
 
         if ( options->timebasedfilter_interval_us > 0) {
 #if defined(EPROSIMA_FAST_DDS) || defined(RTI_CONNEXT_MICRO)
-            logger.log_message("    TimeBasedFilter = not supported", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] TimeBasedFilter QoS is not supported", Verbosity::ERROR);
             return false;
 #else
             dr_qos.time_based_filter FIELD_ACCESSOR.minimum_separation.SECONDS_FIELD_NAME = options->timebasedfilter_interval_us / 1000000;
@@ -1735,14 +1716,14 @@ public:
                 }
 
                 if (cft == NULL) {
-                    logger.log_message("failed to create content filtered topic", Verbosity::ERROR);
+                    logger.log_message("[" DDS_VENDOR_NAME "] Failed to create content filtered topic <" + filtered_topic_name_str + "> with expression: " + (filter_expr ? filter_expr : "color"), Verbosity::ERROR);
                     return false;
                 }
 
                 printf("Create reader for topic: %s\n", cft->get_name() NAME_ACCESSOR);
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(cft, dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
-                    logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
+                    logger.log_message("[" DDS_VENDOR_NAME "] Failed to create datareader[" + std::to_string(i) + "] for filtered topic: " + cft->get_name() NAME_ACCESSOR + " (check QoS compatibility or resource limits)", Verbosity::ERROR);
                     return false;
                 }
             }
@@ -1755,7 +1736,7 @@ public:
                 printf("Create reader for topic: %s\n", topics[i]->get_name() NAME_ACCESSOR);
                 drs[i] = dynamic_cast<ShapeTypeDataReader *>(sub->create_datareader(topics[i], dr_qos, NULL, LISTENER_STATUS_MASK_NONE));
                 if (drs[i] == NULL) {
-                    logger.log_message("failed to create datareader[" + std::to_string(i) + "] topic: " + topics[i]->get_name(), Verbosity::ERROR);
+                    logger.log_message("[" DDS_VENDOR_NAME "] Failed to create datareader[" + std::to_string(i) + "] for topic: " + topics[i]->get_name() NAME_ACCESSOR + " (check QoS compatibility or resource limits)", Verbosity::ERROR);
                     return false;
                 }
             }
@@ -1808,7 +1789,7 @@ public:
         // Create a previous_handle per topic
         previous_handles = (InstanceHandle_t*) malloc(sizeof(InstanceHandle_t) * options->num_topics);
         if (previous_handles == NULL) {
-            logger.log_message("Error allocating memory for previous_handles", Verbosity::ERROR);
+            logger.log_message("[" DDS_VENDOR_NAME "] Error allocating memory for previous_handles (" + std::to_string(options->num_topics) + " requested)", Verbosity::ERROR);
             return false;
         }
 #if  defined(EPROSIMA_FAST_DDS)

@@ -1,0 +1,129 @@
+name: 3 - Batch Run and Compare Reports
+run-name: Batch Run (${{ github.event.inputs.iterations }}x) & Compare Reports
+on:
+  workflow_dispatch:
+    inputs:
+      iterations:
+        description: 'Number of repetitions (N)'
+        required: true
+        default: '3'
+        type: number
+      publishers:
+        description: 'Publishers to use'
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone", "zzdds"]'
+      subscribers:
+        description: 'Subscribers to use'
+        type: string
+        default: '["connext_dds","dust_dds","eprosima_fastdds","intercom_dds","opendds","toc_coredx_dds", "hdds", "eclipse_cyclone", "zzdds"]'
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  run_batches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run N iterations of Workflow 1 and Workflow 2
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          ITERATIONS: ${{ github.event.inputs.iterations }}
+          PUBLISHERS: ${{ github.event.inputs.publishers }}
+          SUBSCRIBERS: ${{ github.event.inputs.subscribers }}
+        run: |
+          echo "Running $ITERATIONS ..."
+          
+          for i in $(seq 1 $ITERATIONS); do
+            echo "=========================================="
+            echo " Running ITERACI $i of $ITERATIONS"
+            echo "=========================================="
+
+            # 1. Run Workflow 1
+            echo "Running 1 - Run Interoperability Tests..."
+            gh workflow run "1 - Run Interoperability Tests" \
+              --repo "$REPO" \
+              -f publishers="$PUBLISHERS" \
+              -f subscribers="$SUBSCRIBERS"
+            
+            sleep 10
+            
+            # Get ID of last run Workflow 1 
+            RUN_1_ID=$(gh run list --workflow="1 - Run Interoperability Tests" --repo "$REPO" --limit 1 --json databaseId -q '.[0].databaseId')
+            echo "Waiting for Workflow 1 (Run ID: $RUN_1_ID)..."
+            gh run watch "$RUN_1_ID" --repo "$REPO" --exit-status
+
+            # 2. Run Workflow 2
+            echo "Running 2 - Upload Test Results to Drive..."
+            gh workflow run "2 - Upload Test Results to Drive" --repo "$REPO"
+            
+            sleep 10
+            
+            # Get ID Workflow 2 
+            RUN_2_ID=$(gh run list --workflow="2 - Upload Test Results to Drive" --repo "$REPO" --limit 1 --json databaseId -q '.[0].databaseId')
+            echo "Waiting for Workflow 2 (Run ID: $RUN_2_ID)..."
+            gh run watch "$RUN_2_ID" --repo "$REPO" --exit-status
+
+            echo "✓ Iteration $i successfully ended."
+          done
+
+      - name: Setup Rclone
+        uses: AnimMouse/setup-rclone@v1
+        with:
+          rclone_config: |
+            [mygdrive]
+            type = drive
+            token = ${{ secrets.RCLONE_TOKEN }}
+          disable_base64: true
+
+      - name: Download zip reports from Google Drive
+        run: |
+          mkdir -p gdrive_download/zips
+          mkdir -p xml_reports
+
+          echo "Downloading report folder from Google Drive..."
+          rclone copy mygdrive: gdrive_download/ --drive-root-folder-id ${{ secrets.DRIVE_FOLDER_ID }} --include "report_*/**.zip" -v
+
+          echo "Extracting junit XML files ..."
+          find gdrive_download -type f -name "*.zip" -exec unzip -o {} -d xml_reports/ \;
+          
+          echo "List of XML files:"
+          ls -la xml_reports/
+
+      - name: Run comparison script
+        run: |
+          # 1. download compare script 
+          curl -sSL -o compare_junit_reports.py \
+            https://raw.githubusercontent.com/martinrichtersupervag/compare_junit_reports/main/compare_junit_reports/test_compare_junit_reports.py
+
+          # 2. run comparison
+          python3 compare_junit_reports.py --directory ./xml_reports --compare-all --show-difference | tee comparison_output.txt
+
+      - name: Publish Summary to GitHub Actions
+        if: always()
+        run: |
+          if [ -f comparison_output.txt ]; then
+            echo "## Comparison results (--compare-all --show-difference)" >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+            cat comparison_output.txt >> $GITHUB_STEP_SUMMARY
+            echo '```' >> $GITHUB_STEP_SUMMARY
+          fi
+
+      - name: Upload Comparison Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: comparison_results
+          path: |
+            ./comparison_output.txt
+            ./xml_reports/*.txt
+            ./xml_reports/junit_*.xml

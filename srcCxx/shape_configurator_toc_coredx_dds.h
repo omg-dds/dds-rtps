@@ -16,6 +16,24 @@
 #define DDS_BOOLEAN_TRUE                   (1)
 #define DDS_BOOLEAN_FALSE                  (0)
 
+#define DDS_VENDOR_NAME "Twin Oaks CoreDX"
+
+template <typename OptionsType>
+bool vendor_check_publisher_options(const OptionsType *options, std::string &error_msg)
+{
+    (void)options;
+    (void)error_msg;
+    return true;
+}
+
+template <typename OptionsType>
+bool vendor_check_subscriber_options(const OptionsType *options, std::string &error_msg)
+{
+    (void)options;
+    (void)error_msg;
+    return true;
+}
+
 void StringSeq_push(DDS::StringSeq  &string_seq, const char *elem)
 {
   char * e = NULL;
