@@ -1,0 +1,32 @@
+# The ZeroDDS client of this repository's interoperability tests, built
+# against ZeroDDS 1.0.0-rc.7.4 from crates.io. Its source is
+# `tools/omg-shape-main` in https://github.com/zero-objects/zero-dds.
+[workspace]
+
+[package]
+name = "zerodds_shape_main_linux"
+version = "1.0.0-rc.7.4"
+description = "OMG dds-rtps interoperability: the ZeroDDS client"
+edition = "2024"
+rust-version = "1.97"
+license = "Apache-2.0"
+repository = "https://github.com/zero-objects/zero-dds"
+publish = false
+
+[[bin]]
+name = "zerodds_shape_main_linux"
+path = "src/main.rs"
+
+[build-dependencies]
+zerodds-build = { version = "1.0.0-rc.7.3" }
+
+[dependencies]
+zerodds-dcps = { version = "1.0.0-rc.7.4" }
+zerodds-ast-layout = { version = "1.0.0-rc.7" }
+zerodds-rtps = { version = "1.0.0-rc.7.3" }
+zerodds-qos = { version = "1.0.0-rc.7" }
+zerodds-sql-filter = { version = "1.0.0-rc.7" }
+zerodds-wire = { version = "1.0.0-rc.7.3" }
+zerodds-types = { version = "1.0.0-rc.7.4" }
+clap = { version = "4", features = ["derive"] }
+ctrlc = { version = "3", features = ["termination"] }
