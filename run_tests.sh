@@ -74,6 +74,17 @@ if [[ -z $publisher || -z $subscriber ]]; then
     usage
 fi
 
+# Archive previous test results if present
+archive_dir="./archive_reports"
+shopt -s nullglob
+old_reports=(*.xml *.xlsx index.html)
+if [ ${#old_reports[@]} -gt 0 ]; then
+    echo "Archiving previous test reports to $archive_dir..."
+    mkdir -p "$archive_dir"
+    mv "${old_reports[@]}" "$archive_dir/" 2>/dev/null || true
+fi
+shopt -u nullglob
+
 # Run the application logic
 for i in $publisher; do
     for j in $subscriber; do
