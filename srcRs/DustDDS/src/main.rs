@@ -1,6 +1,5 @@
 use clap::{Parser, ValueEnum};
 use dust_dds::{
-    configuration::DustDdsConfigurationBuilder,
     dds_async::{topic::TopicAsync, topic_description::TopicDescriptionAsync},
     domain::{
         domain_participant::DomainParticipant,
@@ -8,6 +7,7 @@ use dust_dds::{
         domain_participant_listener::DomainParticipantListener,
     },
     infrastructure::{
+        configuration::DustDdsConfigurationBuilder,
         error::DdsError,
         instance::InstanceHandle,
         listener::NO_LISTENER,
@@ -15,15 +15,18 @@ use dust_dds::{
         qos_policy::{
             self, DataRepresentationQosPolicy, DurabilityQosPolicy, HistoryQosPolicy,
             HistoryQosPolicyKind, OwnershipQosPolicy, OwnershipQosPolicyKind,
-            OwnershipStrengthQosPolicy, PartitionQosPolicy, ReliabilityQosPolicy,
-            XCDR_DATA_REPRESENTATION, XCDR2_DATA_REPRESENTATION,
+            OwnershipStrengthQosPolicy, PartitionQosPolicy, PresentationQosPolicy,
+            PresentationQosPolicyAccessScopeKind, ReliabilityQosPolicy, XCDR_DATA_REPRESENTATION,
+            XCDR2_DATA_REPRESENTATION,
         },
         sample_info::{ANY_INSTANCE_STATE, ANY_SAMPLE_STATE, ANY_VIEW_STATE, InstanceStateKind},
         status::{InconsistentTopicStatus, NO_STATUS, StatusKind},
         time::{Duration, DurationKind},
     },
-    publication::data_writer::DataWriter,
-    subscription::data_reader::DataReader,
+    publication::{data_writer::DataWriter, publisher::Publisher},
+    rtps_udp_transport::RtpsUdpTransport,
+    security::plugins::types::DdsSecurityPlugins,
+    subscription::{data_reader::DataReader, subscriber::Subscriber},
 };
 use rand::{Rng, random, thread_rng};
 use std::{
@@ -745,41 +748,23 @@ fn init_publisher(
     participant: &DomainParticipant,
     options: &Options,
     logger: &Logger,
-) -> Result<Vec<DataWriter<ShapeType>>, InitializeError> {
+) -> Result<(Publisher, Vec<DataWriter<ShapeType>>), InitializeError> {
     logger.log_message("Running init_publisher() function", Verbosity::Debug);
-
-    if options.coherent {
-        logger.log_message(
-            "    Presentation Coherent Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Coherent Access = not supported".to_string(),
-        ));
-    }
-    if options.ordered {
-        logger.log_message(
-            "    Presentation Ordered Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Ordered Access = not supported".to_string(),
-        ));
-    }
-    if let Some(access_scope) = options.access_scope {
-        if access_scope != AccessScope::I {
-            logger.log_message(
-                "    Presentation Access Scope = not supported",
-                Verbosity::Error,
-            );
-            return Err(InitializeError(
-                "Presentation Access Scope = not supported".to_string(),
-            ));
-        }
-    }
 
     let publisher_qos = QosKind::Specific(PublisherQos {
         partition: options.partition_qos_policy(),
+        presentation: PresentationQosPolicy {
+            access_scope: options
+                .access_scope
+                .map(|x| match x {
+                    AccessScope::I => PresentationQosPolicyAccessScopeKind::Instance,
+                    AccessScope::T => PresentationQosPolicyAccessScopeKind::Topic,
+                    AccessScope::G => PresentationQosPolicyAccessScopeKind::Group,
+                })
+                .unwrap_or(PresentationQosPolicyAccessScopeKind::Instance),
+            coherent_access: options.coherent,
+            ordered_access: options.ordered,
+        },
         ..Default::default()
     });
     let publisher = participant.create_publisher(publisher_qos, NO_LISTENER, NO_STATUS)?;
@@ -828,7 +813,9 @@ fn init_publisher(
             data_writer_qos.ownership_strength = options.ownership_strength_qos_policy();
         }
         if let Some(FinalInstanceState::U) = options.final_instance_state {
-            data_writer_qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
+            data_writer_qos
+                .writer_data_lifecycle
+                .autodispose_unregistered_instances = false;
         }
 
         let data_writer = publisher.create_datawriter::<ShapeType>(
@@ -841,10 +828,11 @@ fn init_publisher(
         data_writers.push(data_writer);
     }
 
-    Ok(data_writers)
+    Ok((publisher, data_writers))
 }
 
 fn run_publisher(
+    publisher: &Publisher,
     data_writers: &[DataWriter<ShapeType>],
     options: &Options,
     logger: &Logger,
@@ -900,6 +888,16 @@ fn run_publisher(
             }
         }
 
+        if options.coherent || options.ordered {
+            // n also represents the number of samples written per publisher per instance
+            if let Some(coherent_sample_count) = options.coherent_sample_count {
+                if coherent_sample_count != 0 && n % coherent_sample_count == 0 {
+                    println!("Started Coherent Set");
+                    publisher.begin_coherent_changes()?;
+                }
+            }
+        }
+
         for (i, data_writer) in data_writers.iter().enumerate() {
             let topic_name = format!(
                 "{}{}",
@@ -926,6 +924,18 @@ fn run_publisher(
                         print!(" {{{}}}", shape.additional_payload_size.last().unwrap());
                     }
                     println!();
+                }
+            }
+        }
+
+        if options.coherent || options.ordered {
+            // n also represents the number of samples written per publisher per instance
+            if let Some(coherent_sample_count) = options.coherent_sample_count {
+                if coherent_sample_count != 0
+                    && n % coherent_sample_count == coherent_sample_count - 1
+                {
+                    println!("Finished Coherent Set");
+                    publisher.end_coherent_changes()?;
                 }
             }
         }
@@ -980,41 +990,23 @@ fn init_subscriber(
     participant: &DomainParticipant,
     options: &Options,
     logger: &Logger,
-) -> Result<Vec<DataReader<ShapeType>>, InitializeError> {
+) -> Result<(Subscriber, Vec<DataReader<ShapeType>>), InitializeError> {
     logger.log_message("Running init_subscriber() function", Verbosity::Debug);
-
-    if options.coherent {
-        logger.log_message(
-            "    Presentation Coherent Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Coherent Access = not supported".to_string(),
-        ));
-    }
-    if options.ordered {
-        logger.log_message(
-            "    Presentation Ordered Access = not supported",
-            Verbosity::Error,
-        );
-        return Err(InitializeError(
-            "Presentation Ordered Access = not supported".to_string(),
-        ));
-    }
-    if let Some(access_scope) = options.access_scope {
-        if access_scope != AccessScope::I {
-            logger.log_message(
-                "    Presentation Access Scope = not supported",
-                Verbosity::Error,
-            );
-            return Err(InitializeError(
-                "Presentation Access Scope = not supported".to_string(),
-            ));
-        }
-    }
 
     let subscriber_qos = QosKind::Specific(SubscriberQos {
         partition: options.partition_qos_policy(),
+        presentation: PresentationQosPolicy {
+            access_scope: options
+                .access_scope
+                .map(|x| match x {
+                    AccessScope::I => PresentationQosPolicyAccessScopeKind::Instance,
+                    AccessScope::T => PresentationQosPolicyAccessScopeKind::Topic,
+                    AccessScope::G => PresentationQosPolicyAccessScopeKind::Group,
+                })
+                .unwrap_or(PresentationQosPolicyAccessScopeKind::Instance),
+            coherent_access: options.coherent,
+            ordered_access: options.ordered,
+        },
         ..Default::default()
     });
     let subscriber = participant.create_subscriber(subscriber_qos, NO_LISTENER, NO_STATUS)?;
@@ -1100,10 +1092,11 @@ fn init_subscriber(
         }
     }
 
-    Ok(data_readers)
+    Ok((subscriber, data_readers))
 }
 
 fn run_subscriber(
+    subscriber: &Subscriber,
     data_readers: &[DataReader<ShapeType>],
     options: &Options,
     logger: &Logger,
@@ -1116,6 +1109,16 @@ fn run_subscriber(
     let mut n: u32 = 0;
 
     while all_done.try_recv().is_err() {
+        if options.coherent {
+            println!("Reading coherent sets, iteration {n}");
+        }
+        if options.ordered {
+            println!("Reading with ordered access, iteration {n}");
+        }
+        if options.coherent || options.ordered {
+            subscriber.begin_access()?;
+        }
+
         for (i, data_reader) in data_readers.iter().enumerate() {
             previous_handles[i] = None;
             loop {
@@ -1218,6 +1221,10 @@ fn run_subscriber(
             }
         }
 
+        if options.coherent || options.ordered {
+            subscriber.end_access()?;
+        }
+
         n += 1;
         logger.log_message(format!("Subscriber iteration: <{}>", n), Verbosity::Debug);
         logger.log_message(
@@ -1252,16 +1259,20 @@ fn initialize(options: &Options, logger: &Logger) -> Result<DomainParticipant, I
         )));
     }
 
-    let participant_factory = DomainParticipantFactory::get_instance();
-
-    if options.periodic_announcement > 0 {
+    let participant_factory = if options.periodic_announcement > 0 {
         let configuration = DustDdsConfigurationBuilder::new()
             .participant_announcement_interval(std::time::Duration::from_millis(
                 options.periodic_announcement,
             ))
             .build()?;
-        *participant_factory.get_mut_configuration() = configuration;
-    }
+        DomainParticipantFactory::get_custom_instance(
+            configuration,
+            RtpsUdpTransport::default(),
+            DdsSecurityPlugins::disabled(),
+        )
+    } else {
+        DomainParticipantFactory::get_instance()
+    };
 
     let participant = participant_factory.create_participant(
         options.domain_id,
@@ -1379,11 +1390,11 @@ fn run_app() -> Result<(), Return> {
 
     logger.log_message("Running ShapeApp...", Verbosity::Debug);
     if options.publish {
-        let data_writers = init_publisher(&participant, &options, &logger)?;
-        run_publisher(&data_writers, &options, &logger, rx)?;
+        let (publisher, data_writers) = init_publisher(&participant, &options, &logger)?;
+        run_publisher(&publisher, &data_writers, &options, &logger, rx)?;
     } else {
-        let data_readers = init_subscriber(&participant, &options, &logger)?;
-        run_subscriber(&data_readers, &options, &logger, rx)?;
+        let (subscriber, data_readers) = init_subscriber(&participant, &options, &logger)?;
+        run_subscriber(&subscriber, &data_readers, &options, &logger, rx)?;
     }
 
     participant

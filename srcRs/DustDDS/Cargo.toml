@@ -17,7 +17,7 @@ publish = false
 clap = { version = "4.5.47", features = ["derive", "string"] }
 rand = "0.8.5"
 ctrlc = "3.4"
-dust_dds = { version = "0.16.0" }
+dust_dds = { git = "https://github.com/s2e-systems/dust-dds.git", rev = "7cd45ffcc0a862d5554d5435a2120efe5ecf36c5" }
 
 [build-dependencies]
-dust_dds_gen = "0.16.0"
+dust_dds_gen = { git = "https://github.com/s2e-systems/dust-dds.git", rev = "7cd45ffcc0a862d5554d5435a2120efe5ecf36c5" }
