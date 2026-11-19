@@ -9,14 +9,13 @@ pub fn build(b: *std.Build) void {
     const version = b.option([]const u8, "dds-version", "Full zzdds version string for the executable name (e.g. 0.1.0-zig.0.16.0); omit for a stable CI-friendly name");
     const sanitize_thread = b.option(bool, "sanitize-thread", "Enable ThreadSanitizer (requires libc, Linux only)") orelse false;
     const debug_allocator = b.option(bool, "debug-allocator", "Route the factory's allocation path through std.heap.DebugAllocator instead of the default std.heap.c_allocator, for fast attributable double-free/UAF diagnostics") orelse false;
-    const shared_runtime = b.option(bool, "shared-runtime", "Run participants on zzdds's shared runtime (contributors only; migration in progress)") orelse false;
     const default_log_level: LogLevel = switch (optimize) {
         .Debug => .debug,
         .ReleaseSafe, .ReleaseFast, .ReleaseSmall => .info,
     };
     const log_level = b.option(LogLevel, "log-level", "shape_main std.log level: err, warn, info, debug (default matches Zig build mode)") orelse default_log_level;
 
-    const zzdds_dep = b.dependency("zzdds", .{ .target = target, .optimize = optimize, .@"sanitize-thread" = sanitize_thread, .@"shared-runtime" = shared_runtime });
+    const zzdds_dep = b.dependency("zzdds", .{ .target = target, .optimize = optimize, .@"sanitize-thread" = sanitize_thread });
     const zzdds_mod = zzdds_dep.module("zzdds");
     const zzdds_gen = zzdds_dep.module("zzdds_generated");
 
