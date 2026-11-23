@@ -162,8 +162,12 @@ fn drOnDeadlineMissed(lc: *ListenerCtx, _: DDS.DataReader, status: DDS.Requested
 
 // ── DataWriter QoS builder ────────────────────────────────────────────────────
 
-fn buildWriterQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataWriterQos {
-    var qos = DDS.DataWriterQos{};
+// Starts from the Publisher's default, as srcCxx's shape_main does, so the
+// implementation's defaults (RELIABILITY's max_blocking_time, configured QoS)
+// apply to whatever the options leave unset.
+fn buildWriterQos(alloc: std.mem.Allocator, pub_: DDS.Publisher, opts: *const Options) !DDS.DataWriterQos {
+    var qos: DDS.DataWriterQos = undefined;
+    if (pub_.get_default_datawriter_qos(&qos) != DDS.RETCODE_OK) return error.GetDefaultQosFailed;
 
     // -r forces RELIABLE even if -b was also passed; otherwise -b selects
     // BEST_EFFORT and everything else (including the no-flags case) is RELIABLE.
@@ -216,8 +220,10 @@ fn buildWriterQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataWrite
 
 // ── DataReader QoS builder ────────────────────────────────────────────────────
 
-fn buildReaderQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataReaderQos {
-    var qos = DDS.DataReaderQos{};
+// Starts from the Subscriber's default, as buildWriterQos does.
+fn buildReaderQos(alloc: std.mem.Allocator, sub: DDS.Subscriber, opts: *const Options) !DDS.DataReaderQos {
+    var qos: DDS.DataReaderQos = undefined;
+    if (sub.get_default_datareader_qos(&qos) != DDS.RETCODE_OK) return error.GetDefaultQosFailed;
 
     // -r forces RELIABLE even if -b was also passed; otherwise -b selects
     // BEST_EFFORT and everything else (including the no-flags case) is RELIABLE.
@@ -371,7 +377,7 @@ fn runPublisher(
     const pub_ = dp.create_publisher(pub_qos, null, 0);
     if (isNilPub(pub_)) return error.PublisherFailed;
 
-    var dw_qos = try buildWriterQos(alloc, opts);
+    var dw_qos = try buildWriterQos(alloc, pub_, opts);
     defer dw_qos.deinit(alloc);
 
     // One ListenerCtx, raw DataWriter handle, and typed DataWriter per topic.
@@ -592,7 +598,7 @@ fn runSubscriber(
     const sub = dp.create_subscriber(sub_qos, null, 0);
     if (isNilSub(sub)) return error.SubscriberFailed;
 
-    var dr_qos = try buildReaderQos(alloc, opts);
+    var dr_qos = try buildReaderQos(alloc, sub, opts);
     defer dr_qos.deinit(alloc);
 
     // One ListenerCtx, raw DataReader handle, and typed DataReader per topic.
