@@ -25,7 +25,7 @@ jobs:
           ./timestamp
 
   run_tests:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: generate_timestamp
     strategy:
       matrix:
@@ -84,7 +84,7 @@ jobs:
           ./timestamp
 
   generate_report:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     needs: run_tests
     steps:
       - name: Checkout

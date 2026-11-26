@@ -3,7 +3,7 @@ run-name: ${{ github.actor }} is generating doc in GitHub Actions 🚀
 on: workflow_dispatch
 jobs:
   generate_doc:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
