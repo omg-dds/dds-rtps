@@ -751,6 +751,36 @@ fn init_publisher(
 ) -> Result<(Publisher, Vec<DataWriter<ShapeType>>), InitializeError> {
     logger.log_message("Running init_publisher() function", Verbosity::Debug);
 
+    if let Some(AccessScope::G) = options.access_scope {
+        logger.log_message(
+            "    Presentation Access Scope GROUP = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Presentation Access Scope GROUP = not supported".to_string(),
+        ));
+    }
+
+    if options.coherent && options.num_topics > 1 {
+        logger.log_message(
+            "    Coherent sets with multiple topics = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Coherent sets with multiple topics = not supported".to_string(),
+        ));
+    }
+
+    if options.coherent && options.access_scope.unwrap_or(AccessScope::I) != AccessScope::I {
+        logger.log_message(
+            "    Coherent Access with Presentation Access Scope = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Coherent Access with Presentation Access Scope = not supported".to_string(),
+        ));
+    }
+
     let publisher_qos = QosKind::Specific(PublisherQos {
         partition: options.partition_qos_policy(),
         presentation: PresentationQosPolicy {
@@ -992,6 +1022,36 @@ fn init_subscriber(
     logger: &Logger,
 ) -> Result<(Subscriber, Vec<DataReader<ShapeType>>), InitializeError> {
     logger.log_message("Running init_subscriber() function", Verbosity::Debug);
+
+    if let Some(AccessScope::G) = options.access_scope {
+        logger.log_message(
+            "    Presentation Access Scope GROUP = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Presentation Access Scope GROUP = not supported".to_string(),
+        ));
+    }
+
+    if options.coherent && options.num_topics > 1 {
+        logger.log_message(
+            "    Coherent sets with multiple topics = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Coherent sets with multiple topics = not supported".to_string(),
+        ));
+    }
+
+    if options.coherent && options.access_scope.unwrap_or(AccessScope::I) != AccessScope::I {
+        logger.log_message(
+            "    Coherent Access with Presentation Access Scope = not supported",
+            Verbosity::Error,
+        );
+        return Err(InitializeError(
+            "Coherent Access with Presentation Access Scope = not supported".to_string(),
+        ));
+    }
 
     let subscriber_qos = QosKind::Specific(SubscriberQos {
         partition: options.partition_qos_policy(),
