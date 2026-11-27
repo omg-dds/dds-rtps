@@ -5,7 +5,8 @@ on: workflow_dispatch
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
 permissions:
-  contents: read
+  actions: read
+  contents: write
   pages: write
   id-token: write
 
@@ -23,6 +24,11 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
       - name: Get Artifact
         uses: dawidd6/action-download-artifact@v6
         with:
@@ -31,6 +37,51 @@ jobs:
       - run: |
           mkdir html
           unzip documentation.zip -d html
+          # Workflow 3 may have built the docs before master advanced.
+      - name: Verify documentation matches master
+        run: |
+          if [[ "$(cat html/documentation-commit.txt)" != "$(git rev-parse HEAD)" ]]; then
+            echo "Documentation was built from a different commit. Run workflow 3 again before publishing."
+            exit 1
+          fi
+      # Use the latest release for the version name only; -final is a Git tag, not a new release.
+      - name: Set publication tag in documentation
+        id: publication
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(gh release view --repo "$GITHUB_REPOSITORY" --json tagName --jq '.tagName')
+          if [[ ! "$version" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo 'Latest release tag does not match v<number>.<number>.<number>.' >&2
+            exit 1
+          fi
+          tag="${version}-final"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          page=html/test_results.html
+          marker='Documentation tag: Not published'
+          if ! grep -Fq "$marker" "$page"; then
+            echo 'Publication tag placeholder missing. Run workflow 3 again.' >&2
+            exit 1
+          fi
+          url="$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/tree/$tag"
+          sed "s|$marker|Documentation tag: <a href=\"$url\">$tag</a>|" "$page" > "$page.tmp"
+          mv "$page.tmp" "$page"
+      # A deployment retry may reuse the tag, but must never move it to another commit.
+      - name: Create publication tag on master commit
+        env:
+          PUBLICATION_TAG: ${{ steps.publication.outputs.tag }}
+        run: |
+          if git show-ref --verify --quiet "refs/tags/$PUBLICATION_TAG"; then
+            if [[ "$(git rev-parse "refs/tags/${PUBLICATION_TAG}^{commit}")" != "$(git rev-parse HEAD)" ]]; then
+              echo "Tag $PUBLICATION_TAG already points to a different commit." >&2
+              exit 1
+            fi
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git tag -a "$PUBLICATION_TAG" -m "Documentation publication $PUBLICATION_TAG" HEAD
+          git push origin "refs/tags/$PUBLICATION_TAG"
       - name: Setup Pages
         uses: actions/configure-pages@v5
       - name: Upload artifact
