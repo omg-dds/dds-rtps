@@ -162,8 +162,12 @@ fn drOnDeadlineMissed(lc: *ListenerCtx, _: DDS.DataReader, status: DDS.Requested
 
 // ── DataWriter QoS builder ────────────────────────────────────────────────────
 
-fn buildWriterQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataWriterQos {
-    var qos = DDS.DataWriterQos{};
+// Starts from the Publisher's default, as srcCxx's shape_main does, so the
+// implementation's defaults (RELIABILITY's max_blocking_time, configured QoS)
+// apply to whatever the options leave unset.
+fn buildWriterQos(alloc: std.mem.Allocator, pub_: DDS.Publisher, opts: *const Options) !DDS.DataWriterQos {
+    var qos: DDS.DataWriterQos = undefined;
+    if (pub_.get_default_datawriter_qos(&qos) != DDS.RETCODE_OK) return error.GetDefaultQosFailed;
 
     // -r forces RELIABLE even if -b was also passed; otherwise -b selects
     // BEST_EFFORT and everything else (including the no-flags case) is RELIABLE.
@@ -198,6 +202,10 @@ fn buildWriterQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataWrite
         qos.ownership_strength.value = opts.ownership_strength;
     }
 
+    // As srcCxx's shape_main does: an unregister then leaves the instance
+    // NOT_ALIVE_NO_WRITERS rather than disposing it, whatever the default.
+    if (opts.final_instance_state == 'u') qos.writer_data_lifecycle.autodispose_unregistered_instances = false;
+
     qos.durability.kind = switch (opts.durability) {
         'v' => .VOLATILE_DURABILITY_QOS,
         'l' => .TRANSIENT_LOCAL_DURABILITY_QOS,
@@ -216,8 +224,10 @@ fn buildWriterQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataWrite
 
 // ── DataReader QoS builder ────────────────────────────────────────────────────
 
-fn buildReaderQos(alloc: std.mem.Allocator, opts: *const Options) !DDS.DataReaderQos {
-    var qos = DDS.DataReaderQos{};
+// Starts from the Subscriber's default, as buildWriterQos does.
+fn buildReaderQos(alloc: std.mem.Allocator, sub: DDS.Subscriber, opts: *const Options) !DDS.DataReaderQos {
+    var qos: DDS.DataReaderQos = undefined;
+    if (sub.get_default_datareader_qos(&qos) != DDS.RETCODE_OK) return error.GetDefaultQosFailed;
 
     // -r forces RELIABLE even if -b was also passed; otherwise -b selects
     // BEST_EFFORT and everything else (including the no-flags case) is RELIABLE.
@@ -371,7 +381,7 @@ fn runPublisher(
     const pub_ = dp.create_publisher(pub_qos, null, 0);
     if (isNilPub(pub_)) return error.PublisherFailed;
 
-    var dw_qos = try buildWriterQos(alloc, opts);
+    var dw_qos = try buildWriterQos(alloc, pub_, opts);
     defer dw_qos.deinit(alloc);
 
     // One ListenerCtx, raw DataWriter handle, and typed DataWriter per topic.
@@ -555,7 +565,7 @@ fn runSubscriber(
     const effective_cft_expr: ?[:0]const u8 = if (opts.cft_expression) |e|
         e
     else if (opts.color) |c|
-        std.fmt.bufPrintZ(&synth_cft_buf, "color = '{s}'", .{c}) catch null
+        std.fmt.bufPrintSentinel(&synth_cft_buf, "color = '{s}'", .{c}, 0) catch null
     else
         null;
 
@@ -592,7 +602,7 @@ fn runSubscriber(
     const sub = dp.create_subscriber(sub_qos, null, 0);
     if (isNilSub(sub)) return error.SubscriberFailed;
 
-    var dr_qos = try buildReaderQos(alloc, opts);
+    var dr_qos = try buildReaderQos(alloc, sub, opts);
     defer dr_qos.deinit(alloc);
 
     // One ListenerCtx, raw DataReader handle, and typed DataReader per topic.

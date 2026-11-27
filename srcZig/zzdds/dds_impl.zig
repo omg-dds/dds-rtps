@@ -13,9 +13,6 @@ const build_options = @import("dds_impl_options");
 
 pub const DDS = zzdds_gen.DDS;
 
-const DomainParticipantImpl = zzdds.dcps.DomainParticipantImpl;
-const TopicImpl = zzdds.dcps.TopicImpl;
-const ContentFilteredTopicImpl = zzdds.dcps.ContentFilteredTopicImpl;
 const nil = zzdds.dcps;
 
 // ── Participant bootstrapping ─────────────────────────────────────────────────
@@ -91,8 +88,7 @@ pub fn destroyParticipant(p: *Participant) void {
 // ── Topic name ────────────────────────────────────────────────────────────────
 
 pub fn topicName(topic: DDS.Topic) []const u8 {
-    const impl: *TopicImpl = @ptrCast(@alignCast(topic.ptr));
-    return impl.topic_name;
+    return topic.get_name();
 }
 
 // ── DataWriter extras ─────────────────────────────────────────────────────────
@@ -120,8 +116,7 @@ pub fn readerMatchedCount(dr: DDS.DataReader) usize {
 // is wired (see registerTypeSupport's call site in shape_main.zig)
 
 pub fn cftTopicDescription(cft: DDS.ContentFilteredTopic) DDS.TopicDescription {
-    const impl: *ContentFilteredTopicImpl = @ptrCast(@alignCast(cft.ptr));
-    return impl.toTopicDescription();
+    return cft.as_TopicDescription();
 }
 
 // ── TypeSupport ───────────────────────────────────────────────────────────────
@@ -133,8 +128,7 @@ pub fn registerTypeSupport(
     type_name: []const u8,
     ts: TypeSupport,
 ) void {
-    const impl: *DomainParticipantImpl = @ptrCast(@alignCast(dp.ptr));
-    _ = impl.registerTypeSupport(type_name, ts);
+    _ = zzdds.registerTypeSupport(dp, type_name, ts);
 }
 
 // ── Nil sentinel helpers ──────────────────────────────────────────────────────

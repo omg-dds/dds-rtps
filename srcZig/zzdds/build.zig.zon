@@ -2,11 +2,11 @@
     .name = .zzdds_shape_main,
     .version = "0.0.0",
     .fingerprint = 0x336e9664cb8850f7,
-    .minimum_zig_version = "0.16.0",
+    .minimum_zig_version = "0.17.1",
     .dependencies = .{
         .zzdds = .{
-            .url = "https://github.com/zz-iot/zzdds/archive/refs/tags/v0.3.2-zig.0.16.0.tar.gz",
-            .hash = "zzdds-0.3.2-zig.0.16.0-sc7dmhtXNQDBgUKPmBt-aHnEhnNYLxTBlYqk93Dx_5oJ",
+            .url = "https://github.com/zz-iot/zzdds/archive/refs/tags/v0.3.14-zig.0.17.1.tar.gz",
+            .hash = "zzdds-0.3.14-zig.0.17.1-sc7dmr_rXAC98fvRNjGA-aQUSbEksnDzxzZHpVzUW-eq",
         },
     },
     .paths = .{
