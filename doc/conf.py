@@ -211,7 +211,19 @@ if INDEX_HTML_PATH is None:
     print ('Error getting INDEX_HTML_PATH')
     exit(1)
 
+commit_filename = 'documentation-commit.txt'
+commit_path = os.path.join(os.path.dirname(__file__), commit_filename)
+commit_link = 'Not generated'
+if os.path.isfile(commit_path):
+    html_extra_path = [commit_filename]
+    with open(commit_path) as commit_file:
+        documentation_commit = commit_file.read().strip()
+    repository_url = 'https://github.com/omg-dds/dds-rtps'
+    commit_link = f'`{documentation_commit} <{repository_url}/commit/{documentation_commit}>`__'
+
 replacements = {
+    '|DOCUMENTATION_COMMIT|': commit_link,
+    '|PUBLICATION_TAG|': 'Not published',
     '|LINK_XLSX_URL|': LINK_XLSX_URL,
     '|INDEX_HTML_PATH|': INDEX_HTML_PATH,
     '|TEST_DESCRIPTION|': TEST_DESCRIPTION,

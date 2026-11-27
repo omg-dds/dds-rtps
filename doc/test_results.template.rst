@@ -34,3 +34,10 @@ Access the report at: |LINK_XLSX_URL|
 .. raw:: html
 
     <iframe src="|LINK_XLSX_URL|" width="100%" height="800"></iframe>
+
+Source Revision
+---------------
+
+Documentation source commit: |DOCUMENTATION_COMMIT|
+
+Documentation tag: |PUBLICATION_TAG|

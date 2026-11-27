@@ -7,6 +7,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: master
 
       - name: Get Artifact
         uses: dawidd6/action-download-artifact@v6
@@ -23,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11.4'
+          python-version: '3.11'
 
       - name: Create virtual environment
         run: |
@@ -40,6 +42,9 @@ jobs:
           GCP_CREDENTIAL_STR: ${{ secrets.GCP_CREDENTIAL_STR }}
           DRIVE_FOLDER_ID: ${{ secrets.DRIVE_FOLDER_ID }}
         run: python get_latest_file_urls.py gdrive_url.py
+
+      - name: Record documentation source commit
+        run: git rev-parse HEAD > doc/documentation-commit.txt
 
       - name: Build documentation
         run: sphinx-build -b html doc html
